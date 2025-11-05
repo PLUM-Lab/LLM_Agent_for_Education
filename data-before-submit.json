@@ -1,0 +1,32 @@
+{
+  "state": "before",
+  "question": {
+    "number": 1,
+    "type": "Multiple Choice",
+    "title": "Which of the following is a JavaScript data type?",
+    "content": "Please select the correct option:\n\nJavaScript has multiple data types, including primitive types and reference types. Please select the correct answer from the following options."
+  },
+  "answerOptions": [
+    {
+      "value": "A",
+      "label": "A. Number"
+    },
+    {
+      "value": "B",
+      "label": "B. String"
+    },
+    {
+      "value": "C",
+      "label": "C. Boolean"
+    },
+    {
+      "value": "D",
+      "label": "D. All of the above"
+    }
+  ],
+  "metadata": {
+    "difficulty": "Easy",
+    "points": 5,
+    "timeLimit": 300
+  }
+}

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Quiz System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 1.1 Before student submits answer -->
+        <div id="state-before" class="state-container">
+            <div class="header">
+                <h1>Practice Questions</h1>
+                <div class="question-info">
+                    <span class="question-number">Question <span id="question-num-before">1</span></span>
+                    <span class="question-type" id="question-type-before">Multiple Choice</span>
+                </div>
+            </div>
+
+            <div class="question-content">
+                <h2 id="question-title-before">Question Description</h2>
+                <div id="question-body-before" class="question-body">
+                    <!-- Question content will be loaded dynamically from JSON -->
+                </div>
+            </div>
+
+            <div class="answer-section">
+                <h3>Your Answer:</h3>
+                <div id="answer-input-container">
+                    <!-- Answer input area will be generated dynamically from JSON -->
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="submit-btn" class="btn btn-primary">Submit Answer</button>
+                <button id="reset-btn" class="btn btn-secondary">Reset</button>
+            </div>
+        </div>
+
+        <!-- 1.2 After student submits correct answer -->
+        <div id="state-correct" class="state-container hidden">
+            <div class="header success-header">
+                <div class="success-icon">✓</div>
+                <h1>Correct Answer!</h1>
+            </div>
+
+            <div class="question-content">
+                <div class="question-info-bar">
+                    <span class="question-number">Question <span id="question-num-correct">1</span></span>
+                    <span class="question-type" id="question-type-correct">Multiple Choice</span>
+                </div>
+                <h2 id="question-title-correct">Question Description</h2>
+                <div id="question-body-correct" class="question-body">
+                    <!-- Question content -->
+                </div>
+            </div>
+
+            <div class="answer-section">
+                <div class="answer-result">
+                    <div class="result-item">
+                        <span class="result-label">Your Answer:</span>
+                        <span class="result-value correct-answer" id="user-answer-correct"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Correct Answer:</span>
+                        <span class="result-value correct-answer" id="correct-answer-display"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feedback-section">
+                <h3>Explanation:</h3>
+                <div id="explanation-correct" class="explanation">
+                    <!-- Explanation content -->
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="next-btn" class="btn btn-primary">Next Question</button>
+                <button id="review-btn" class="btn btn-secondary">View Details</button>
+            </div>
+        </div>
+
+        <!-- 1.3 After student submits wrong answer -->
+        <div id="state-wrong" class="state-container hidden">
+            <div class="header error-header">
+                <div class="error-icon">✗</div>
+                <h1>Incorrect Answer</h1>
+            </div>
+
+            <div class="question-content">
+                <div class="question-info-bar">
+                    <span class="question-number">Question <span id="question-num-wrong">1</span></span>
+                    <span class="question-type" id="question-type-wrong">Multiple Choice</span>
+                </div>
+                <h2 id="question-title-wrong">Question Description</h2>
+                <div id="question-body-wrong" class="question-body">
+                    <!-- Question content -->
+                </div>
+            </div>
+
+            <div class="answer-section">
+                <div class="answer-result">
+                    <div class="result-item">
+                        <span class="result-label">Your Answer:</span>
+                        <span class="result-value wrong-answer" id="user-answer-wrong"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Correct Answer:</span>
+                        <span class="result-value correct-answer" id="correct-answer-wrong"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feedback-section">
+                <h3>Explanation:</h3>
+                <div id="explanation-wrong" class="explanation">
+                    <!-- Explanation content -->
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="retry-btn" class="btn btn-primary">Try Again</button>
+                <button id="next-question-btn" class="btn btn-secondary">Next Question</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

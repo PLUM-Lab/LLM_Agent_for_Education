@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Case Study Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .question-text {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .choices-container {
+            margin-top: 10px;
+        }
+
+        .choice-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .choice-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .choice-item input[type="radio"] {
+            margin-right: 12px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+
+        .choice-item label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .choice-item.disabled {
+            cursor: default;
+        }
+
+        .choice-item.disabled:hover {
+            background-color: transparent;
+        }
+
+        .submit-btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: #357abd;
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .feedback-container {
+            min-height: 100px;
+        }
+
+        .feedback-container.empty {
+            background: #f9f9f9;
+            border: 1px dashed #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+        }
+
+        .correctness-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .correctness-badge.correct {
+            background: #4caf50;
+            color: white;
+        }
+
+        .correctness-badge.wrong {
+            background: #f44336;
+            color: white;
+        }
+
+        .explanation-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .explanation-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+
+        .explanation-item.correct {
+            background: #e8f5e9;
+        }
+
+        .explanation-item.incorrect {
+            background: #ffebee;
+        }
+
+        .explanation-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .explanation-icon.correct {
+            background: #4caf50;
+            color: white;
+        }
+
+        .explanation-icon.incorrect {
+            background: #f44336;
+            color: white;
+        }
+
+        .explanation-text {
+            flex: 1;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .message-container {
+            min-height: 150px;
+        }
+
+        .conversation {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .message-input-container {
+            display: flex;
+            margin-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 15px;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .message-input:focus {
+            border-color: #4a90e2;
+        }
+
+        .message-input::placeholder {
+            color: #999;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Question Section -->
+        <div class="section">
+            <div class="section-title">Question</div>
+            <div class="question-text" id="question-text"></div>
+            <div class="choices-container">
+                <div class="section-title" style="margin-bottom: 10px;">Choices</div>
+                <div id="choices-list"></div>
+                <button class="submit-btn" id="submit-btn">Submit</button>
+            </div>
+        </div>
+
+        <!-- Feedback Section -->
+        <div class="section">
+            <div class="section-title">Feedback</div>
+            <div class="feedback-container empty" id="feedback-container">
+                No feedback yet
+            </div>
+        </div>
+
+        <!-- Message Section -->
+        <div class="section">
+            <div class="section-title">Message</div>
+            <div class="message-container">
+                <div class="conversation" id="conversation-list"></div>
+                <div class="message-input-container">
+                    <input type="text" class="message-input" placeholder="Ask ChatGPT anything..." id="message-input">
+                    <button id="message-send-btn" class="submit-btn" style="margin-left: 10px; padding: 10px 20px;">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Embedded JSON data
+        const dataBeforeSubmit = {
+            "QA": {
+                "question": "A 25-year-old presents with RLQ pain for 8 hours. Vitals show temp 38.2°C. What is the most appropriate next step?",
+                "choices": [
+                    "A. Order an abdominal ultrasound to evaluate for appendicitis",
+                    "B. Start broad-spectrum IV antibiotics immediately without imaging",
+                    "C. Schedule elective diagnostic laparoscopy in 2 weeks",
+                    "D. Discharge home with oral analgesics and return precautions"
+                ],
+                "answer": 0
+            },
+            "feedback": {},
+            "conversation": [
+                {
+                    "user": "What is RLQ?",
+                    "assistant": "Right Lower Quadrant of the abdomen, where the appendix is located."
+                }
+            ]
+        };
+
+        const dataAfterCorrect = {
+            "QA": {
+                "question": "A 25-year-old presents with RLQ pain for 8 hours. Vitals show temp 38.2°C. What is the most appropriate next step?",
+                "choices": [
+                    "A. Order an abdominal ultrasound to evaluate for appendicitis",
+                    "B. Start broad-spectrum IV antibiotics immediately without imaging",
+                    "C. Schedule elective diagnostic laparoscopy in 2 weeks",
+                    "D. Discharge home with oral analgesics and return precautions"
+                ],
+                "answer": 0,
+                "student_prediction": 0
+            },
+            "feedback": {
+                "correctness": "Correct!",
+                "explaination": [
+                    "A. First-line test for suspected appendicitis; confirms diagnosis before surgery, avoids unnecessary radiation.",
+                    "B. Antibiotics come after diagnosis or surgical decision; premature use masks findings.",
+                    "C. Appendicitis is urgent; delaying evaluation risks perforation",
+                    "D. Fever + RLQ pain needs immediate imaging, not outpatient follow-up."
+                ]
+            },
+            "conversation": [
+                {
+                    "user": "What is RLQ?",
+                    "assistant": "Right Lower Quadrant of the abdomen, where the appendix is located."
+                }
+            ]
+        };
+
+        const dataAfterWrong = {
+            "QA": {
+                "question": "A 25-year-old presents with RLQ pain for 8 hours. Vitals show temp 38.2°C. What is the most appropriate next step?",
+                "choices": [
+                    "A. Order an abdominal ultrasound to evaluate for appendicitis",
+                    "B. Start broad-spectrum IV antibiotics immediately without imaging",
+                    "C. Schedule elective diagnostic laparoscopy in 2 weeks",
+                    "D. Discharge home with oral analgesics and return precautions"
+                ],
+                "answer": 0,
+                "student_prediction": 1
+            },
+            "feedback": {
+                "correctness": "Wrong!",
+                "explaination": [
+                    "A. First-line test for suspected appendicitis; confirms diagnosis before surgery, avoids unnecessary radiation.",
+                    "B. Antibiotics come after diagnosis or surgical decision; premature use masks findings.",
+                    "C. Appendicitis is urgent; delaying evaluation risks perforation",
+                    "D. Fever + RLQ pain needs immediate imaging, not outpatient follow-up."
+                ]
+            },
+            "conversation": [
+                {
+                    "user": "What is RLQ?",
+                    "assistant": "Right Lower Quadrant of the abdomen, where the appendix is located."
+                }
+            ]
+        };
+
+        let currentData = null;
+        let selectedAnswer = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData(dataBeforeSubmit);
+            setupEventListeners();
+        });
+
+        // OpenAI API Key - read only from localStorage (no default bundled)
+        function cleanApiKey(key) {
+            if (!key) return '';
+            return String(key).split('').filter(c => c.charCodeAt(0) <= 127).join('').trim();
+        }
+        (function initApiKey() {
+            const stored = cleanApiKey(localStorage.getItem('openai_api_key'));
+            if (stored && /^sk-/.test(stored) && stored.length > 40) {
+                openAIApiKey = stored;
+            } else {
+                if (stored) {
+                    try { localStorage.removeItem('openai_api_key'); } catch (_) {}
+                }
+                openAIApiKey = '';
+            }
+        })();
+
+        function setupEventListeners() {
+            document.getElementById('submit-btn').addEventListener('click', handleSubmit);
+            
+            // Message section ChatGPT
+            const messageInput = document.getElementById('message-input');
+            const messageSendBtn = document.getElementById('message-send-btn');
+            
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleMessageSubmit();
+                }
+            });
+            messageSendBtn.addEventListener('click', handleMessageSubmit);
+        }
+
+        function loadData(data) {
+            currentData = data;
+            renderQuestion(data);
+            renderFeedback(data);
+            renderConversation(data);
+        }
+
+        function renderQuestion(data) {
+            const qa = data.QA;
+            document.getElementById('question-text').textContent = qa.question;
+            
+            const choicesList = document.getElementById('choices-list');
+            choicesList.innerHTML = '';
+            
+            const isSubmitted = data.feedback && Object.keys(data.feedback).length > 0;
+            const studentPrediction = qa.student_prediction;
+            const correctAnswer = qa.answer;
+
+            qa.choices.forEach((choice, index) => {
+                const choiceItem = document.createElement('div');
+                choiceItem.className = 'choice-item';
+                if (isSubmitted) {
+                    choiceItem.classList.add('disabled');
+                }
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'answer';
+                radio.value = index;
+                radio.id = `choice-${index}`;
+                radio.disabled = isSubmitted;
+                
+                if (!isSubmitted) {
+                    radio.addEventListener('change', function() {
+                        selectedAnswer = index;
+                    });
+                } else {
+                    // Show selected answer after submission
+                    if (index === studentPrediction) {
+                        radio.checked = true;
+                    }
+                }
+
+                const label = document.createElement('label');
+                label.htmlFor = `choice-${index}`;
+                label.textContent = choice;
+
+                choiceItem.appendChild(radio);
+                choiceItem.appendChild(label);
+                choicesList.appendChild(choiceItem);
+            });
+
+            const submitBtn = document.getElementById('submit-btn');
+            if (isSubmitted) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitted';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
+            }
+        }
+
+        function renderFeedback(data) {
+            const feedbackContainer = document.getElementById('feedback-container');
+            
+            if (!data.feedback || Object.keys(data.feedback).length === 0) {
+                feedbackContainer.className = 'feedback-container empty';
+                feedbackContainer.textContent = 'No feedback yet';
+                return;
+            }
+
+            feedbackContainer.className = 'feedback-container';
+            const feedback = data.feedback;
+            const qa = data.QA;
+            const correctAnswer = qa.answer;
+
+            let html = '';
+            
+            // Correctness badge
+            const isCorrect = feedback.correctness === 'Correct!';
+            html += `<div class="correctness-badge ${isCorrect ? 'correct' : 'wrong'}">${feedback.correctness}</div>`;
+            
+            // Explanations
+            if (feedback.explaination && feedback.explaination.length > 0) {
+                html += '<ul class="explanation-list">';
+                feedback.explaination.forEach((explanation, index) => {
+                    const isCorrectChoice = index === correctAnswer;
+                    html += `
+                        <li class="explanation-item ${isCorrectChoice ? 'correct' : 'incorrect'}">
+                            <div class="explanation-icon ${isCorrectChoice ? 'correct' : 'incorrect'}">
+                                ${isCorrectChoice ? '✓' : '✗'}
+                            </div>
+                            <div class="explanation-text">${explanation}</div>
+                        </li>
+                    `;
+                });
+                html += '</ul>';
+            }
+
+            feedbackContainer.innerHTML = html;
+            
+            // Show ChatGPT chat container if feedback exists
+            const chatContainer = document.getElementById('feedback-chat-container');
+            if (feedback && Object.keys(feedback).length > 0) {
+                chatContainer.classList.remove('hidden');
+            } else {
+                chatContainer.classList.add('hidden');
+            }
+        }
+
+        function renderConversation(data) {
+            const conversationList = document.getElementById('conversation-list');
+            
+            // Don't show initial conversation from JSON - only show ChatGPT messages
+            // Clear any existing content and wait for user to start chatting
+            if (messageChatHistory.length === 0) {
+                conversationList.innerHTML = '';
+            }
+            // ChatGPT messages are handled separately in addMessageToConversation
+        }
+
+        function handleSubmit() {
+            if (selectedAnswer === null) {
+                alert('Please select an answer first');
+                return;
+            }
+
+            // Determine which data to show based on answer
+            let resultData;
+            if (selectedAnswer === dataBeforeSubmit.QA.answer) {
+                resultData = JSON.parse(JSON.stringify(dataAfterCorrect));
+                resultData.QA.student_prediction = selectedAnswer;
+            } else {
+                resultData = JSON.parse(JSON.stringify(dataAfterWrong));
+                resultData.QA.student_prediction = selectedAnswer;
+            }
+
+            loadData(resultData);
+        }
+
+        // ChatGPT chat history for message section
+        let messageChatHistory = [];
+
+        async function handleMessageSubmit() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            if (!openAIApiKey) {
+                alert('API Key not configured. Please check the code.');
+                return;
+            }
+
+            // Add user message to conversation
+            addMessageToConversation('user', message);
+            input.value = '';
+            input.disabled = true;
+            document.getElementById('message-send-btn').disabled = true;
+
+            // Show loading indicator
+            const loadingId = addMessageToConversation('assistant', 'Thinking...', true);
+
+            try {
+                // Call OpenAI API
+                const response = await callOpenAIDirect(message);
+                
+                // Remove loading message and add real response
+                removeMessageFromConversation(loadingId);
+                addMessageToConversation('assistant', response);
+            } catch (error) {
+                console.error('ChatGPT Error:', error);
+                removeMessageFromConversation(loadingId);
+                addMessageToConversation('assistant', 'Sorry, I encountered an error: ' + error.message);
+            } finally {
+                input.disabled = false;
+                document.getElementById('message-send-btn').disabled = false;
+                input.focus();
+            }
+        }
+
+        function addMessageToConversation(role, content, isLoading = false) {
+            const conversationList = document.getElementById('conversation-list');
+            
+            const messageDiv = document.createElement('div');
+            const messageId = 'msg-' + Date.now() + '-' + Math.random();
+            messageDiv.id = messageId;
+            messageDiv.className = 'message ' + role;
+            messageDiv.textContent = content;
+            
+            if (isLoading) {
+                messageDiv.style.opacity = '0.6';
+                messageDiv.style.fontStyle = 'italic';
+            }
+            
+            conversationList.appendChild(messageDiv);
+            conversationList.scrollTop = conversationList.scrollHeight;
+            
+            return messageId;
+        }
+
+        function removeMessageFromConversation(messageId) {
+            const messageDiv = document.getElementById(messageId);
+            if (messageDiv) {
+                messageDiv.remove();
+            }
+        }
+
+        async function callOpenAIDirect(message) {
+            if (!openAIApiKey) {
+                throw new Error('API key not configured');
+            }
+
+            // Clean and validate API key
+            const apiKey = cleanApiKey(openAIApiKey);
+            if (!apiKey) {
+                throw new Error('API key is empty');
+            }
+
+            // Build context from current question and feedback
+            let context = 'You are a helpful medical education assistant. Answer questions clearly and accurately.\n\n';
+            
+            if (currentData?.QA?.question) {
+                context += `Current Question: ${currentData.QA.question}\n\n`;
+            }
+            
+            if (currentData?.feedback?.correctness) {
+                context += `Feedback: ${currentData.feedback.correctness}\n`;
+                if (currentData.feedback.explaination) {
+                    context += 'Explanations:\n';
+                    currentData.feedback.explaination.forEach((exp, idx) => {
+                        context += `${idx + 1}. ${exp}\n`;
+                    });
+                }
+                context += '\n';
+            }
+
+            // Prepare messages for OpenAI
+            const messages = [
+                {
+                    role: 'system',
+                    content: context
+                },
+                // Add conversation history
+                ...messageChatHistory,
+                // Add current user message
+                {
+                    role: 'user',
+                    content: message
+                }
+            ];
+
+            // Use XMLHttpRequest to avoid headers encoding issues
+            const requestData = JSON.stringify({
+                model: 'gpt-3.5-turbo',
+                messages: messages,
+                max_tokens: 500,
+                temperature: 0.7
+            });
+
+            // Make API call using XMLHttpRequest
+            // Build Authorization header value as ASCII-only string
+            const authHeader = 'Bearer ' + apiKey;
+            
+            const assistantResponse = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'https://api.openai.com/v1/chat/completions', true);
+                
+                try {
+                    // Set headers one at a time with error handling
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.setRequestHeader('Authorization', authHeader);
+                } catch (e) {
+                    reject(new Error('Failed to set headers: ' + e.message + '. API Key length: ' + apiKey.length));
+                    return;
+                }
+                
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            try {
+                                const data = JSON.parse(xhr.responseText);
+                                resolve(data.choices[0].message.content);
+                            } catch (e) {
+                                reject(new Error('Failed to parse response: ' + e.message));
+                            }
+                        } else {
+                            try {
+                                const error = JSON.parse(xhr.responseText);
+                                reject(new Error(error.error?.message || 'OpenAI API error: ' + xhr.status));
+                            } catch (e) {
+                                reject(new Error('OpenAI API error: ' + xhr.status + ' - ' + xhr.statusText));
+                            }
+                        }
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    reject(new Error('Network error occurred'));
+                };
+                
+                xhr.send(requestData);
+            });
+            
+            // Update chat history
+            messageChatHistory.push({ role: 'user', content: message });
+            messageChatHistory.push({ role: 'assistant', content: assistantResponse });
+            
+            return assistantResponse;
+        }
+
+        // Function to load data from JSON (for backend integration)
+        window.loadQuizData = function(data) {
+            loadData(data);
+        };
+
+        // Function to set OpenAI API key programmatically
+        window.setOpenAIAPIKey = function(apiKey) {
+            openAIApiKey = apiKey;
+            localStorage.setItem('openai_api_key', apiKey);
+            document.getElementById('openai-api-key').value = '••••••••••••' + apiKey.slice(-4);
+            updateApiKeyStatus(true);
+            enableMessageInput();
+        };
+    </script>
+</body>
+</html>
+

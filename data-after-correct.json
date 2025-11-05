@@ -1,0 +1,23 @@
+{
+  "state": "correct",
+  "question": {
+    "number": 1,
+    "type": "Multiple Choice",
+    "title": "Which of the following is a JavaScript data type?",
+    "content": "Please select the correct option:\n\nJavaScript has multiple data types, including primitive types and reference types. Please select the correct answer from the following options."
+  },
+  "userAnswer": "D",
+  "correctAnswer": "D",
+  "isCorrect": true,
+  "explanation": "The correct answer is D.\n\nJavaScript's primitive data types include:\n1. Number\n2. String\n3. Boolean\n4. Undefined\n5. Null\n6. Symbol (added in ES6)\n7. BigInt (added in ES2020)\n\nTherefore, options A (Number), B (String), and C (Boolean) are all JavaScript data types, so the correct answer is D (All of the above).",
+  "score": {
+    "earned": 5,
+    "total": 5
+  },
+  "feedback": "Great job! You have a complete understanding of JavaScript data types.",
+  "metadata": {
+    "difficulty": "Easy",
+    "points": 5,
+    "timeSpent": 45
+  }
+}
