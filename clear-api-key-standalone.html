@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear API Key - Standalone</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        button:hover {
+            background: #c82333;
+        }
+        code {
+            background: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 3px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>清除 API Key</h1>
+        <p>这个页面可以直接在浏览器中打开（不需要服务器）</p>
+        
+        <div id="status" class="info">
+            <strong>当前状态：</strong><br>
+            <span id="statusText">检查中...</span>
+        </div>
+        
+        <button onclick="clearApiKey()">清除 API Key</button>
+        <button onclick="checkStatus()">检查状态</button>
+        
+        <div id="result"></div>
+        
+        <div class="info" style="margin-top: 30px; text-align: left;">
+            <strong>说明：</strong>
+            <ul>
+                <li>这个页面会清除浏览器 localStorage 中存储的 API key</li>
+                <li>清除后，刷新 medical-quiz.html 页面，系统会提示你配置新的 API key</li>
+                <li>如果清除后仍然能使用 ChatGPT，可能是其他标签页或扩展程序保存了 key</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function checkStatus() {
+            try {
+                const key = localStorage.getItem('openai_api_key');
+                const statusEl = document.getElementById('statusText');
+                if (key) {
+                    statusEl.innerHTML = `✅ 已找到存储的 API key<br>长度: ${key.length} 字符<br>前4位: ${key.substring(0, 4)}...`;
+                    document.getElementById('status').className = 'info';
+                } else {
+                    statusEl.textContent = '❌ 未找到存储的 API key';
+                    document.getElementById('status').className = 'success';
+                }
+            } catch (e) {
+                document.getElementById('statusText').textContent = '检查失败: ' + e.message;
+            }
+        }
+
+        function clearApiKey() {
+            try {
+                const hadKey = localStorage.getItem('openai_api_key') !== null;
+                
+                // 清除所有可能的存储
+                localStorage.removeItem('openai_api_key');
+                sessionStorage.removeItem('openai_api_key');
+                
+                // 验证清除结果
+                const stillHasKey = localStorage.getItem('openai_api_key') !== null;
+                
+                const resultEl = document.getElementById('result');
+                
+                if (!stillHasKey) {
+                    resultEl.className = 'success';
+                    resultEl.style.display = 'block';
+                    resultEl.innerHTML = `
+                        <h2>✅ API Key 已成功清除！</h2>
+                        <p>${hadKey ? '已找到并清除了存储的 API key。' : '未找到存储的 API key（可能已经清除过了）。'}</p>
+                        <p><strong>下一步：</strong></p>
+                        <p>现在可以关闭此页面，刷新 <code>medical-quiz.html</code> 页面。</p>
+                        <p>系统将提示你配置新的 API key。</p>
+                    `;
+                } else {
+                    resultEl.className = 'info';
+                    resultEl.style.display = 'block';
+                    resultEl.innerHTML = `
+                        <h2>⚠️ 清除可能未完全成功</h2>
+                        <p>请尝试手动清除：</p>
+                        <p>在浏览器控制台（F12）中运行：</p>
+                        <code>localStorage.removeItem('openai_api_key');</code>
+                    `;
+                }
+                
+                // 更新状态
+                checkStatus();
+            } catch (e) {
+                document.getElementById('result').innerHTML = `
+                    <div style="background: #f8d7da; color: #721c24; padding: 20px; border-radius: 4px; margin-top: 20px;">
+                        <h2>❌ 清除失败</h2>
+                        <p>错误: ${e.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 页面加载时检查状态
+        checkStatus();
+    </script>
+</body>
+</html>
+

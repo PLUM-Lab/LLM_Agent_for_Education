@@ -1,7 +1,7 @@
 node_modules/
 
 # Local secrets/config
-local-config.js
+api-key.js
 .env
 *.env
 OPENAI_API_KEY.txt

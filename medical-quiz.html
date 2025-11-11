@@ -197,7 +197,8 @@
         }
 
         .message-container {
-            min-height: 150px;
+            min-height: 200px;
+            padding: 10px 0;
         }
 
         .conversation {
@@ -266,6 +267,7 @@
                 <div class="section-title" style="margin-bottom: 10px;">Choices</div>
                 <div id="choices-list"></div>
                 <button class="submit-btn" id="submit-btn">Submit</button>
+                <button class="submit-btn" id="next-q" style="margin-left:10px;">Next</button>
             </div>
         </div>
 
@@ -278,7 +280,7 @@
         </div>
 
         <!-- Message Section -->
-        <div class="section">
+        <div class="section" id="message-section" style="display: block !important;">
             <div class="section-title">Message</div>
             <div class="message-container">
                 <div class="conversation" id="conversation-list"></div>
@@ -289,6 +291,11 @@
             </div>
         </div>
     </div>
+
+    <!-- Load API key from api-key.js (ignored by Git) -->
+    <script src="api-key.js"></script>
+    <!-- Load local config that reads from api-key.js and manages localStorage -->
+    <script src="local-config.js"></script>
 
     <script>
         // Embedded JSON data
@@ -372,11 +379,16 @@
 
         let currentData = null;
         let selectedAnswer = null;
+        let generatedQuestions = [];
+        let currentGeneratedIndex = -1;
+        let currentQuestionMeta = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadData(dataBeforeSubmit);
             setupEventListeners();
+            // Auto-generate a 5-question set in the background
+            generateQuestionSet(5);
         });
 
         // OpenAI API Key - read only from localStorage (no default bundled)
@@ -512,13 +524,7 @@
 
             feedbackContainer.innerHTML = html;
             
-            // Show ChatGPT chat container if feedback exists
-            const chatContainer = document.getElementById('feedback-chat-container');
-            if (feedback && Object.keys(feedback).length > 0) {
-                chatContainer.classList.remove('hidden');
-            } else {
-                chatContainer.classList.add('hidden');
-            }
+            // Message section is always visible, no need to show/hide based on feedback
         }
 
         function renderConversation(data) {
@@ -538,7 +544,30 @@
                 return;
             }
 
-            // Determine which data to show based on answer
+            // If we are running a generated quiz, grade locally
+            if (currentQuestionMeta && typeof currentQuestionMeta.correct !== 'undefined') {
+                const isCorrect = String(selectedAnswer).trim() === String(currentQuestionMeta.correct).trim();
+                const feedback = {
+                    correctness: isCorrect ? 'Correct!' : 'Wrong!',
+                    explaination: [
+                        isCorrect
+                            ? `Your answer ${selectedAnswer} is correct.`
+                            : `Correct answer is ${currentQuestionMeta.correct}.`
+                    ]
+                };
+
+                const qa = {
+                    question: currentQuestionMeta.prompt,
+                    choices: currentQuestionMeta.labels,
+                    answer: currentQuestionMeta.correct,
+                    student_prediction: selectedAnswer
+                };
+
+                loadData({ QA: qa, feedback });
+                return;
+            }
+
+            // Fallback to sample JSON flow
             let resultData;
             if (selectedAnswer === dataBeforeSubmit.QA.answer) {
                 resultData = JSON.parse(JSON.stringify(dataAfterCorrect));
@@ -547,8 +576,71 @@
                 resultData = JSON.parse(JSON.stringify(dataAfterWrong));
                 resultData.QA.student_prediction = selectedAnswer;
             }
-
             loadData(resultData);
+        }
+
+        // Build 5-question set from the current case
+        async function generateQuestionSet(count) {
+            try {
+                const caseText = dataBeforeSubmit.QA.question;
+                const prompt = `Create ${count} multiple-choice questions (MCQ) based strictly on this case. Return ONLY JSON array with fields: serial (number), question (string), options (array of 4), correct (string). No prose.\nCase:\n"""${caseText}"""`;
+                const reply = await callOpenAIDirect(prompt);
+                const list = tryExtractJsonArray(reply) || [];
+                if (Array.isArray(list) && list.length) {
+                    generatedQuestions = list;
+                    loadQuestionFromSet(0);
+                }
+            } catch (e) {
+                console.warn('Auto-generation failed:', e);
+            }
+        }
+
+        function loadQuestionFromSet(index) {
+            if (!generatedQuestions.length || index < 0 || index >= generatedQuestions.length) return;
+            currentGeneratedIndex = index;
+            const item = generatedQuestions[index];
+            const labels = Array.isArray(item.options)
+                ? ['A','B','C','D'].map((k,i)=> `${k}. ${item.options[i]||''}`)
+                : [];
+
+            currentQuestionMeta = {
+                prompt: item.question,
+                labels,
+                correct: (item.correct || '').toString().trim()
+            };
+
+            // Adapt into our UI structure
+            const qa = {
+                number: index + 1,
+                type: 'Multiple Choice',
+                title: 'Generated Question',
+                content: item.question
+            };
+            const answerOptions = ['A','B','C','D'].map((k,i)=> ({ value: k, label: labels[i]||`${k}.` }));
+
+            const data = { QA: { question: qa, choices: labels, answer: item.correct }, answerOptions };
+            // Reuse existing render path
+            currentData = { question: qa };
+            document.getElementById('question-text').textContent = `${item.question} ( ${index+1} / ${generatedQuestions.length} )`;
+            renderAnswerInput({ type: 'Multiple Choice' }, answerOptions);
+        }
+
+        function normalizeMCQList(arr) {
+            return (arr||[])
+                .filter(q => typeof q === 'object')
+                .map((q,i) => {
+                    const opts = Array.isArray(q.options) ? q.options.slice(0,4) : [];
+                    while (opts.length < 4) opts.push('');
+                    const correct = String(q.correct || '').trim().toUpperCase();
+                    return {
+                        serial: Number(q.serial ?? (i+1)),
+                        question: String(q.question ?? '').trim(),
+                        options: opts,
+                        correct: ['A','B','C','D'].includes(correct) ? correct : 'A',
+                        answer: String(q.answer ?? '').trim()
+                    };
+                })
+                .filter(q => q.question && q.options.every(o => typeof o === 'string'));
         }
 
         // ChatGPT chat history for message section
@@ -616,6 +708,102 @@
             if (messageDiv) {
                 messageDiv.remove();
             }
+        }
+
+        // Next button logic (advance within generated set)
+        document.getElementById('next-q')?.addEventListener('click', () => {
+            if (!generatedQuestions.length) return;
+            const next = (currentGeneratedIndex ?? -1) + 1;
+            if (next < generatedQuestions.length) {
+                loadQuestionFromSet(next);
+            } else {
+                alert('You have completed all 5 questions.');
+                currentGeneratedIndex = -1;
+                generatedQuestions = [];
+                loadData(dataBeforeSubmit);
+            }
+        });
+
+        // -------- Generate 5 Questions from current case --------
+        document.getElementById('gen-5-btn')?.addEventListener('click', async () => {
+            const caseText = currentData?.QA?.question || document.getElementById('question-text')?.textContent || '';
+            const prompt = `Create 5 multiple-choice questions (MCQ) based strictly on this case. Return ONLY JSON array with fields: serial (number), question (string), options (array of 4), correct (string), answer (string). No prose.\nCase:\n"""${caseText}"""`;
+            const genId = addMessageToConversation('assistant', 'Generating 5 questions...', true);
+            try {
+                const reply = await callOpenAIDirect(prompt);
+                removeMessageFromConversation(genId);
+                const data = tryExtractJsonArray(reply);
+                if (Array.isArray(data) && data.length) {
+                    renderQuestionsTable(data);
+                } else {
+                    addMessageToConversation('assistant', reply);
+                }
+            } catch (e) {
+                removeMessageFromConversation(genId);
+                addMessageToConversation('assistant', 'Generation failed: ' + e.message);
+            }
+        });
+
+        function tryExtractJsonArray(text) {
+            try {
+                // direct JSON
+                const j = JSON.parse(text);
+                if (Array.isArray(j)) return j;
+            } catch(_) {}
+            // code block or mixed text -> find first [...]
+            const match = text.match(/\[([\s\S]*?)\]/);
+            if (match) {
+                try { return JSON.parse(match[0]); } catch(_) {}
+            }
+            return null;
+        }
+
+        function escapeCsv(val) {
+            const s = (val==null? '': String(val));
+            return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+        }
+
+        function downloadCsv(rows) {
+            if (!rows.length) return;
+            const headers = Object.keys(rows[0]);
+            const csv = [headers.map(escapeCsv).join(',')]
+                .concat(rows.map(r => headers.map(h => escapeCsv(r[h])).join(',')))
+                .join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'questions.csv'; a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function renderQuestionsTable(items) {
+            const wrap = document.getElementById('pdf-results');
+            const dl = document.getElementById('pdf-download-wrap');
+            wrap.innerHTML = '';
+            if (!items || !items.length) { dl.style.display='none'; return; }
+            const headers = Object.keys(items[0]);
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            table.innerHTML = `<thead><tr>${headers.map(h=>`<th style="text-align:left;border-bottom:1px solid #e0e0e0;padding:8px;">${h}</th>`).join('')}</tr></thead>`;
+            const tbody = document.createElement('tbody');
+            items.forEach(row => {
+                const tr = document.createElement('tr');
+                headers.forEach(h => {
+                    const td = document.createElement('td');
+                    td.style.padding = '8px';
+                    td.style.borderBottom = '1px solid #f0f0f0';
+                    const v = row[h];
+                    td.textContent = Array.isArray(v) ? v.join(', ') : (v==null? '': String(v));
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            wrap.appendChild(table);
+
+            dl.style.display='block';
+            document.getElementById('download-csv').onclick = () => downloadCsv(items);
         }
 
         async function callOpenAIDirect(message) {
