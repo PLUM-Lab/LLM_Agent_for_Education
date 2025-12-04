@@ -1,9 +1,107 @@
 <!DOCTYPE html>
+<!--
+================================================================================
+医学教育测验 - 交互式学习平台
+================================================================================
+
+概述：
+    一个单页 Web 应用，让医学生通过由医学指南生成的选择题来练习临床知识。
+
+架构：
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                         医学测验系统                                      │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   ┌─────────────┐     ┌─────────────┐     ┌─────────────────────┐       │
+    │   │  questions  │     │   前端      │     │   ChatGPT API       │       │
+    │   │   .json     │────▶│  (本文件)   │────▶│   (OpenAI)          │       │
+    │   └─────────────┘     └─────────────┘     └─────────────────────┘       │
+    │                              │                                           │
+    │                              ▼                                           │
+    │                       ┌─────────────┐                                   │
+    │                       │ RAG 服务器  │ (可选)                             │
+    │                       │ (FAISS)     │                                   │
+    │                       └─────────────┘                                   │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+功能：
+    1. 测验功能：
+       - 从 questions.json 加载 200 道题目
+       - 在题目间导航（上一题/下一题）
+       - 提交答案并查看反馈
+       - 每个选项的解释
+       - 跟踪进度
+
+    2. ChatGPT 集成：
+       - 对任何主题提问
+       - 接收完整上下文（题目、选项、答案、解释）
+       - 系统提示配置为医学教育导师
+
+    3. RAG（检索增强生成）：
+       - 每道题的原始源文本块
+       - 通过 FAISS 服务器动态检索相关块
+       - 服务器不可用时回退到关键词搜索
+       - 来源引用（PDF 名称 + 页码）
+
+数据流：
+    1. 页面加载 → 获取 questions.json
+    2. 显示题目 → 学生选择答案 → 提交
+    3. 显示每个选项解释的反馈
+    4. 学生向 ChatGPT 提问 → 构建上下文包含：
+       - 当前题目和选项
+       - 学生答案 vs 正确答案
+       - 所有解释
+       - 原始源文本块（来自题目生成）
+       - 检索的文本块（通过 FAISS 或关键词搜索）
+    5. ChatGPT 返回带引用的回答
+
+文件依赖：
+    - questions.json：生成的题目（来自 generate_questions.py）
+    - api-key.js：OpenAI API 密钥（可选，可使用 localStorage）
+    - rag_server.py：RAG 后端（可选，提供语义搜索）
+
+使用方法：
+    1. 启动 HTTP 服务器：python -m http.server 8000
+    2. 打开：http://localhost:8000/medical-quiz.html
+    3. （可选）启动 RAG：python rag_server.py
+    4. 按提示输入 API 密钥
+    5. 开始练习！
+
+作者：AI for Education (Wenchao Qin)
+================================================================================
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medical Case Study Quiz</title>
+    
+    <!-- ====================================================================
+         CSS 样式表
+         ====================================================================
+         
+         设计原则：
+         - 响应式布局：自适应桌面端和移动端屏幕
+         - 专业医学主题：简洁、清晰、易读
+         - 颜色编码反馈：绿色=正确答案，红色=错误答案
+         - 无障碍设计：足够的对比度和可点击区域
+         
+         主要样式类：
+         - .container：页面主容器，最大宽度900px，居中显示
+         - .section：白色卡片区块，带阴影和圆角
+         - .choice-item：单个选项容器，带悬停效果
+         - .submit-btn：提交按钮，蓝色主题
+         - .feedback-container：反馈区域
+         - .message：聊天气泡样式
+         
+         颜色方案：
+         - 主色：#4a90e2（蓝色，用于按钮和链接）
+         - 正确：#4caf50（绿色）
+         - 错误：#f44336（红色）
+         - 背景：#f5f5f5（浅灰）
+         - 文字：#333（深灰）
+         ==================================================================== -->
     <style>
         * {
             margin: 0;
@@ -49,6 +147,84 @@
             line-height: 1.6;
             color: #333;
             margin-bottom: 15px;
+            white-space: pre-line;  /* 保留换行符，合并多个空格，用于显示表格数据 */
+        }
+
+        /* 实验室数据格式化样式 */
+        .question-text .lab-data {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            background: #f8f9fa;
+            border: 1px solid #d0d7de;
+            border-left: 4px solid #4a90e2;
+            border-radius: 4px;
+            padding: 15px 18px;
+            margin: 15px 0;
+            white-space: pre;  /* 保留所有空白字符，不自动换行，保持对齐 */
+            color: #24292f;
+            display: block;
+            overflow-x: auto;  /* 如果内容太宽，显示横向滚动条 */
+            overflow-y: visible;
+            word-wrap: normal;
+            overflow-wrap: normal;
+            tab-size: 4;  /* 制表符宽度 */
+            max-width: 100%;  /* 确保不超出容器 */
+            box-sizing: border-box;
+        }
+
+        .question-images {
+            margin: 15px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .question-image {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 5px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .question-image:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .question-image:active {
+            transform: scale(0.98);
+        }
+
+        /* 图片放大模态框 */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            cursor: pointer;
+        }
+
+        .image-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 4px;
         }
 
         .choices-container {
@@ -196,6 +372,62 @@
             line-height: 1.6;
         }
 
+        .tip-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+        }
+
+        .tip-label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .tip-content {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #856404;
+            white-space: pre-line;  /* 保留换行符 */
+        }
+
+        .explanation-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e7f3ff;
+            border-left: 4px solid #2196f3;
+            border-radius: 4px;
+        }
+
+        .explanation-label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #0d47a1;
+            margin-bottom: 8px;
+        }
+
+        .explanation-content {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #0d47a1;
+        }
+        
+        .explanation-content p {
+            margin: 0.8em 0;
+            line-height: 1.6;
+        }
+        
+        .explanation-content p:first-child {
+            margin-top: 0;
+        }
+        
+        .explanation-content p:last-child {
+            margin-bottom: 0;
+        }
+
         .message-container {
             min-height: 200px;
             padding: 10px 0;
@@ -258,8 +490,62 @@
     </style>
 </head>
 <body>
+    <!-- ====================================================================
+         HTML 主体结构
+         ====================================================================
+         
+         页面布局（从上到下）：
+         1. 题库选择器 - 选择不同的题目来源
+         2. 题目区域 - 显示当前题目和选项
+         3. 反馈区域 - 显示答题结果和解释
+         4. 消息区域 - 与 ChatGPT 对话
+         
+         ==================================================================== -->
     <div class="container">
-        <!-- Question Section -->
+        <!-- ============================================================
+             题库选择器
+             ============================================================
+             功能：允许用户在不同题库之间切换
+             
+             可用题库：
+             - questions.json：从临床指南生成的 200 道题目
+             - qbank_questions.json：从 Qbank PDF 解析的 249 道题目
+             - all：合并所有题库（449 道题目）
+             
+             元素说明：
+             - #qbank-selector：下拉选择框
+             - #qbank-status：显示加载状态和题目数量
+             ============================================================ -->
+        <div class="section" style="padding: 15px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <label style="font-weight: 600; color: #666;">题库选择:</label>
+                <select id="qbank-selector" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #e0e0e0; font-size: 14px;">
+                    <option value="questions.json">Clinical Guidelines (200题)</option>
+                    <option value="qbank_questions.json">Qbanks PDF解析 (249题)</option>
+                    <option value="all">全部题目 (449题)</option>
+                </select>
+                <span id="qbank-status" style="color: #666; font-size: 13px;"></span>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             题目显示区域
+             ============================================================
+             功能：显示当前题目、选项和导航按钮
+             
+             元素说明：
+             - #question-text：题目文本容器
+             - #choices-list：选项列表容器（动态生成单选按钮）
+             - #submit-btn：提交答案按钮
+             - #prev-q：上一题按钮
+             - #next-q：下一题按钮
+             - #progress-info：进度信息（当前题号/总题数）
+             
+             交互流程：
+             1. 用户点击选项 → 选中对应单选按钮
+             2. 用户点击提交 → 检查答案，显示反馈
+             3. 用户点击导航 → 切换到上/下一题
+             ============================================================ -->
         <div class="section">
             <div class="section-title">Question</div>
             <div class="question-text" id="question-text"></div>
@@ -267,11 +553,29 @@
                 <div class="section-title" style="margin-bottom: 10px;">Choices</div>
                 <div id="choices-list"></div>
                 <button class="submit-btn" id="submit-btn">Submit</button>
+                <button class="submit-btn" id="prev-q" style="margin-left:10px; background: #6c757d;">Previous</button>
                 <button class="submit-btn" id="next-q" style="margin-left:10px;">Next</button>
+                <div id="progress-info" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
             </div>
         </div>
 
-        <!-- Feedback Section -->
+        <!-- ============================================================
+             反馈显示区域
+             ============================================================
+             功能：显示答题结果和每个选项的解释
+             
+             元素说明：
+             - #feedback-container：反馈内容容器
+             
+             显示内容（提交后）：
+             - 正确/错误徽章（绿色/红色）
+             - 每个选项的解释（正确选项标绿，错误选项标红）
+             - 题目来源信息（PDF 名称）
+             
+             状态：
+             - 提交前：显示 "No feedback yet"
+             - 提交后：显示完整反馈信息
+             ============================================================ -->
         <div class="section">
             <div class="section-title">Feedback</div>
             <div class="feedback-container empty" id="feedback-container">
@@ -279,7 +583,29 @@
             </div>
         </div>
 
-        <!-- Message Section -->
+        <!-- ============================================================
+             ChatGPT 对话区域
+             ============================================================
+             功能：与 ChatGPT 进行对话，获取医学知识解答
+             
+             元素说明：
+             - #conversation-list：对话历史容器
+             - #message-input：用户输入框
+             - #message-send-btn：发送按钮
+             
+             对话上下文：
+             ChatGPT 会自动获取以下上下文信息：
+             1. 当前题目和所有选项
+             2. 学生的答案和正确答案
+             3. 每个选项的解释
+             4. 原始源文本块（生成题目的原文）
+             5. RAG 检索的相关文本块
+             
+             使用方法：
+             1. 在输入框输入问题
+             2. 按 Enter 或点击 Send 按钮
+             3. 等待 ChatGPT 回复（带来源引用）
+             ============================================================ -->
         <div class="section" id="message-section" style="display: block !important;">
             <div class="section-title">Message</div>
             <div class="message-container">
@@ -294,11 +620,28 @@
 
     <!-- Load API key from api-key.js (ignored by Git) -->
     <script src="api-key.js"></script>
-    <!-- Load local config that reads from api-key.js and manages localStorage -->
-    <script src="local-config.js"></script>
 
+    <!-- ====================================================================
+         JAVASCRIPT - 测验逻辑和 ChatGPT 集成
+         
+         主要部分：
+         1. 示例数据结构 - 参考用的示例数据格式
+         2. 全局状态变量 - 在函数间跟踪测验状态
+         3. 初始化和设置 - 页面加载、事件监听器
+         4. 题目加载 - 从 questions.json 获取并显示
+         5. RAG 集成 - FAISS 语义搜索 + 关键词回退
+         6. UI 渲染 - 显示题目、选项、反馈
+         7. 事件处理 - 提交、导航、聊天
+         8. ChatGPT API - OpenAI 集成与完整上下文
+         ==================================================================== -->
     <script>
-        // Embedded JSON data
+        // ====================================================================
+        // 第 1 部分：示例数据结构
+        // ====================================================================
+        // 这些常量展示预期的数据格式
+        // 实际题目从 questions.json 加载
+        
+        // 示例：学生提交答案前的题目
         const dataBeforeSubmit = {
             "QA": {
                 "question": "A 25-year-old presents with RLQ pain for 8 hours. Vitals show temp 38.2°C. What is the most appropriate next step?",
@@ -377,62 +720,781 @@
             ]
         };
 
-        let currentData = null;
-        let selectedAnswer = null;
-        let generatedQuestions = [];
-        let currentGeneratedIndex = -1;
-        let currentQuestionMeta = null;
+        // ====================================================================
+        // 第 2 部分：全局状态变量
+        // ====================================================================
+        // 
+        // 这些变量在整个应用中共享，用于跟踪测验状态和用户交互。
+        // 它们在页面加载时初始化，并在用户操作时更新。
+        //
+        // 状态流程图：
+        //   页面加载 → 初始化变量 → 加载题目 → 用户答题 → 更新状态 → 显示反馈
+        //
+        // ====================================================================
+        
+        let currentData = null;           // 当前显示的题目数据（包含题目、选项、反馈等）
+        let selectedAnswer = null;        // 学生选择的答案索引 (0=A, 1=B, 2=C, 3=D, 4=E)
+        let generatedQuestions = [];      // 遗留功能：ChatGPT 动态生成的题目数组
+        let currentGeneratedIndex = 0;    // 当前题目在 allQuestions 数组中的索引（从 0 开始）
+        let currentQuestionMeta = null;   // 当前题目的元数据对象，包含：
+                                          //   - correctIndex: 正确答案索引
+                                          //   - explanations: 各选项解释数组
+                                          //   - source: 题目来源 PDF 名称
+                                          //   - sourceChunk: 用于生成题目的原始文本
+                                          //   - sourcePage: 原始文本所在页码
+        let allQuestions = [];            // 从 JSON 文件加载的所有题目数组
+        let openAIApiKey = '';            // OpenAI API 密钥，用于调用 ChatGPT
+        let messageChatHistory = [];      // ChatGPT 对话历史，用于保持上下文连贯性
+                                          // 格式: [{role: 'user', content: '...'}, {role: 'assistant', content: '...'}]
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadData(dataBeforeSubmit);
+        // ====================================================================
+        // 第 3 部分：初始化
+        // ====================================================================
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', async function() {
             setupEventListeners();
-            // Auto-generate a 5-question set in the background
-            generateQuestionSet(5);
+            setupQbankSelector();
+            // Load questions from default source
+            await loadQuestionsFromFile('questions.json');
         });
 
-        // OpenAI API Key - read only from localStorage (no default bundled)
+        // 设置题库选择器
+        function setupQbankSelector() {
+            const selector = document.getElementById('qbank-selector');
+            if (selector) {
+                selector.addEventListener('change', async function() {
+                    const source = this.value;
+                    await loadQuestionsFromFile(source);
+                });
+            }
+        }
+
+        // ============================================================
+        // 从指定来源加载题目
+        // ============================================================
+        // 
+        // @param {string} source - 题目来源，可选值：
+        //   - 'questions.json'：临床指南生成的题目
+        //   - 'qbank_questions.json'：Qbank PDF 解析的题目
+        //   - 'all'：合并所有题库
+        //
+        // 加载流程：
+        //   1. 根据 source 参数决定加载策略
+        //   2. 使用 fetch API 异步获取 JSON 数据
+        //   3. 更新 allQuestions 数组
+        //   4. 显示第一道题目
+        //   5. 更新状态栏显示题目数量
+        //
+        // 错误处理：
+        //   - 如果加载失败，显示错误信息和启动服务器的说明
+        //
+        // ============================================================
+        async function loadQuestionsFromFile(source = 'questions.json') {
+            const statusEl = document.getElementById('qbank-status');
+            
+            try {
+                let questions = [];
+                
+                if (source === 'all') {
+                    // 加载所有题库
+                    const [clinical, qbank] = await Promise.all([
+                        fetch('questions.json').then(r => r.json()).catch(() => []),
+                        fetch('qbank_questions.json').then(r => r.json()).catch(() => [])
+                    ]);
+                    questions = [...clinical, ...qbank];
+                    if (statusEl) statusEl.textContent = `已加载全部 ${questions.length} 题`;
+                } else {
+                    const response = await fetch(source);
+                    if (!response.ok) throw new Error('Failed to fetch');
+                    questions = await response.json();
+                    if (statusEl) statusEl.textContent = `已加载 ${questions.length} 题`;
+                }
+                
+                allQuestions = questions;
+                currentGeneratedIndex = 0;
+                console.log(`✓ Loaded ${allQuestions.length} questions from ${source}`);
+                
+                if (allQuestions.length > 0) {
+                    loadQuestionByIndex(0);
+                } else {
+                    loadData(dataBeforeSubmit);
+                }
+            } catch (error) {
+                console.error(`Failed to load ${source}:`, error);
+                if (statusEl) statusEl.textContent = '加载失败';
+                
+                // Show error message in UI
+                document.getElementById('question-text').innerHTML = `
+                    <div style="color: #e74c3c;">
+                        <strong>⚠️ Cannot load ${source}</strong><br><br>
+                        To use this quiz, please start a local server:<br><br>
+                        <code style="background: #f5f5f5; padding: 10px; display: block; margin: 10px 0;">
+                        python -m http.server 8000
+                        </code>
+                        Then open: <a href="http://localhost:8000/medical-quiz.html">http://localhost:8000/medical-quiz.html</a>
+                    </div>
+                `;
+                document.getElementById('choices-list').innerHTML = '';
+            }
+        }
+
+        // ============================================================
+        // 转换题目格式：从 JSON 格式转换为 UI 显示格式
+        // ============================================================
+        //
+        // @param {Object} q - 原始题目对象，来自 JSON 文件
+        //   - q.question: 题目文本
+        //   - q.options: 选项对象 {A: '...', B: '...', C: '...', D: '...', E: '...'}
+        //   - q.correct_answer: 正确答案字母 ('A', 'B', 'C', 'D' 或 'E')
+        //   - q.explanations: 各选项解释对象（可选）
+        //   - q.explanation: 单一解释文本（可选，qbank格式）
+        //   - q.tip: 提示文本（可选，qbank格式）
+        //   - q.source: 题目来源 PDF 名称
+        //
+        // @param {number} index - 题目在数组中的索引
+        //
+        // @returns {Object|null} - 转换后的 UI 格式对象，或 null（如果题目无效）
+        //   - QA.question: 题目文本
+        //   - QA.choices: 选项数组 ['A. ...', 'B. ...', ...]
+        //   - QA.answer: 正确答案索引 (0-4)
+        //   - QA.source: 题目来源
+        //   - explanations: 解释数组
+        //
+        // 特殊处理：
+        //   - 支持 2-10 个选项 (A-J)
+        //   - 自动跳过缺少选项的无效题目
+        //   - 兼容多种解释格式（explanations/explanation/tip）
+        //
+        // ============================================================
+        function convertQuestionFormat(q, index) {
+            // 检查题目是否有效
+            if (!q || !q.options || !q.question) {
+                console.warn('Invalid question at index', index, q);
+                return null;
+            }
+            
+            // 动态获取可用的选项字母（支持 A-J，最多10个选项）
+            const allLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+            const letters = allLetters.filter(letter => q.options[letter]);
+            
+            if (letters.length === 0) {
+                console.warn('Question has no valid options:', q);
+                return null;
+            }
+            
+            const choices = letters.map(letter => `${letter}. ${q.options[letter]}`);
+            const correctIndex = letters.indexOf(q.correct_answer);
+            
+            // Build explanations array
+            const explanations = letters.map(letter => {
+                if (q.explanations && q.explanations[letter]) {
+                    return `${letter}. ${q.explanations[letter]}`;
+                } else if (q.explanation && letter === q.correct_answer) {
+                    return `${letter}. ✓ ${q.explanation}`;
+                } else if (q.tip && letter === q.correct_answer) {
+                    return `${letter}. ✓ ${q.tip}`;
+                } else if (letter === q.correct_answer) {
+                    return `${letter}. ✓ Correct answer`;
+                }
+                return `${letter}. Incorrect`;
+            });
+
+            return {
+                QA: {
+                    question: q.question,
+                    choices: choices,
+                    answer: correctIndex,
+                    source: q.source || q.source_file || '',
+                    images: q.images || []  // 传递图片路径数组
+                },
+                feedback: {},
+                explanations: explanations,
+                tip: q.tip || '',  // 传递 tip（如果有）
+                explanation: q.explanation || '',  // 传递 explanation（如果有）
+                conversation: []
+            };
+        }
+
+        // ============================================================
+        // 按索引加载指定题目
+        // ============================================================
+        //
+        // @param {number} index - 题目索引（0 开始）
+        //
+        // 功能：
+        //   1. 验证索引有效性
+        //   2. 重置用户选择状态
+        //   3. 转换题目格式
+        //   4. 设置题目元数据（用于 ChatGPT 上下文）
+        //   5. 渲染题目到 UI
+        //   6. 更新进度显示
+        //
+        // 元数据 (currentQuestionMeta)：
+        //   - correctIndex: 正确答案索引
+        //   - explanations: 解释数组
+        //   - source: 来源 PDF
+        //   - sourceChunk: 原始文本块
+        //   - sourcePage: 页码
+        //
+        // ============================================================
+        function loadQuestionByIndex(index) {
+            if (index < 0 || index >= allQuestions.length) return;
+            
+            currentGeneratedIndex = index;
+            selectedAnswer = null;
+            const q = allQuestions[index];
+            const converted = convertQuestionFormat(q, index);
+            
+            // 如果转换失败，跳到下一题
+            if (!converted) {
+                console.warn('Skipping invalid question at index', index);
+                if (index < allQuestions.length - 1) {
+                    loadQuestionByIndex(index + 1);
+                }
+                return;
+            }
+            
+            currentQuestionMeta = {
+                correctIndex: converted.QA.answer,
+                explanations: converted.explanations,
+                source: converted.QA.source,
+                // Store the source chunk for RAG context
+                sourceChunk: q.source_chunk || null,
+                // Store page number if available
+                sourcePage: q.source_page || q.page_number || q.page || 'N/A'
+            };
+            loadData(converted);
+            
+            // Update progress display
+            updateProgressDisplay();
+        }
+
+        // ============================================================
+        // 更新进度显示
+        // ============================================================
+        //
+        // 更新内容：
+        //   - 下一题按钮文本（"Next →" 或 "Finish ✓"）
+        //   - 上一题按钮状态（第一题时禁用）
+        //   - 进度信息（"Question X of Y | 📄 来源"）
+        //
+        // ============================================================
+        function updateProgressDisplay() {
+            const nextBtn = document.getElementById('next-q');
+            const prevBtn = document.getElementById('prev-q');
+            const progressInfo = document.getElementById('progress-info');
+            
+            if (nextBtn) {
+                nextBtn.textContent = currentGeneratedIndex < allQuestions.length - 1 ? 'Next →' : 'Finish ✓';
+            }
+            if (prevBtn) {
+                prevBtn.disabled = currentGeneratedIndex === 0;
+                prevBtn.textContent = '← Previous';
+            }
+            if (progressInfo && allQuestions.length > 0) {
+                const q = allQuestions[currentGeneratedIndex];
+                progressInfo.innerHTML = `
+                    <strong>Question ${currentGeneratedIndex + 1} of ${allQuestions.length}</strong>
+                    ${q.source ? ` | 📄 ${q.source}` : ''}
+                `;
+            }
+        }
+
+        // ====================================================================
+        // 第 5 部分：RAG（检索增强生成）
+        // ====================================================================
+        // 
+        // 当学生向 ChatGPT 提问时，RAG 从医学指南中提供相关上下文。
+        // 这提高了回答质量并支持来源引用。
+        //
+        // 两种检索方法：
+        //   1. FAISS 服务器（首选）：使用向量的语义搜索
+        //      - 需要 rag_server.py 正在运行
+        //      - 使用 OpenAI 向量进行相似度计算
+        //      - ColBERTv2 重排序提高准确性
+        //
+        //   2. 关键词回退：简单的 TF-IDF 类匹配
+        //      - 在 FAISS 服务器不可用时使用
+        //      - 搜索 questions.json 中的 source_chunk 字段
+        //      - 准确性较低但可离线工作
+        //
+        // ====================================================================
+        
+        const RAG_SERVER_URL = 'http://localhost:5000';
+        let ragServerAvailable = false;
+        
+        // Check if RAG server is available
+        let ragServerInfo = null;
+        
+        async function checkRagServer() {
+            try {
+                const response = await fetch(`${RAG_SERVER_URL}/health`, { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    ragServerAvailable = true;
+                    ragServerInfo = data;
+                    console.log(`✓ RAG Server connected:`);
+                    console.log(`  - ${data.chunks_count} chunks indexed`);
+                    console.log(`  - Reranker: ${data.reranker}`);
+                    console.log(`  - Config: FAISS→${data.config?.num_retrieved} → Rerank→${data.config?.num_final}`);
+                    return true;
+                }
+            } catch (e) {
+                ragServerAvailable = false;
+                ragServerInfo = null;
+                console.log('⚠ RAG Server not available, using fallback keyword search');
+            }
+            return false;
+        }
+        
+        // Initialize RAG server check
+        checkRagServer();
+        
+        /**
+         * Retrieve relevant chunks using FAISS + OpenAI Embeddings
+         * Falls back to keyword matching if server unavailable
+         * 
+         * @param {string} query - The student's question
+         * @param {number} topK - Number of chunks to retrieve
+         * @returns {Array} - Array of {text, source, score} objects
+         */
+        async function retrieveRelevantChunksAsync(query, topK = 5) {
+            // Try FAISS server first
+            if (ragServerAvailable) {
+                try {
+                    const response = await fetch(`${RAG_SERVER_URL}/search`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query, top_k: topK })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log(`✓ RAG: Retrieved ${data.results.length} chunks via FAISS`);
+                        return data.results;
+                    }
+                } catch (e) {
+                    console.log('⚠ RAG server error, falling back to keyword search');
+                }
+            }
+            
+            // Fallback to keyword matching
+            return retrieveRelevantChunksKeyword(query, topK);
+        }
+        
+        /**
+         * Fallback: Simple keyword-based retrieval
+         */
+        function retrieveRelevantChunksKeyword(query, topK = 5) {
+            if (!allQuestions || allQuestions.length === 0) return [];
+            
+            const queryTokens = query.toLowerCase()
+                .replace(/[^\w\s]/g, ' ')
+                .split(/\s+/)
+                .filter(t => t.length > 2);
+            
+            if (queryTokens.length === 0) return [];
+            
+            const currentSource = currentQuestionMeta?.source || '';
+            const scoredChunks = [];
+            const seenTexts = new Set();
+            
+            for (const q of allQuestions) {
+                if (!q.source_chunk) continue;
+                
+                const chunkKey = q.source_chunk.substring(0, 100);
+                if (seenTexts.has(chunkKey)) continue;
+                seenTexts.add(chunkKey);
+                
+                if (currentQuestionMeta?.sourceChunk === q.source_chunk) continue;
+                
+                const chunkLower = q.source_chunk.toLowerCase();
+                let score = 0;
+                
+                for (const token of queryTokens) {
+                    const regex = new RegExp(token, 'gi');
+                    const matches = chunkLower.match(regex);
+                    if (matches) score += matches.length;
+                }
+                
+                if (q.source === currentSource) score *= 1.5;
+                
+                if (score > 0) {
+                    scoredChunks.push({
+                        text: q.source_chunk,
+                        source: q.source || 'Unknown',
+                        score: score
+                    });
+                }
+            }
+            
+            scoredChunks.sort((a, b) => b.score - a.score);
+            return scoredChunks.slice(0, topK);
+        }
+        
+        // Sync wrapper for backward compatibility
+        function retrieveRelevantChunks(query, topK = 5) {
+            // For sync calls, use keyword fallback
+            return retrieveRelevantChunksKeyword(query, topK);
+        }
+
+        // ============================================================
+        // API 密钥初始化
+        // ============================================================
+        //
+        // 密钥来源（按优先级）：
+        //   1. api-key.js 中的 OPENAI_API_KEY 全局变量（推荐）
+        //   2. 浏览器 localStorage 中的 'openai_api_key'
+        //
+        // 密钥验证规则：
+        //   - 必须以 'sk-' 开头
+        //   - 长度必须大于 40 字符
+        //   - 只包含 ASCII 字符（过滤不可见字符）
+        //
+        // cleanApiKey 函数：
+        //   清理 API 密钥中的非 ASCII 字符，防止因编码问题导致 API 调用失败
+        //
+        // ============================================================
+        
+        /**
+         * 清理 API 密钥，移除非 ASCII 字符
+         * @param {string} key - 原始 API 密钥
+         * @returns {string} - 清理后的 API 密钥
+         */
         function cleanApiKey(key) {
             if (!key) return '';
+            // 过滤掉所有非 ASCII 字符（charCode > 127）
             return String(key).split('').filter(c => c.charCodeAt(0) <= 127).join('').trim();
         }
+        
+        /**
+         * 立即执行函数：初始化 API 密钥
+         * 在页面加载时自动执行
+         */
         (function initApiKey() {
+            // 优先从 api-key.js 的全局变量读取
+            // 这是推荐的方式，api-key.js 在 <script src="api-key.js"> 中加载
+            if (typeof OPENAI_API_KEY !== 'undefined' && OPENAI_API_KEY && OPENAI_API_KEY.startsWith('sk-')) {
+                openAIApiKey = cleanApiKey(OPENAI_API_KEY);
+                console.log('✅ API Key loaded from api-key.js');
+                return;
+            }
+            
+            // 备用方案：从 localStorage 读取
+            // 用户可以在浏览器开发者工具中手动设置：
+            // localStorage.setItem('openai_api_key', 'sk-...')
             const stored = cleanApiKey(localStorage.getItem('openai_api_key'));
             if (stored && /^sk-/.test(stored) && stored.length > 40) {
                 openAIApiKey = stored;
+                console.log('✅ API Key loaded from localStorage');
             } else {
+                // 清理无效的 localStorage 条目
                 if (stored) {
                     try { localStorage.removeItem('openai_api_key'); } catch (_) {}
                 }
                 openAIApiKey = '';
+                console.warn('⚠️ No API Key found');
             }
         })();
 
+        // ============================================================
+        // 设置事件监听器
+        // ============================================================
+        //
+        // 绑定的事件：
+        //   - 提交按钮点击 → handleSubmit()
+        //   - 消息输入框 Enter 键 → handleMessageSubmit()
+        //   - 发送按钮点击 → handleMessageSubmit()
+        //
+        // ============================================================
         function setupEventListeners() {
+            // 题目提交按钮
             document.getElementById('submit-btn').addEventListener('click', handleSubmit);
             
-            // Message section ChatGPT
+            // ChatGPT 消息区域
             const messageInput = document.getElementById('message-input');
             const messageSendBtn = document.getElementById('message-send-btn');
             
+            // 支持 Enter 键发送消息
             messageInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     handleMessageSubmit();
                 }
             });
+            // 发送按钮点击
             messageSendBtn.addEventListener('click', handleMessageSubmit);
         }
 
+        // ============================================================
+        // 加载数据到 UI
+        // ============================================================
+        //
+        // @param {Object} data - 题目数据对象
+        //   - data.QA: 题目和选项
+        //   - data.feedback: 反馈信息
+        //   - data.conversation: 对话历史
+        //
+        // 调用三个渲染函数更新 UI
+        //
+        // ============================================================
         function loadData(data) {
             currentData = data;
-            renderQuestion(data);
-            renderFeedback(data);
-            renderConversation(data);
+            renderQuestion(data);     // 渲染题目和选项
+            renderFeedback(data);     // 渲染反馈区域
+            renderConversation(data); // 渲染对话区域
         }
 
+        // ============================================================
+        // 渲染题目和选项
+        // ============================================================
+        //
+        // @param {Object} data - 题目数据
+        //
+        // 渲染内容：
+        //   - 题目文本
+        //   - 题目图片（如果有）
+        //   - 选项列表（单选按钮）
+        //   - 提交按钮状态
+        //
+        // 提交后：
+        //   - 禁用所有单选按钮
+        //   - 标记用户选择的答案
+        //   - 禁用提交按钮
+        //
+        // ============================================================
+        /**
+         * 格式化题目文本，检测并美化实验室数据部分
+         * @param {string} text - 原始题目文本
+         * @returns {string} - 格式化后的 HTML
+         */
+        function formatQuestionText(text) {
+            if (!text) return '';
+            
+            // 检测实验室数据的关键词（不区分大小写）
+            const labKeywords = [
+                'Laboratory studies show',
+                'Laboratory studies:',
+                'Laboratory:',
+                'Lab studies',
+                'Laboratory values',
+                'Laboratory results',
+                'Lab results',
+                'Laboratory data',
+                'Laboratory studies',
+                'Lab values',
+                'Lab data'
+            ];
+            
+            // 检查是否包含实验室数据（不区分大小写）
+            let hasLabData = false;
+            let labStartIndex = -1;
+            const textLower = text.toLowerCase();
+            
+            for (const keyword of labKeywords) {
+                const index = textLower.indexOf(keyword.toLowerCase());
+                if (index !== -1) {
+                    hasLabData = true;
+                    labStartIndex = index;
+                    break;
+                }
+            }
+            
+            if (!hasLabData || labStartIndex === -1) {
+                // 没有实验室数据，返回 null 表示不需要特殊格式化
+                return null;
+            }
+            
+            // 分割文本：实验室数据之前、实验室数据、之后
+            const beforeLab = text.substring(0, labStartIndex);
+            const labAndAfter = text.substring(labStartIndex);
+            
+            // 尝试找到实验室数据的结束位置（通常是选项开始或问题结束）
+            // 选项通常以 "Which of the following" 或 "What is" 等开始
+            const questionEndMarkers = [
+                'Which of the following',
+                'What is',
+                'What are',
+                'What would',
+                'The most likely',
+                'The most appropriate',
+                'The best',
+                'Correct Answer:'
+            ];
+            
+            let labEndIndex = labAndAfter.length;
+            for (const marker of questionEndMarkers) {
+                const index = labAndAfter.indexOf(marker);
+                if (index !== -1 && index < labEndIndex) {
+                    labEndIndex = index;
+                    break;
+                }
+            }
+            
+            let labData = labAndAfter.substring(0, labEndIndex);
+            const afterLab = labAndAfter.substring(labEndIndex);
+            
+            // 改进实验数据格式化：
+            // 1. 如果实验数据被合并成一行（没有换行符），尝试重新格式化
+            // 2. 检测常见的实验数据格式（如 "Hemoglobin 14.0 g/dL"）
+            // 3. 如果检测到实验数据项目，尝试按行分割并格式化对齐
+            
+            // 检查是否包含换行符
+            if (!labData.includes('\n')) {
+                // 没有换行符，可能是被合并了
+                // 尝试识别实验数据项目并重新格式化
+                // 实验数据项目通常包含：项目名 + 数值 + 单位
+                // 例如："Hemoglobin 14.0 g/dL", "Creatinine 1 mg/dL"
+                
+                // 尝试按常见模式分割：
+                // 1. 大写字母开头的单词（项目名）后跟数字（值）和单位
+                // 2. 或者包含常见单位（g/dL, mg/dL, mEq/L, U/L, mm3, /mm3, /hpf 等）
+                
+                // 检测实验数据项目的模式（改进版，更准确）
+                // 匹配：项目名（可能包含空格、+、-等） + 数值 + 单位
+                const labItemPattern = /([A-Z][a-zA-Z\s\+\-\(\)]+?)\s+(\d+\.?\d*)\s*([a-zA-Z\/\s\(\)=+\-°]+?)(?=\s+[A-Z][a-zA-Z]|\s*$|,)/g;
+                const matches = [...labData.matchAll(labItemPattern)];
+                
+                if (matches.length > 0) {
+                    // 找到多个实验数据项目，重新格式化为对齐的多行
+                    const formattedItems = matches.map(match => {
+                        const itemName = match[1].trim();
+                        const value = match[2].trim();
+                        const unit = match[3].trim();
+                        // 对齐格式：项目名（最多35字符）+ 数值（右对齐）+ 单位
+                        const paddedName = itemName.padEnd(35, ' ');
+                        return `${paddedName}${value.padStart(8, ' ')} ${unit}`;
+                    });
+                    labData = formattedItems.join('\n');
+                } else {
+                    // 如果没有匹配到模式，尝试按常见分隔符分割
+                    // 常见分隔符：多个空格、制表符、冒号等
+                    labData = labData
+                        .replace(/([a-zA-Z])\s+([A-Z][a-z])/g, '$1\n$2')  // 项目名之间
+                        .replace(/(\d+\s*[a-zA-Z\/]+)\s+([A-Z][a-zA-Z])/g, '$1\n$2')  // 数值单位后跟项目名
+                        .replace(/([a-zA-Z])\s+(\d+\.?\d*)/g, '$1 $2');  // 项目名和数值之间保持空格
+                }
+            } else {
+                // 已经有换行符，但可能需要改进对齐
+                // 尝试识别每行的格式并对齐
+                const lines = labData.split('\n');
+                const formattedLines = lines.map(line => {
+                    line = line.trim();
+                    if (!line) return '';
+                    
+                    // 尝试匹配：项目名 + 数值 + 单位
+                    const match = line.match(/^([A-Z][a-zA-Z\s\+\-\(\)]+?)\s+(\d+\.?\d*)\s*([a-zA-Z\/\s\(\)=+\-°]+?)$/);
+                    if (match) {
+                        const itemName = match[1].trim();
+                        const value = match[2].trim();
+                        const unit = match[3].trim();
+                        // 对齐格式
+                        const paddedName = itemName.padEnd(35, ' ');
+                        return `${paddedName}${value.padStart(8, ' ')} ${unit}`;
+                    }
+                    // 如果包含冒号（如 "Hemoglobin: 14.0 g/dL"），也尝试格式化
+                    const colonMatch = line.match(/^([A-Z][a-zA-Z\s\+\-\(\)]+?):\s*(\d+\.?\d*)\s*([a-zA-Z\/\s\(\)=+\-°]+?)$/);
+                    if (colonMatch) {
+                        const itemName = colonMatch[1].trim() + ':';
+                        const value = colonMatch[2].trim();
+                        const unit = colonMatch[3].trim();
+                        const paddedName = itemName.padEnd(35, ' ');
+                        return `${paddedName}${value.padStart(8, ' ')} ${unit}`;
+                    }
+                    // 无法格式化，返回原行
+                    return line;
+                });
+                labData = formattedLines.join('\n');
+            }
+            
+            // 构建 HTML：普通文本 + 格式化的实验室数据 + 普通文本
+            // 使用 innerHTML 来插入格式化的 HTML
+            return {
+                before: beforeLab,
+                lab: labData,
+                after: afterLab,
+                hasLab: true
+            };
+        }
+        
         function renderQuestion(data) {
             const qa = data.QA;
-            document.getElementById('question-text').textContent = qa.question;
+            const questionTextEl = document.getElementById('question-text');
+            
+            // 格式化题目文本（检测实验室数据）
+            const formatted = formatQuestionText(qa.question);
+            
+            if (formatted !== null && formatted.hasLab) {
+                // 有实验室数据，使用特殊格式化
+                questionTextEl.innerHTML = '';
+                
+                // 添加前面的文本
+                if (formatted.before) {
+                    const beforeSpan = document.createElement('span');
+                    beforeSpan.textContent = formatted.before;
+                    questionTextEl.appendChild(beforeSpan);
+                }
+                
+                // 添加格式化的实验室数据
+                const labPre = document.createElement('pre');
+                labPre.className = 'lab-data';
+                labPre.textContent = formatted.lab;
+                questionTextEl.appendChild(labPre);
+                
+                // 添加后面的文本
+                if (formatted.after) {
+                    const afterSpan = document.createElement('span');
+                    afterSpan.textContent = formatted.after;
+                    questionTextEl.appendChild(afterSpan);
+                }
+            } else {
+                // 没有实验室数据，直接显示文本
+                questionTextEl.textContent = qa.question;
+            }
+            
+            // 如果有图片，显示图片
+            if (qa.images && qa.images.length > 0) {
+                // 创建图片容器
+                let imagesContainer = document.getElementById('question-images');
+                if (!imagesContainer) {
+                    imagesContainer = document.createElement('div');
+                    imagesContainer.id = 'question-images';
+                    imagesContainer.className = 'question-images';
+                    // 插入到题目文本后面
+                    questionTextEl.parentNode.insertBefore(imagesContainer, questionTextEl.nextSibling);
+                }
+                
+                // 清空之前的图片
+                imagesContainer.innerHTML = '';
+                
+                // 添加每张图片
+                qa.images.forEach((imagePath, index) => {
+                    const img = document.createElement('img');
+                    img.src = imagePath;
+                    img.alt = `Question image ${index + 1}`;
+                    img.className = 'question-image';
+                    img.title = '点击放大查看';
+                    img.onerror = function() {
+                        // 如果图片加载失败，隐藏该图片
+                        this.style.display = 'none';
+                        console.warn(`Failed to load image: ${imagePath}`);
+                    };
+                    // 点击图片放大显示
+                    img.onclick = function() {
+                        showImageModal(imagePath);
+                    };
+                    imagesContainer.appendChild(img);
+                });
+            } else {
+                // 如果没有图片，移除图片容器（如果存在）
+                const imagesContainer = document.getElementById('question-images');
+                if (imagesContainer) {
+                    imagesContainer.remove();
+                }
+            }
             
             const choicesList = document.getElementById('choices-list');
             choicesList.innerHTML = '';
@@ -485,9 +1547,27 @@
             }
         }
 
+        // ============================================================
+        // 渲染反馈区域
+        // ============================================================
+        //
+        // @param {Object} data - 题目数据，包含 feedback 对象
+        //
+        // 反馈内容：
+        //   - 正确/错误徽章
+        //   - 各选项解释列表
+        //     - 正确选项：绿色背景 + ✓ 图标
+        //     - 错误选项：红色背景 + ✗ 图标
+        //
+        // 状态：
+        //   - 无反馈：显示灰色虚线框 "No feedback yet"
+        //   - 有反馈：显示完整反馈内容
+        //
+        // ============================================================
         function renderFeedback(data) {
             const feedbackContainer = document.getElementById('feedback-container');
             
+            // 检查是否有反馈数据
             if (!data.feedback || Object.keys(data.feedback).length === 0) {
                 feedbackContainer.className = 'feedback-container empty';
                 feedbackContainer.textContent = 'No feedback yet';
@@ -505,7 +1585,58 @@
             const isCorrect = feedback.correctness === 'Correct!';
             html += `<div class="correctness-badge ${isCorrect ? 'correct' : 'wrong'}">${feedback.correctness}</div>`;
             
-            // Explanations
+            // Tip（如果有）
+            if (data.tip && data.tip.trim()) {
+                html += '<div class="tip-container">';
+                html += '<div class="tip-label">💡 Tip:</div>';
+                
+                // 处理 tip 文本：HTML 转义和格式化
+                let tipText = data.tip
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+                
+                // 将换行符转换为 <br>
+                tipText = tipText.split('\n').join('<br>');
+                
+                html += `<div class="tip-content">${tipText}</div>`;
+                html += '</div>';
+            }
+            
+            // Explanation（如果有，且不是通过 explaination 数组显示的）
+            if (data.explanation && data.explanation.trim() && 
+                (!feedback.explaination || feedback.explaination.length === 0)) {
+                html += '<div class="explanation-container">';
+                html += '<div class="explanation-label">📖 Explanation:</div>';
+                
+                // 处理段落结构：将 \n\n 转换为段落分隔
+                // 1. HTML 转义以防止 XSS
+                let explanationText = data.explanation
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+                
+                // 2. 将双换行符（段落分隔）转换为段落标签
+                // 先处理双换行符（段落分隔）
+                explanationText = explanationText.split('\n\n').map(para => {
+                    // 每个段落内的单换行符转换为 <br>
+                    return para.trim().split('\n').join('<br>');
+                }).join('</p><p>');
+                
+                // 3. 包装在 <p> 标签中
+                if (explanationText) {
+                    explanationText = '<p>' + explanationText + '</p>';
+                }
+                
+                html += `<div class="explanation-content">${explanationText}</div>`;
+                html += '</div>';
+            }
+            
+            // Explanations（各选项的解释）
             if (feedback.explaination && feedback.explaination.length > 0) {
                 html += '<ul class="explanation-list">';
                 feedback.explaination.forEach((explanation, index) => {
@@ -538,32 +1669,51 @@
             // ChatGPT messages are handled separately in addMessageToConversation
         }
 
+        // ============================================================
+        // 处理答案提交
+        // ============================================================
+        //
+        // 提交流程：
+        //   1. 验证用户是否已选择答案
+        //   2. 比较用户答案与正确答案
+        //   3. 生成反馈信息（正确/错误 + 各选项解释）
+        //   4. 更新 UI 显示反馈
+        //   5. 禁用选项和提交按钮（防止重复提交）
+        //
+        // 反馈内容：
+        //   - correctness: "Correct!" 或 "Wrong!"
+        //   - explaination: 各选项的解释数组
+        //   - source: 题目来源信息
+        //
+        // ============================================================
         function handleSubmit() {
             if (selectedAnswer === null) {
                 alert('Please select an answer first');
                 return;
             }
 
-            // If we are running a generated quiz, grade locally
-            if (currentQuestionMeta && typeof currentQuestionMeta.correct !== 'undefined') {
-                const isCorrect = String(selectedAnswer).trim() === String(currentQuestionMeta.correct).trim();
+            // If using questions from questions.json
+            if (currentQuestionMeta && typeof currentQuestionMeta.correctIndex !== 'undefined') {
+                const isCorrect = selectedAnswer === currentQuestionMeta.correctIndex;
+                
                 const feedback = {
                     correctness: isCorrect ? 'Correct!' : 'Wrong!',
-                    explaination: [
-                        isCorrect
-                            ? `Your answer ${selectedAnswer} is correct.`
-                            : `Correct answer is ${currentQuestionMeta.correct}.`
-                    ]
+                    explaination: currentQuestionMeta.explanations || []
                 };
 
-                const qa = {
-                    question: currentQuestionMeta.prompt,
-                    choices: currentQuestionMeta.labels,
-                    answer: currentQuestionMeta.correct,
-                    student_prediction: selectedAnswer
-                };
-
-                loadData({ QA: qa, feedback });
+                // Update current data with feedback
+                currentData.QA.student_prediction = selectedAnswer;
+                currentData.feedback = feedback;
+                
+                // Re-render with feedback
+                renderQuestion(currentData);
+                renderFeedback(currentData);
+                
+                // Show source
+                if (currentQuestionMeta.source) {
+                    const feedbackContainer = document.getElementById('feedback-container');
+                    feedbackContainer.innerHTML += `<div style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 4px; font-size: 13px; color: #666;">📄 Source: ${currentQuestionMeta.source}</div>`;
+                }
                 return;
             }
 
@@ -599,8 +1749,10 @@
             if (!generatedQuestions.length || index < 0 || index >= generatedQuestions.length) return;
             currentGeneratedIndex = index;
             const item = generatedQuestions[index];
+            // 支持最多10个选项（A-J）
+            const optionLetters = ['A','B','C','D','E','F','G','H','I','J'];
             const labels = Array.isArray(item.options)
-                ? ['A','B','C','D'].map((k,i)=> `${k}. ${item.options[i]||''}`)
+                ? optionLetters.slice(0, Math.min(item.options.length, 10)).map((k,i)=> `${k}. ${item.options[i]||''}`)
                 : [];
 
             currentQuestionMeta = {
@@ -616,7 +1768,7 @@
                 title: 'Generated Question',
                 content: item.question
             };
-            const answerOptions = ['A','B','C','D'].map((k,i)=> ({ value: k, label: labels[i]||`${k}.` }));
+            const answerOptions = optionLetters.slice(0, labels.length).map((k,i)=> ({ value: k, label: labels[i]||`${k}.` }));
 
             const data = { QA: { question: qa, choices: labels, answer: item.correct }, answerOptions };
             // Reuse existing render path
@@ -626,17 +1778,22 @@
         }
 
         function normalizeMCQList(arr) {
+            // 支持最多10个选项（A-J）
+            const optionLetters = ['A','B','C','D','E','F','G','H','I','J'];
             return (arr||[])
                 .filter(q => typeof q === 'object')
                 .map((q,i) => {
-                    const opts = Array.isArray(q.options) ? q.options.slice(0,4) : [];
-                    while (opts.length < 4) opts.push('');
+                    // 支持最多10个选项，但至少保留2个
+                    const opts = Array.isArray(q.options) ? q.options.slice(0, 10) : [];
+                    // 如果选项少于2个，补充到2个（最小要求）
+                    while (opts.length < 2) opts.push('');
                     const correct = String(q.correct || '').trim().toUpperCase();
                     return {
                         serial: Number(q.serial ?? (i+1)),
                         question: String(q.question ?? '').trim(),
                         options: opts,
-                        correct: ['A','B','C','D'].includes(correct) ? correct : 'A',
+                        // 验证答案是否在有效范围内（A-J）
+                        correct: optionLetters.includes(correct) ? correct : 'A',
                         answer: String(q.answer ?? '').trim()
                     };
                 })
@@ -644,8 +1801,28 @@
         }
 
         // ChatGPT chat history for message section
-        let messageChatHistory = [];
+        // (messageChatHistory 已在上方声明)
 
+        // ============================================================
+        // 处理 ChatGPT 消息提交
+        // ============================================================
+        //
+        // 功能：发送用户消息到 ChatGPT 并显示回复
+        //
+        // 流程：
+        //   1. 验证输入不为空
+        //   2. 验证 API 密钥已配置
+        //   3. 在对话区域显示用户消息
+        //   4. 显示 "Thinking..." 加载指示器
+        //   5. 调用 callOpenAIDirect() 发送请求
+        //   6. 移除加载指示器，显示 ChatGPT 回复
+        //   7. 错误时显示错误信息
+        //
+        // UI 状态：
+        //   - 发送时禁用输入框和按钮
+        //   - 完成后重新启用并聚焦输入框
+        //
+        // ============================================================
         async function handleMessageSubmit() {
             const input = document.getElementById('message-input');
             const message = input.value.trim();
@@ -710,17 +1887,44 @@
             }
         }
 
-        // Next button logic (advance within generated set)
-        document.getElementById('next-q')?.addEventListener('click', () => {
-            if (!generatedQuestions.length) return;
-            const next = (currentGeneratedIndex ?? -1) + 1;
-            if (next < generatedQuestions.length) {
-                loadQuestionFromSet(next);
+        // ============================================================
+        // 题目导航按钮
+        // ============================================================
+        
+        /**
+         * 上一题按钮
+         * - 如果当前是第一题，显示提示
+         * - 否则加载上一题并重置状态
+         */
+        document.getElementById('prev-q')?.addEventListener('click', () => {
+            if (!allQuestions.length) return;
+            
+            const prev = currentGeneratedIndex - 1;
+            if (prev >= 0) {
+                loadQuestionByIndex(prev);
             } else {
-                alert('You have completed all 5 questions.');
-                currentGeneratedIndex = -1;
-                generatedQuestions = [];
-                loadData(dataBeforeSubmit);
+                alert('This is the first question.');
+            }
+        });
+
+        /**
+         * 下一题按钮
+         * - 如果还有下一题，加载下一题
+         * - 如果是最后一题，显示完成提示并询问是否重新开始
+         */
+        document.getElementById('next-q')?.addEventListener('click', () => {
+            if (!allQuestions.length) return;
+            
+            const next = currentGeneratedIndex + 1;
+            if (next < allQuestions.length) {
+                loadQuestionByIndex(next);
+            } else {
+                // 完成所有题目
+                alert(`🎉 Congratulations! You have completed all ${allQuestions.length} questions.`);
+                // 询问是否从头开始
+                if (confirm('Would you like to restart from the beginning?')) {
+                    loadQuestionByIndex(0);
+                }
             }
         });
 
@@ -806,6 +2010,34 @@
             document.getElementById('download-csv').onclick = () => downloadCsv(items);
         }
 
+        // ====================================================================
+        // 第 8 部分：ChatGPT API 集成
+        // ====================================================================
+        //
+        // 此函数使用完整上下文调用 OpenAI ChatGPT API：
+        //
+        // 上下文结构：
+        //   1. 系统提示 - 医学导师角色和指南
+        //   2. 当前题目 - 题目文本和所有选项
+        //   3. 答案信息 - 正确答案、学生答案、结果
+        //   4. 解释 - 每个选项的解释（A, B, C, ..., J，最多10个选项）
+        //   5. 源文本块 - 用于生成题目的原始文本
+        //   6. 检索的文本块 - 指南中最相关的 5 个块
+        //
+        // 系统提示指示 ChatGPT：
+        //   - 扮演医学教育专家
+        //   - 使用 [来源: PDF名称, 第X页] 格式引用来源
+        //   - 提供清晰的、基于证据的解释
+        //
+        // ====================================================================
+        
+        /**
+         * 使用完整测验上下文调用 OpenAI ChatGPT API
+         * 
+         * @param {string} message - 学生的问题
+         * @returns {Promise<string>} - ChatGPT 的回答
+         * @throws {Error} - 如果缺少 API 密钥或 API 调用失败
+         */
         async function callOpenAIDirect(message) {
             if (!openAIApiKey) {
                 throw new Error('API key not configured');
@@ -817,44 +2049,223 @@
                 throw new Error('API key is empty');
             }
 
+            // Build system prompt - ONLY role and citation requirements
+            // Keep it concise to avoid hitting context window limits
+            const systemPromptOnly = `You are an expert medical education tutor specializing in clinical medicine, surgery, and evidence-based practice.
+
+## Your Role
+- Help medical students understand complex medical concepts through clear explanations
+- Use the Socratic method when appropriate to guide students to deeper understanding
+- Provide accurate, evidence-based information from established medical guidelines
+- Break down complex concepts into digestible parts
+- Be supportive and constructive, even when correcting misconceptions
+
+## Response Style
+- Keep responses concise but comprehensive (aim for 2-4 paragraphs unless more detail is requested)
+- Use bullet points for lists of differential diagnoses, symptoms, or treatment options
+- If uncertain about specific details, acknowledge limitations
+- Always prioritize patient safety in any clinical advice
+
+## CRITICAL: Mandatory Source Citation Requirements
+**YOU MUST INCLUDE SOURCE CITATIONS IN EVERY RESPONSE. NO EXCEPTIONS.**
+
+### Citation Rules:
+1. **Every fact, claim, or piece of information** you provide MUST be followed by a citation
+2. **Citation format is MANDATORY**: **[Source: PDF名称, Page X]** or **[来源: PDF名称, 第X页]**
+3. **Every chunk** you use MUST be cited with its exact PDF name and page number
+4. **Multiple sources**: If you use information from multiple chunks, cite ALL of them
+5. **Inline citations**: Place citations immediately after the relevant information, not at the end
+
+### Examples of CORRECT citations:
+- "The recommended treatment is **[Source: Management of Acute Appendicitis.pdf, Page 5]**..."
+- "According to the guidelines **[Source: AAA Repair Guidelines.pdf, Page 12]**, the indication is..."
+- "This approach is supported by **[Source: Surgical Procedures.pdf, Page 8]** and **[Source: Post-operative Care.pdf, Page 3]**..."
+
+### Examples of INCORRECT (unacceptable):
+- "According to the guidelines..." (NO citation)
+- "The source mentions..." (NO citation)
+- "As stated in the document..." (NO citation)
+- Citations at the end only (must be inline)
+
+### Response Structure:
+Your response MUST follow this structure:
+1. Answer the student's question
+2. **For EVERY piece of information**, immediately cite the source: **[Source: PDF名称, Page X]**
+3. If using multiple chunks, cite each one separately where relevant
+
+**REMEMBER: A response without citations is INCOMPLETE and UNACCEPTABLE.**`;
+
             // Build context from current question and feedback
-            let context = 'You are a helpful medical education assistant. Answer questions clearly and accurately.\n\n';
+            let questionContext = '';
             
-            if (currentData?.QA?.question) {
-                context += `Current Question: ${currentData.QA.question}\n\n`;
-            }
-            
-            if (currentData?.feedback?.correctness) {
-                context += `Feedback: ${currentData.feedback.correctness}\n`;
-                if (currentData.feedback.explaination) {
-                    context += 'Explanations:\n';
-                    currentData.feedback.explaination.forEach((exp, idx) => {
-                        context += `${idx + 1}. ${exp}\n`;
+            if (currentData?.QA) {
+                const qa = currentData.QA;
+                questionContext += '\n\n---\n## CURRENT QUIZ QUESTION\n';
+                
+                // Question source info
+                if (currentQuestionMeta?.source) {
+                    const sourcePage = currentQuestionMeta.sourcePage || 'N/A';
+                    questionContext += `**Question Source:** ${currentQuestionMeta.source}, Page ${sourcePage}\n`;
+                }
+                
+                questionContext += `\n**Question:** ${qa.question}\n\n`;
+                
+                if (qa.choices && qa.choices.length > 0) {
+                    questionContext += '**Answer Options:**\n';
+                    qa.choices.forEach((choice) => {
+                        questionContext += `- ${choice}\n`;
                     });
                 }
-                context += '\n';
+                
+                if (currentData.feedback && Object.keys(currentData.feedback).length > 0) {
+                    const feedback = currentData.feedback;
+                    // 支持 A-J（最多10个选项）
+                    const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+                    const correctLetter = optionLetters[qa.answer] || '?';
+                    const studentLetter = qa.student_prediction !== undefined 
+                        ? optionLetters[qa.student_prediction] || '?'
+                        : 'Not answered';
+                    
+                    questionContext += `\n**Correct Answer:** ${correctLetter}\n`;
+                    questionContext += `**Student's Answer:** ${studentLetter}\n`;
+                    questionContext += `**Result:** ${feedback.correctness}\n`;
+                    
+                    if (feedback.explaination && feedback.explaination.length > 0) {
+                        questionContext += '\n**Explanations for each option:**\n';
+                        feedback.explaination.forEach((exp) => {
+                            questionContext += `- ${exp}\n`;
+                        });
+                    }
+                }
+                questionContext += '---\n';
             }
 
+            // ========================================
+            // RAG: Add source chunks with full citation info
+            // ========================================
+            let ragContext = '\n\n## SOURCE CHUNKS FROM MEDICAL GUIDELINES\n';
+            ragContext += '(Use these sources to answer questions. ALWAYS cite with [Source: PDF名称, Page X])\n';
+            
+            // Track all sources for summary
+            const allSources = [];
+            
+            // 1. Add the original chunk used to generate this question
+            if (currentQuestionMeta?.sourceChunk) {
+                const sourcePdf = currentQuestionMeta.source || 'Unknown PDF';
+                const sourcePage = currentQuestionMeta.sourcePage || 'N/A';
+                allSources.push({ pdf: sourcePdf, page: sourcePage, type: 'Question Source' });
+                
+                ragContext += '\n### 📄 CHUNK 0: Original Question Source\n';
+                ragContext += `**Source PDF:** ${sourcePdf}\n`;
+                ragContext += `**Page Number:** ${sourcePage}\n`;
+                ragContext += `**MANDATORY Citation Format:** **[Source: ${sourcePdf}, Page ${sourcePage}]**\n`;
+                ragContext += `**Example:** "According to **[Source: ${sourcePdf}, Page ${sourcePage}]**, ..."\n`;
+                ragContext += '**Content:**\n```\n' + currentQuestionMeta.sourceChunk + '\n```\n';
+                ragContext += `\n⚠️ **When using information from this chunk, you MUST cite: [Source: ${sourcePdf}, Page ${sourcePage}]\n`;
+            }
+            
+            // 2. Retrieve additional relevant chunks using FAISS (async)
+            let retrievedChunks = [];
+            try {
+                retrievedChunks = await retrieveRelevantChunksAsync(message, 5);
+            } catch (e) {
+                console.log('RAG retrieval failed, using fallback');
+                retrievedChunks = retrieveRelevantChunksKeyword(message, 5);
+            }
+            
+            if (retrievedChunks.length > 0) {
+                let searchMethod = 'keyword matching';
+                if (ragServerAvailable && ragServerInfo) {
+                    searchMethod = ragServerInfo.reranker !== 'None' 
+                        ? `FAISS → ColBERTv2 Reranking`
+                        : 'FAISS semantic search';
+                }
+                ragContext += `\n### 🔍 RETRIEVED CHUNKS (via ${searchMethod}):\n`;
+                
+                retrievedChunks.forEach((chunk, idx) => {
+                    const sourcePdf = chunk.source || 'Unknown PDF';
+                    const sourcePage = chunk.page !== undefined ? chunk.page : 'N/A';
+                    const score = chunk.score ? chunk.score.toFixed(3) : 'N/A';
+                    allSources.push({ pdf: sourcePdf, page: sourcePage, type: 'Retrieved' });
+                    
+                    ragContext += `\n#### 📄 CHUNK ${idx + 1}:\n`;
+                    ragContext += `**Source PDF:** ${sourcePdf}\n`;
+                    ragContext += `**Page Number:** ${sourcePage}\n`;
+                    ragContext += `**Relevance Score:** ${score}\n`;
+                    ragContext += `**MANDATORY Citation Format:** **[Source: ${sourcePdf}, Page ${sourcePage}]**\n`;
+                    ragContext += `**Example:** "The guidelines **[Source: ${sourcePdf}, Page ${sourcePage}]** state that..."\n`;
+                    ragContext += '**Content:**\n```\n' + chunk.text.substring(0, 1000) + (chunk.text.length > 1000 ? '...' : '') + '\n```\n';
+                    ragContext += `\n⚠️ **When using information from this chunk, you MUST cite: [Source: ${sourcePdf}, Page ${sourcePage}]\n`;
+                });
+            }
+            
+            // Add source summary with MANDATORY citation reminder
+            ragContext += '\n### 📚 SOURCE SUMMARY\n';
+            ragContext += 'Available sources for citation:\n';
+            allSources.forEach((src, idx) => {
+                ragContext += `- Chunk ${idx}: **${src.pdf}**, Page ${src.page} (${src.type})\n`;
+            });
+            ragContext += '\n';
+            ragContext += '⚠️ **MANDATORY CITATION REQUIREMENT**:\n';
+            ragContext += '- You MUST cite EVERY chunk you use in your answer\n';
+            ragContext += '- Use format: **[Source: PDF名称, Page X]** immediately after each fact\n';
+            ragContext += '- Do NOT provide information without citations\n';
+            ragContext += '- If you use information from Chunk 0, cite it: **[Source: ' + (allSources[0]?.pdf || 'Unknown') + ', Page ' + (allSources[0]?.page || 'N/A') + ']**\n';
+            if (allSources.length > 1) {
+                ragContext += '- If you use information from retrieved chunks, cite each one: **[Source: ' + allSources.slice(1).map(s => s.pdf + ', Page ' + s.page).join(']**, **[Source: ') + ']**\n';
+            }
+            
+            questionContext += ragContext;
+
+            // ========================================================================
+            // 优化：拆分系统提示和用户上下文
+            // ========================================================================
+            // 
+            // 问题：将所有内容塞进 system 消息容易击穿上下文窗口
+            // - gpt-4o-mini 上下文：128k tokens
+            // - 实际安全上限：80-90k tokens
+            // - 极端情况（长题目 + 长 chunk × 6）容易超限
+            //
+            // 解决方案：
+            //   - system 消息：只放角色说明和引用规范（简洁，~500 tokens）
+            //   - user 消息：包含完整上下文（题目、chunks、学生提问）
+            //
+            // 好处：
+            //   - 避免上下文窗口溢出
+            //   - system 消息更稳定，不会被频繁替换
+            //   - 符合 OpenAI 最佳实践
+            //
+            // ========================================================================
+            
+            // Build full context for user message
+            // This includes: current question, feedback, source chunks, and student's question
+            // Add MANDATORY citation requirement at the end
+            const citationRequirement = `\n\n---\n## ⚠️ MANDATORY REQUIREMENT\n\nYou MUST include citations in your answer. For EVERY piece of information you provide:\n1. Immediately cite the source using: **[Source: PDF名称, Page X]**\n2. Use the exact PDF name and page number from the chunks above\n3. Do NOT provide any information without a citation\n4. If you use multiple chunks, cite each one separately\n\nExample: "The treatment protocol **[Source: ${allSources[0]?.pdf || 'Guidelines.pdf'}, Page ${allSources[0]?.page || 'X'}]** recommends..."\n\nYour answer MUST include citations. A response without citations is incomplete.`;
+            
+            const fullContext = questionContext + `\n\n学生提问：${message}` + citationRequirement;
+
             // Prepare messages for OpenAI
+            // System message: ONLY role and citation requirements (kept concise)
+            // User message: Full context (question, chunks, student query)
             const messages = [
                 {
                     role: 'system',
-                    content: context
+                    content: systemPromptOnly  // Only role and citation format (~500 tokens)
                 },
                 // Add conversation history
                 ...messageChatHistory,
-                // Add current user message
+                // Add current user message with full context
                 {
                     role: 'user',
-                    content: message
+                    content: fullContext  // Question context + source chunks + student query (variable length)
                 }
             ];
 
             // Use XMLHttpRequest to avoid headers encoding issues
             const requestData = JSON.stringify({
-                model: 'gpt-3.5-turbo',
+                model: 'gpt-4o-mini',
                 messages: messages,
-                max_tokens: 500,
+                max_tokens: 1000,
                 temperature: 0.7
             });
 
@@ -902,26 +2313,152 @@
                 xhr.send(requestData);
             });
             
+            // ========================================================================
+            // 验证和补充引用
+            // ========================================================================
+            // 检查响应是否包含引用，如果没有则添加提醒
+            let finalResponse = assistantResponse;
+            
+            // 检查是否包含引用格式 [Source: ...]
+            const citationPattern = /\[Source:\s*[^\]]+\]/i;
+            const hasCitation = citationPattern.test(assistantResponse);
+            
+            // 如果没有引用，添加警告和默认引用
+            if (!hasCitation && allSources.length > 0) {
+                console.warn('⚠️ Response missing citations, adding reminder');
+                
+                // 添加警告和默认引用
+                const defaultSource = allSources[0];
+                const citationReminder = `\n\n---\n⚠️ **注意**: 以上回答应基于提供的医学指南。主要来源: **[Source: ${defaultSource.pdf}, Page ${defaultSource.page}]**`;
+                
+                // 如果使用了多个 chunks，也添加它们的引用
+                if (allSources.length > 1) {
+                    const additionalSources = allSources.slice(1).map(s => `**[Source: ${s.pdf}, Page ${s.page}]**`).join(', ');
+                    finalResponse = assistantResponse + citationReminder + `\n其他相关来源: ${additionalSources}`;
+                } else {
+                    finalResponse = assistantResponse + citationReminder;
+                }
+            } else if (hasCitation) {
+                // 验证引用的完整性（检查是否引用了所有使用的 chunks）
+                const citedSources = [];
+                const citationMatches = assistantResponse.matchAll(/\[Source:\s*([^,]+),\s*Page\s*([^\]]+)\]/gi);
+                for (const match of citationMatches) {
+                    citedSources.push({ pdf: match[1].trim(), page: match[2].trim() });
+                }
+                
+                // 如果引用了但可能不完整，添加补充信息
+                if (citedSources.length < allSources.length && allSources.length > 1) {
+                    console.log(`✓ Found ${citedSources.length} citations, ${allSources.length} sources available`);
+                }
+            }
+            
             // Update chat history
             messageChatHistory.push({ role: 'user', content: message });
-            messageChatHistory.push({ role: 'assistant', content: assistantResponse });
+            messageChatHistory.push({ role: 'assistant', content: finalResponse });
             
-            return assistantResponse;
+            return finalResponse;
         }
 
-        // Function to load data from JSON (for backend integration)
+        // ============================================================
+        // 暴露给外部的全局函数
+        // ============================================================
+        //
+        // 这些函数可以在浏览器控制台中调用，用于调试或外部集成
+        //
+        // 使用示例：
+        //   // 在控制台中设置 API 密钥
+        //   window.setOpenAIAPIKey('sk-your-api-key-here');
+        //
+        //   // 加载自定义题目数据
+        //   window.loadQuizData({QA: {...}, feedback: {...}});
+        //
+        // ============================================================
+        
+        /**
+         * 加载题目数据（供后端集成使用）
+         * @param {Object} data - 题目数据对象
+         */
         window.loadQuizData = function(data) {
             loadData(data);
         };
 
-        // Function to set OpenAI API key programmatically
+        /**
+         * 编程方式设置 API 密钥
+         * @param {string} apiKey - OpenAI API 密钥
+         * 
+         * 使用场景：
+         *   - 通过控制台快速设置密钥
+         *   - 外部系统集成时动态注入密钥
+         */
         window.setOpenAIAPIKey = function(apiKey) {
             openAIApiKey = apiKey;
             localStorage.setItem('openai_api_key', apiKey);
+            // 显示密钥末尾 4 位（安全考虑）
             document.getElementById('openai-api-key').value = '••••••••••••' + apiKey.slice(-4);
             updateApiKeyStatus(true);
             enableMessageInput();
         };
+        
+        // ============================================================
+        // 图片模态框功能
+        // ============================================================
+        /**
+         * 显示图片放大模态框
+         * @param {string} imagePath - 图片路径
+         */
+        function showImageModal(imagePath) {
+            // 获取或创建模态框
+            let modal = document.getElementById('image-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'image-modal';
+                modal.className = 'image-modal';
+                modal.onclick = function() {
+                    // 点击背景关闭模态框
+                    hideImageModal();
+                };
+                document.body.appendChild(modal);
+            }
+            
+            // 创建或更新图片元素
+            let img = modal.querySelector('img');
+            if (!img) {
+                img = document.createElement('img');
+                img.onclick = function(e) {
+                    // 点击图片本身不关闭（阻止事件冒泡）
+                    e.stopPropagation();
+                };
+                modal.appendChild(img);
+            }
+            
+            img.src = imagePath;
+            modal.classList.add('active');
+            
+            // 按 ESC 键关闭
+            document.addEventListener('keydown', function escHandler(e) {
+                if (e.key === 'Escape') {
+                    hideImageModal();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            });
+        }
+        
+        /**
+         * 隐藏图片放大模态框
+         */
+        function hideImageModal() {
+            const modal = document.getElementById('image-modal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        // ============================================================
+        // 初始化完成
+        // ============================================================
+        console.log('🏥 Medical Quiz loaded successfully');
+        console.log('📚 Use qbank selector to switch between question banks');
+        console.log('💬 ChatGPT integration ready (API key required)');
     </script>
 </body>
 </html>
