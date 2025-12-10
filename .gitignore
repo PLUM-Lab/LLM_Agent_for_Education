@@ -41,3 +41,8 @@ __pycache__/
 # Temporary test files
 test_validation.py
 
+# Ensure API key is never committed
+api-key.js
+*.key
+*secret*
+

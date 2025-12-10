@@ -154,19 +154,38 @@ except ImportError:
 # -----------------------------------------------------------------------------
 # ColBERTv2 使用 Late Interaction 机制进行更精确的重排序
 # 它在 token 级别比较查询和文档的向量
+
+# 修复 langchain.retrievers 兼容性问题
+# 必须在导入 ragatouille 之前创建兼容层
+import langchain
+import types
+
+# 检查并创建 langchain.retrievers 兼容层
+if not hasattr(langchain, 'retrievers'):
+    langchain.retrievers = types.ModuleType('retrievers')
+    # 创建 document_compressors 子模块
+    langchain.retrievers.document_compressors = types.ModuleType('document_compressors')
+    # 创建 base 子模块
+    langchain.retrievers.document_compressors.base = types.ModuleType('base')
+    # 创建一个虚拟的 BaseDocumentCompressor 类
+    class BaseDocumentCompressor:
+        pass
+    langchain.retrievers.document_compressors.base.BaseDocumentCompressor = BaseDocumentCompressor
+    # 确保模块已注册到 sys.modules
+    import sys
+    sys.modules['langchain.retrievers'] = langchain.retrievers
+    sys.modules['langchain.retrievers.document_compressors'] = langchain.retrievers.document_compressors
+    sys.modules['langchain.retrievers.document_compressors.base'] = langchain.retrievers.document_compressors.base
+
+# 尝试导入重排序器
+HAS_RERANKER = False
 try:
     from ragatouille import RAGPretrainedModel
     HAS_RERANKER = True
-except ImportError:
-    print("[!] RAGatouille 未安装，正在安装...")
-    import subprocess
-    subprocess.check_call(["pip", "install", "ragatouille"])
-    try:
-        from ragatouille import RAGPretrainedModel
-        HAS_RERANKER = True
-    except:
-        HAS_RERANKER = False
-        print("[!] 重排序器不可用，将仅使用 FAISS")
+except (ImportError, ModuleNotFoundError) as e:
+    HAS_RERANKER = False
+    print(f"[!] 重排序器导入失败: {e}")
+    print("[!] 将仅使用 FAISS 检索")
 
 
 
@@ -184,10 +203,12 @@ EMBEDDING_MODEL = "text-embedding-3-small"
 EMBEDDING_DIMENSION = 1536  # text-embedding-3-small 的向量维度
 
 # 文档分块大小
-# 512 token 是上下文和精度之间的良好平衡
+# 对于医学指南，建议使用更大的 chunk 以保持上下文完整性
+# 1024 token：平衡检索精度和上下文完整性（推荐）
+# 1536 token：更多上下文，适合复杂医学概念
 # 较小的块 = 更精确的检索，较大的块 = 更多上下文
-CHUNK_SIZE = 512
-CHUNK_OVERLAP = 50  # 块之间的重叠，保持上下文连贯性
+CHUNK_SIZE = 1024  # 从 512 增加到 1024，提供更完整的医学上下文
+CHUNK_OVERLAP = 100  # 块之间的重叠，保持上下文连贯性（从 50 增加到 100）
 
 # 索引文件保存路径
 INDEX_FILE = "faiss_index.bin"    # FAISS 向量索引
@@ -247,7 +268,7 @@ def get_api_key() -> str:
         config_path = Path(__file__).parent / 'api-key.js'
         if config_path.exists():
             try:
-                content = config_path.read_text()
+                content = config_path.read_text(encoding='utf-8')
                 # 使用正则表达式提取 API 密钥
                 # 匹配：OPENAI_API_KEY = 'key' 或 OPENAI_API_KEY: 'key'
                 match = re.search(r"OPENAI_API_KEY\s*[=:]\s*['\"]([^'\"]+)['\"]", content)
@@ -759,12 +780,30 @@ def initialize_rag():
     if HAS_RERANKER:
         print("\n[0] 正在加载 ColBERTv2 重排序器...")
         try:
+            # 设置环境变量，尝试跳过 C++ 扩展编译（如果可能）
+            import os
+            # 禁用 C++ 扩展编译（如果系统不支持）
+            os.environ['COLBERT_LOAD_TORCH_EXTENSION_VERBOSE'] = 'False'
+            # 尝试使用纯 Python 实现（如果可用）
+            os.environ['COLBERT_USE_CPP'] = 'False'
+            
             # 加载预训练的 ColBERTv2 模型
             # 首次运行可能会下载模型（约 500MB）
             reranker = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
             print("  [OK] ColBERTv2 重排序器已加载")
         except Exception as e:
+            error_msg = str(e)
             print(f"  [!] 加载重排序器失败：{e}")
+            
+            # 检查是否是 Windows 兼容性问题
+            if 'pthread.h' in error_msg or 'No such file or directory' in error_msg:
+                print("  [!] 原因：ColBERTv2 的 C++ 扩展在 Windows 上不兼容（需要 pthread.h）")
+                print("  [!] 解决方案：")
+                print("      1. 使用 WSL（Windows Subsystem for Linux）运行")
+                print("      2. 或继续使用 FAISS 检索（已足够使用）")
+            else:
+                print("  [!] 提示：ColBERTv2 需要 C++ 编译器（Visual Studio Build Tools）")
+                print("  [!] 或者系统将仅使用 FAISS 检索（已足够使用）")
             reranker = None
     else:
         print("\n[!] 重排序器不可用")

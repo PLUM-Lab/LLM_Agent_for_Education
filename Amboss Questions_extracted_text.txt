@@ -1,0 +1,1612 @@
+25 questions w/ answers from AMBOSS Qbank – Surgery Shelf (paid subscription for Step 2) 
+ 
+1. A 29-year-old man who lives in Utah comes to the emergency department 90 minutes after 
+he received a snake bite on his right leg. He was cleaning out a shed in his backyard when 
+he saw a snake between two beams of wood. When he tried to kill the snake with a shovel, 
+it bit him in the lower leg. He says, “I don't really remember what it looked like other than that 
+it was brown; I had a few beers before I started clearing out the shed, so it's all a bit fuzzy.” 
+The bite site is painful. He is nauseous and says that he feels like he is about to vomit. He 
+has no significant past medical history and takes no medications. His temperature is 37.3°C 
+(99.1°F), pulse is 105/min, respirations are 26/min, and blood pressure is 96/52 mm Hg. 
+Cardiopulmonary examination shows no other abnormalities. Physical examination shows 
+two erythematous puncture wounds with serous drainage just above the right ankle. There is 
+ecchymosis and swelling across the dorsum of the right foot and the lower leg up to the mid-
+shin. Active and passive range of motion of the right knee and ankle is limited by pain. 
+Neurologic examination of the extremities shows no abnormalities. Which of the following is 
+the most appropriate next step in management? 
+ 
+Tip: The majority of snake bites in the US are by Crotalinae species, which are typically earth-
+toned. Treatment of snake envenomation is determined by the severity of clinical 
+manifestations. This patient presents with systemic features, including nausea, tachycardia, 
+tachypnea, and mild hypotension, which are consistent with envenomation of moderate severity. 
+ 
+Administration of antivenom 
+69% 
+Administration of antivenom is the most appropriate next step in management of a 
+patient with moderate to severe envenomation by a crotaline snake. The clinical 
+manifestations of envenomation are generally classified into three categories: local 
+tissue effects (e.g., swelling and pain), systemic effects (e.g., tachycardia, hypotension, 
+vomiting), and coagulopathic effects (e.g., hemorrhage, abnormal coagulation 
+parameters). Severe cases can result in compartment syndrome, respiratory failure, life-
+threatening hypotension, and significant bleeding. Antivenom therapy can slow or halt 
+the progression of toxicity and is most effective when administered within 6 hours of the 
+snakebite. Crotalidae polyvalent immune fab and crotalidae immune f(ab')2 are the 
+antivenoms available in the United States. Patients who have received antivenom should 
+be monitored for hypersensitivity (e.g., serum sickness, anaphylaxis). Additional 
+management recommendations include pain control, local wound care, tetanus 
+immunization, and close observation, including regular monitoring of vital signs, tissue 
+swelling, and coagulation studies. 
+ 
+Application of a tourniquet around the right lower leg 
+6% 
+Tourniquets and constrictive dressings are generally not recommended after a snakebite. 
+Though constriction may theoretically delay venom spread through lymphatic channels, there is 
+no evidence that this intervention provides any clinical benefit. Moreover, tourniquets can 
+worsen local ischemia and tissue damage. Oral suction and cutting of the wound should also be 
+avoided in the management of snakebite wounds, as their efficacy has not been proven. 
+ 
+Compartment pressure measurement in the right lower leg 
+13% 
+Compartment syndrome is a rare complication of snakebites and typically manifests with 
+pulselessness, paresthesia, pallor, and pain on passive stretch. Although this patient presents 
+
+
+with limited range of motion of the right knee and ankle due to pain, he has no other symptoms 
+of compartment syndrome. Direct measurement is only indicated in patients with clinical 
+features of increased compartment pressure. Therefore, another step in management is more 
+appropriate at this time. 
+ 
+Hospitalization and close observation of coagulation studies over 24 hours 
+11% 
+Patients with dry bites (in which no envenomation occurs) or mild envenomation from crotaline 
+snakes can experience localized pain and swelling and should be hospitalized for pain control, 
+local wound care, and close observation, including regular monitoring of vital signs, tissue 
+swelling, and coagulation studies. This patient, however, has systemic features, including 
+nausea, tachycardia, tachypnea, and mild hypotension, which are consistent with envenomation 
+of moderate severity. Moderate to severe envenomation requires active treatment rather than 
+observation alone. 
+ 
+Administration of neostigmine and endotracheal intubation 
+1% 
+Neurotoxic venom can cause neuromuscular blockade and diaphragmatic paralysis, which 
+require neostigmine administration and intubation. Though some North American snakes have 
+neurotoxic venom (e.g., coral snakes and some rattlesnakes), this patient does not have any 
+neurologic symptoms, which makes acute neurotoxicity less likely. If he were to develop muscle 
+weakness, upper airway obstruction, or significantly altered mental status, neostigmine 
+administration and intubation might be indicated. However, they are not the most appropriate 
+next steps in management at this time. 
+ 
+Administration of unfractionated heparin 
+1% 
+Hematologic toxicity is a common effect of crotaline envenomation and typically results in 
+abnormalities in coagulation parameters (e.g., prolonged prothrombin time, hypofibrinogenemia, 
+thrombocytopenia), in part due to the activity of thrombin-like glycoproteins from the venom. 
+These glycoproteins are not inhibited by the action of heparin, which plays no role in the 
+management of crotaline envenomation and may increase the risk of bleeding. 
+ 
+ 
+2. A 22-year-old man comes to the emergency department for pain and swelling of his left knee 
+one day after injuring it while playing soccer. While sprinting on the field, he slipped as he 
+attempted to kick the ball and landed on the anterior aspect of his knee. He underwent an 
+appendectomy at the age of 16 years. His vital signs are within normal limits. Examination 
+shows a swollen and tender left knee; range of motion is limited by pain. The tibial tuberosity 
+shows tenderness to palpation. The left tibia is displaced posteriorly when force is applied to 
+the proximal tibia after flexing the knee. The remainder of the examination shows no 
+abnormalities. An x-ray of the left knee joint shows an avulsion fracture of the tibial condyle. 
+Which of the following is the most likely diagnosis? 
+ 
+Anterior cruciate ligament injury 
+14% 
+ 
+Lateral meniscus injury 
+0% 
+ 
+Posterior cruciate ligament injury 
+
+
+84% 
+Posterior cruciate ligament (PCL) injuries are either noncontact injuries involving 
+hyperflexion of the knee on a plantarflexed foot (most commonly seen in athletes) or 
+injuries caused by a posterior blow to the flexed knee (e.g., dashboard injury, athletic 
+contact injury). A positive posterior drawer sign is highly suggestive of PCL injury, and 
+the diagnosis can be confirmed by MRI. Avulsion fractures are common in PCL injury. 
+Isolated PCL injury can be treated conservatively; multiligament injuries and/or chronic 
+symptoms typically warrant surgery. 
+ 
+Patients with PCL injury sometimes appear to have a positive anterior drawer sign 
+because the affected knee seems to have significantly more anterior movement 
+compared to the unaffected knee (due to starting from a posteriorly displaced position). 
+ 
+Lateral collateral ligament injury 
+1% 
+ 
+Medial meniscus injury 
+0% 
+ 
+Medial collateral ligament injury 
+1% 
+ 
+ 
+3. A 7-year-old boy is brought to the physician because of a 3-day history of fever, headache, 
+earache, and sore throat that is worse when swallowing. He has not had a runny nose or 
+cough. He had a similar problem 1 year ago for which he was prescribed amoxicillin, but 
+after developing a skin rash, facial swelling, and dyspnea he was switched to a different 
+medication. His immunizations are up-to-date. He is at the 75th percentile for height and the 
+50th percentile for weight. His temperature is 38.9°C (102°F), pulse is 136/min, and 
+respirations are 28/min. Examination of the oral cavity reveals a bright red tongue with 
+prominent papillae, a red uvula, and an enlarged right tonsil covered by a whitish 
+membrane. The deep cervical lymph nodes are enlarged and tender. Which of the following 
+is the most appropriate next step in treatment? 
+ 
+Tip: A modified Centor score of 5 (age 3–14 years, swollen tonsil with an exudate, tender 
+anterior cervical lymph nodes, temperature > 100.4°F or > 38°C, and absence of cough) 
+indicates a high likelihood of acute bacterial tonsillitis, which is most commonly caused by 
+Streptococcus pyogenes. This patient also appears to have had a severe allergic reaction to 
+amoxicillin in the past as suggested by the facial swelling (angioedema) and dyspnea. 
+ 
+Penicillin V 
+10% 
+S. pyogenes is the most common cause of bacterial tonsillitis and is uniformly sensitive to 
+penicillin, making penicillin V the first-line treatment. However, given this patient's history of 
+allergic reaction to amoxicillin (e.g., skin rash and facial swelling), penicillin antibiotics are 
+contraindicated. 
+ 
+Total tonsillectomy 
+7% 
+Total tonsillectomy poses a risk of postoperative bleeding. Indications for tonsillectomy include 
+chronic tonsillitis, suspected tonsillar neoplasm, obstructive sleep apnea (due to extreme 
+
+
+hypertrophy of the tonsils), and multiple recent recurrences of acute tonsillitis. Total 
+tonsillectomy is not a suitable initial treatment for a child with an uncomplicated disease course, 
+no signs of peritonsillar abscess, and only two episodes of acute tonsillitis within a year. 
+ 
+Subtotal tonsillectomy 
+3% 
+Subtotal tonsillectomy poses a risk of postoperative bleeding. Indications for tonsillectomy 
+include chronic tonsillitis, suspected tonsillar neoplasm, obstructive sleep apnea (due to 
+extreme hypertrophy of the tonsils), and multiple recent recurrences of acute tonsillitis. Subtotal 
+tonsillectomy is not a suitable initial treatment for a child with an uncomplicated disease course, 
+no signs of peritonsillar abscess, and only two episodes of acute tonsillitis within a year. 
+ 
+Fluconazole 
+2% 
+The whitish membrane seen covering this patient's tonsil could be a finding of oral Candida 
+infection (i.e., thrush), which is typically treated with fluconazole. However, in a healthy child 
+with a fever and acute tonsillitis, this whitish membrane is more likely due to tonsillar exudates. 
+Fungal infections are more common in immunosuppressed or systemically ill individuals. 
+ 
+Clarithromycin 
+56% 
+This patient presents with tonsillitis that is likely due to a bacterial infection, which is 
+normally treated with penicillin V. However, penicillins are contraindicated in this patient 
+because of his past severe IgE-mediated allergic reaction to another penicillin antibiotic. 
+Macrolides, such as clarithromycin or azithromycin, are the antibiotic of choice to treat 
+acute bacterial tonsillitis in patients with a history of a severe penicillin allergy. If local 
+macrolide resistance rates are high, clindamycin should be considered. Before initiating 
+antibiotic therapy for suspected acute group A streptococcal tonsillopharyngitis, a rapid 
+strep test should be obtained to confirm GAS infection. 
+ 
+Cefixime 
+22% 
+Cefixime is a 3rd generation cephalosporin and up to 10% of patients with a penicillin allergy are 
+also allergic to cephalosporins. Cephalosporins may be considered in patients with previous 
+nonsevere reactions to penicillin (i.e., reactions without angioedema or anaphylaxis) but should 
+not be used in patients who have had a previous severe reaction to penicillin. Moreover, when 
+cephalosporins are used for the treatment of tonsillitis or pharyngitis, 1st generation 
+cephalosporins (e.g., cephalexin, cefadroxil) are preferred; 3rd generation cephalosporins are 
+least active among all cephalosporins against gram-positive bacteria such as S. pyogenes. 
+ 
+ 
+4. A 66-year-old man comes to the office because of a 2-day history of intermittent red urine. 
+He has not had flank pain, fever, dysuria, or increased urinary frequency. He has no history 
+of recent trauma. Medical history is remarkable for hypertension and atrial fibrillation. His 
+medications include lisinopril and warfarin. He does not smoke or drink alcohol. Temperature 
+is 36.8°C (98.2°F), pulse is 72/min, respirations are 18/min, and blood pressure is 137/64 
+mm Hg. Abdominal examination shows no abnormalities. Digital rectal examination shows a 
+smooth, normal-sized prostate without any irregularities. Laboratory studies show: 
+ 
+Hemoglobin 
+14.0 g/dL 
+Prothrombin time 
+48 sec (INR = 4) 
+
+
+Serum  
+Creatinine 
+1 mg/dL 
+Urine  
+Blood 3+ 
+Protein negative 
+RBC 
+too numerous to count 
+WBC 2/hpf 
+Casts none 
+Nitrites negative 
+Leukocyte esterase 
+negative 
+ 
+In addition to adjusting the patient's warfarin dosage, which of the following is the most 
+appropriate next step in management? 
+Tip: Painless gross hematuria is the most common manifestation of bladder cancer, so this 
+patient requires a thorough diagnostic evaluation irrespective of his supratherapeutic INR. 
+ 
+Repeat urinalysis in one week 
+17% 
+ 
+Urine culture 
+1% 
+ 
+Ultrasound of the kidneys and bladder 
+19% 
+ 
+Retrograde pyelography 
+2% 
+ 
+Cystoscopy 
+61% 
+Cystoscopy is indicated in any patient with gross hematuria that is not explained by UTI 
+(i.e., negative nitrites and leukocyte esterase on urine dipstick) or glomerular disease 
+(i.e., no proteinuria). This procedure enables direct visualization of the urethral and 
+bladder mucosa with possible biopsy collection and can reliably detect malignancy or 
+other sources of bleeding. Cystoscopy should be combined with CT urography for 
+evaluation of the entire urinary tract. 
+ 
+Cystoscopy is also indicated in men ≥ 40 years of age and women ≥ 50 years of age with 
+microhematuria as well as in younger patients with microhematuria who have risk factors 
+for urinary tract malignancy (e.g., tobacco use, cyclophosphamide treatment, prolonged 
+exposure to aniline dye). 
+ 
+ 
+5. A 69-year-old woman comes to the emergency department because of a 3-hour history of 
+pain in her left wrist. She was cleaning a table when she slipped forward and fell onto a 
+flexed hand. Medical history is remarkable for hypertension, hypercholesterolemia, and 
+osteoporosis. Current medications include perindopril, pitavastatin, and alendronate. She 
+has smoked one pack of cigarettes daily for 50 years. Examination shows warmth, 
+tenderness, and edema of the left wrist. Range of motion is decreased due to pain. An x-ray 
+series of the left arm shows multiple fragmentations at the distal radioulnar joint and an 
+
+
+intraarticular oblique fracture with volar displacement of the distal fragment of the radius. 
+Which of the following is the most appropriate next step in management? 
+ 
+Tip: This patient's x-ray findings of an intraarticular fracture with volar displacement of the distal 
+fragment of the radius indicate a complex fracture. 
+ 
+Internal fixation with intramedullary nailing 
+13% 
+ 
+Sling and swathe splint 
+4% 
+ 
+Closed reduction with percutaneous pinning 
+14% 
+ 
+Open reduction internal fixation 
+67% 
+Open reduction internal fixation (ORIF) and other forms of operative management are 
+indicated for complicated distal radius fractures (i.e., comminuted, intraarticular, severely 
+angulated or foreshortened, or unstable after reduction). Osteoporosis, which this 
+patient has, is a risk factor for both comminuted and distal radius fractures, complicates 
+management and recovery, and is an indication for ORIF. Barring the development of any 
+concerning neurovascular findings (e.g., decreased sensation due to compression of the 
+median nerve, absent radial pulse), uncomplicated distal radius fractures can be 
+managed conservatively. 
+ 
+Hanging-arm cast 
+2% 
+ 
+6. A 60-year-old man comes to the physician for a routine health maintenance examination. 
+Over the past year, he has had problems initiating urination and the sensation of incomplete 
+bladder emptying. He has a history of hypertension and hypercholesterolemia. He has 
+smoked one pack of cigarettes daily for the past 40 years. He does not drink alcohol. His 
+medications include lisinopril, atorvastatin, and daily aspirin. Vital signs are within normal 
+limits. Physical examination shows a pulsatile abdominal mass at the level of the umbilicus 
+and a bruit on auscultation. Digital rectal examination shows a symmetrically enlarged, 
+smooth, firm, nontender prostate with rubbery texture. Laboratory studies are within normal 
+limits. Which of the following is the most appropriate next step in management? 
+ 
+Tip: This patient has a history of smoking, hypercholesterolemia, and arterial hypertension and 
+presents with a pulsatile abdominal mass and a bruit on auscultation. These features are 
+suggestive of an abdominal aortic aneurysm (AAA). He does not have abdominal, back, or flank 
+pain, flank ecchymoses, or signs of hemodynamic instability that would suggest rupture. 
+ 
+CT scan of the abdomen with contrast 
+18% 
+CT angiography of the abdomen and pelvis is appropriate for hemodynamically stable patients 
+with confirmed or suspected symptomatic AAA. This test provides a detailed assessment of the 
+location, size, and extent of the aneurysm, as well as the involvement of branch vessels, 
+presence of a thrombus, and/or rupture. Signs of symptomatic AAA include abdominal, back, or 
+flank pain, flank ecchymoses, and signs of aortic fistula (e.g., heart failure, upper 
+
+
+gastrointestinal bleeding), which this patient does not have. A different step in management is 
+more appropriate for asymptomatic AAA. 
+ 
+Catheter arteriography 
+1% 
+Intraoperative catheter arteriography of the aorta can be used to assess the intraluminal space 
+and the presence of a leak after repair of an AAA. However, it has limited use during diagnostic 
+workup, as it only assesses the aortic lumen and cannot distinguish between the vessel wall 
+and a blood clot in an aneurysm (and thus cannot estimate aneurysm size). 
+ 
+Prostate biopsy 
+1% 
+A prostate biopsy would be appropriate for a patient with a high suspicion for prostate cancer 
+(e.g., presence of constitutional symptoms, terminal hematuria). However, this patient's urinary 
+symptoms (hesitancy and incomplete voiding), in combination with a digital rectal examination 
+showing a symmetrically enlarged, smooth, firm, nontender prostate with rubbery texture, are 
+consistent with benign prostatic hyperplasia. This does not merit urgent management at this 
+time, particularly in this patient with findings suspicious for an AAA. 
+ 
+PSA level testing 
+7% 
+Elevated prostate-specific antigen (PSA) levels are a nonspecific finding in several conditions 
+that affect the prostate, including prostate cancer and benign prostatic hyperplasia (BPH). This 
+patient's urinary symptoms (hesitancy and incomplete voiding), in combination with a digital 
+rectal examination showing a symmetrically enlarged, smooth, firm, nontender prostate with 
+rubbery texture, are consistent with BPH. This does not merit urgent management at this time, 
+particularly in this patient with findings suspicious for an AAA. 
+ 
+Abdominal ultrasonography 
+71% 
+Patients with a suspected asymptomatic AAA should undergo abdominal 
+ultrasonography to confirm the diagnosis (dilatation of the aorta ≥ 3 cm) and evaluate the 
+extent of disease, including location and size of the aneurysm, presence of a blood clot, 
+and presence of comorbid iliac artery aneurysms. The sensitivity and specificity of 
+abdominal ultrasonography for AAA are nearly 100%. After the diagnosis is established, 
+management strategies depend on the risk factors for rupture (e.g., aneurysm diameter 
+and rate of expansion). 
+ 
+Renal arteriography 
+2% 
+Renal arteriography is the gold standard for diagnosing renal artery stenosis (RAS), which can 
+also present with an abdominal bruit. However, additional clinical features include treatment-
+resistant hypertension and hypokalemia (from elevated aldosterone levels) and elevated serum 
+creatinine concentration, which this patient does not have. Other diagnostic methods for workup 
+of RAS include renal ultrasonography, CT angiography, and MR angiography. 
+ 
+ 
+7. A 23-year-old woman comes to the physician for a routine health maintenance examination. 
+She reports that she feels well. Upon questioning, she mentions that she has had an 
+occasional dry cough and recurrent hoarseness over the past 6 months. She does not 
+smoke and has not lost weight. Physical examination shows no abnormalities. Laboratory 
+
+
+studies are within the reference ranges. An x-ray of the chest shows a mass that projects 
+across the right hilum. A CT scan of the chest is shown. Which of the following is the most 
+likely diagnosis? 
+ 
+ 
+ 
+Tip: The CT scan shows that the mass is located in the posterior mediastinum. 
+ 
+Esophageal cancer 
+14% 
+Esophageal cancer often manifests as a middle and/or posterior mediastinal mass. Affected 
+patients typically present with dysphagia and weight loss; hoarseness would be uncommon. In 
+addition, esophageal cancer usually manifests in middle to late adulthood (45–75 years old) 
+rather than young adulthood. 
+ 
+Thymoma 
+39% 
+Although a thymoma may manifest with cough due to mass effect, it develops in the anterior 
+mediastinum. This patient's signs are confined to the posterior mediastinum. 
+ 
+Neurofibroma 
+24% 
+Neurogenic tumors (e.g., neurofibromas and schwannomas) account for the majority of 
+posterior mediastinal masses (∼ 60%). Intrathoracic neurofibromas usually manifest in 
+young adults (20–30 years), typically with chest pain caused by mass effect upon the 
+chest wall. Although neurofibromas are benign, large masses can cause a dry cough 
+(due to compression of the lung), hoarseness (due to compression of the recurrent 
+laryngeal nerve), or dysphagia (due to compression of the vagus nerve). As in this case, 
+constitutional symptoms (i.e., fever and weight loss) are usually absent and laboratory 
+studies are typically normal. 
+ 
+Teratoma 
+15% 
+Teratomas are benign germ cell tumors that are usually asymptomatic but can cause cough due 
+to mass effect. Unlike here, they are generally found in the anterior mediastinum and have CT 
+findings of a heterogeneous mass containing multiple tissue types (e.g., fat, fluid, bone). 
+ 
+Aortic aneurysm 
+7% 
+
+
+Intrathoracic cardiovascular structural anomalies (e.g., aortic aneurysm, pulmonary artery 
+aneurysm, or vascular ring) usually manifest as masses in the middle and/or posterior 
+mediastinum. Aortic aneurysm usually manifests as left-sided masses, not the right-sided mass 
+seen in this case. In addition, while aortic aneurysms are better visualized on contrast-enhanced 
+chest CT, the mass in this patient is clearly visualized as a separate entity from the intrathoracic 
+aorta. 
+ 
+ 
+8. A 10-month-old boy is brought to the physician by his mother because of a 1-week history of 
+a painless bulge in the right groin. His mother says that the bulge is only intermittently visible 
+and increases in size with coughing. He was born via cesarean delivery at 32 weeks' 
+gestation because of premature rupture of membranes. He has no history of serious illness 
+and receives no medications. He appears well. Growth and development are appropriate for 
+age. He is at the 50th percentile for length and weight. Temperature is 37.1°C (98.8°F), 
+pulse is 130/min, and respirations are 40/min. Physical examination shows a 2 x 2-cm 
+nontender right inguinal mass that is manually reducible with gradual pressure. 
+Ultrasonography of the groin in supine position shows widening of the deep inguinal ring. 
+Which of the following is the most appropriate next step in management? 
+ 
+Tip: An intermittent inguinal mass that increases in size with raised intraabdominal pressure is 
+characteristic of an indirect inguinal hernia. 
+ 
+Hospital admission for immediate surgery 
+2% 
+ 
+Parental training on manual reduction 
+10% 
+ 
+Referral to a pediatric surgeon 
+40% 
+ 
+Surgical repair is indicated in all children with inguinal hernia. In asymptomatic patients, 
+surgery should be performed within 14 days of diagnosis to avoid complications (e.g., 
+incarcerated hernia). Therefore, emergency surgery is not required but referral should be 
+obtained promptly. While waiting for elective surgery, parental training on signs and 
+symptoms of incarceration is important because an incarcerated or strangulated hernia 
+requires immediate action. 
+ 
+Indirect inguinal hernias are most common among male infants and infants who are born 
+prematurely, as they mostly result from incomplete obliteration of the processus 
+vaginalis during fetal development. Some hernias, despite being present since birth, do 
+not become symptomatic until adulthood. 
+ 
+MRI of the abdomen and pelvis 
+2% 
+ 
+Reassurance and follow-up only 
+45% 
+ 
+9. Two weeks after undergoing coronary artery bypass surgery for acute myocardial infarction, 
+a 62-year-old man comes to the physician because of a 4-day history of fever, sharp chest 
+
+
+pain, and progressive fatigue. Initially, the pain was only present when he was lying supine, 
+but now it is constant and only subsides when he leans forward. He has hypertension and 
+mild mitral regurgitation. He has smoked one pack of cigarettes daily for 44 years but quit 
+prior to surgery. Current medications include aspirin, clopidogrel, metoprolol, captopril, and 
+atorvastatin. His temperature is 38.3°C (102°F), pulse is 84/min and regular, respirations are 
+16/min, and blood pressure is 132/86 mm Hg. During inspiration, the patient's blood 
+pressure drops to 117/80 mm Hg. On physical examination, there are jugular venous 
+pulsations 4 cm above the sternal angle. Heart sounds are faint. There is 2+ edema in the 
+lower extremities. Which of the following additional findings is most likely to be present in 
+this patient? 
+ 
+This patient's presentation of fatigue, fever, and chest pain that is relieved by leaning forward 
+two weeks after cardiothoracic surgery indicates postpericardiotomy syndrome. This syndrome 
+can be complicated by pericardial effusion and cardiac tamponade. 
+ 
+Increased mean aortic pressure 
+2% 
+ 
+Left ventricular volume overload 
+7% 
+ 
+Increased right ventricular compliance 
+3% 
+ 
+Decreased left ventricular preload 
+63% 
+Postpericardiotomy syndrome typically manifests 1–6 weeks after cardiothoracic surgery 
+as a result of an autoimmune inflammatory process in the pericardium. This syndrome 
+may be accompanied by pericardial effusion, which can lead to cardiac tamponade, 
+manifesting with muffled heart sounds and pulsus paradoxus. Fluid accumulation in the 
+pericardial space leads to compression of the heart (especially the right ventricle 
+because of its thin wall). This compression results in a shift of the interventricular 
+septum toward the left ventricle and impaired left ventricular diastolic filling (decreased 
+preload). Cardiac output subsequently decreases and symptoms of backward heart 
+failure (e.g., peripheral edema and jugular venous distension due to right-sided heart 
+failure) and forward heart failure (e.g., progressive fatigue) develop. 
+ 
+Pericardial effusion causing cardiac tamponade is a life-threatening condition that 
+requires drainage of the pericardial fluid (e.g., using pericardiocentesis). 
+ 
+Decreased pressure in the pericardial space 
+2% 
+ 
+Decreased right ventricular contractility 
+22% 
+ 
+10. Six days after being admitted to the hospital for cholecystectomy, a 56-year-old woman has 
+high-grade fevers, chills, malaise, and generalized weakness. She has been hospitalized 
+twice in the last year for acute cholecystitis. She had a molar extraction around 2 weeks 
+ago. Her last colonoscopy was 8 months ago and showed a benign polyp that was removed. 
+She has mitral valve prolapse, hypertension, rheumatoid arthritis, and hypothyroidism. 
+
+
+Current medications include metformin, rituximab, levothyroxine, and enalapril. Her 
+temperature is 38.3°C (101°F), pulse is 112/min, and blood pressure is 138/90 mm Hg. 
+Examination shows painless macules over her palms and soles and linear hemorrhages 
+under her nail beds. The lungs are clear to auscultation. There is a grade 3/6 systolic 
+murmur heard best at the apex. Blood is drawn and she is started on intravenous antibiotic 
+therapy. Two sets of blood cultures grow coagulase-negative staphylococci. 
+Echocardiography shows a large oscillating vegetation on the mitral valve and moderate 
+mitral regurgitation. Which of the following is the strongest predisposing factor for this 
+patient's condition? 
+ 
+Tip: Acute onset of high-grade fever, chills, splinter hemorrhages, and Janeway lesions 
+(painless macules on palms and soles) in combination with a valvular vegetation on 
+echocardiography and two positive blood cultures suggest acute infective endocarditis (IE). The 
+coagulase-negative Staphylococcus species most commonly associated with IE is 
+Staphylococcus epidermidis. 
+ 
+Predamaged heart valve 
+49% 
+Individuals with predamaged heart valves (e.g., mitral valve prolapse) are at increased risk for 
+developing IE. However, the organisms most commonly associated with IE in predamaged 
+valves are viridans streptococci, which are gram-positive streptococci. Viridans streptococci 
+typically cause subacute IE, which is characterized by a slow progression (weeks to months) 
+and less severe constitutional symptoms (e.g., low fever may occur but is often absent). 
+ 
+Colonic polyp 
+1% 
+A colonic polyp may be benign or malignant. Malignant colonic polyps can develop into colon 
+cancer. IE due to an infection with Streptococcus gallolyticus (formerly known as Streptococcus 
+bovis biotype I, a group D Streptococci) is associated with an increased incidence of colonic 
+neoplasms. However, this patient had coagulase-negative staphylococci in her blood cultures 
+and a colonoscopy 8 months ago showed a benign polyp, all of which make this risk factor 
+unlikely. 
+ 
+Recent dental procedure 
+21% 
+Dental procedures are an important risk factor for subacute IE, especially in patients with 
+predamaged native valves (mainly the mitral valve) and in patients with prosthetic valves (≥ 60 
+days after surgery). The most common pathogens in subacute IE are viridans streptococci 
+(gram-positive streptococci), a common commensal of the oropharynx. Subacute IE has an 
+insidious onset, is characterized by slow progression (weeks to months), and has less severe 
+constitutional symptoms (e.g., low fever may occur but is often absent). Although this patient 
+has a history of a predamaged native valve (mitral valve prolapse), she presents with acute IE 
+and has severe symptoms, which make the diagnosis of subacute IE due to an infection with 
+viridans streptococci unlikely. 
+ 
+Immunosuppression 
+4% 
+Immunosuppression is an important risk factor for IE, particularly with atypical pathogens such 
+as Candida species and Aspergillus fumigatus. This patient takes rituximab, which is in fact 
+considered an immunosuppressive medication. IE caused by Candida species and Aspergillus 
+fumigatus occurs especially following cardiosurgical interventions. However, infection with 
+
+
+coagulase-negative staphylococci, as in this patient, is more often associated with a different 
+risk factor than immunosuppression. 
+ 
+Infected peripheral venous catheter 
+25% 
+This patient with acute IE has most likely acquired S. epidermidis bacteremia through an 
+infected peripheral venous catheter during her hospital stay. S. epidermidis has the 
+ability to adhere to foreign bodies (e.g., intravenous catheters, pacemakers) and 
+subsequently form a biofilm. The pathogen accounts for about 30% of health care-
+associated bloodstream infections and is a common cause of IE in patients with 
+prosthetic heart valves (see “Pathogens causing infective endocarditis” table). 
+ 
+Because coagulase-negative staphylococci often colonize the skin of healthy individuals, 
+they are commonly found in contaminated blood cultures, and their presence is not 
+always clinically significant. Repeat cultures and evaluation of the culture results in 
+accordance with clinical findings are therefore recommended. 
+ 
+11. Two weeks after undergoing allogeneic stem cell transplant for multiple myeloma, a 55-year-
+old man develops a severely pruritic rash, abdominal cramps, and profuse diarrhea. He 
+appears lethargic. Physical examination shows yellow sclerae. There is a generalized 
+maculopapular rash on his face, trunk, and lower extremities, and desquamation of both 
+soles. His serum alanine aminotransferase is 115 U/L, serum aspartate aminotransferase is 
+97 U/L, and serum total bilirubin is 2.7 mg/dL. Which of the following is the most likely 
+underlying cause of this patient's condition? 
+ 
+Tip: This patient developed a desquamating pruritic rash, diarrhea with abdominal cramping, 
+and evidence of liver damage (scleral jaundice, elevated transaminases) shortly after a stem 
+cell transplantation, which is concerning for graft-versus-host disease (GvHD). 
+ 
+Donor T cells in the graft 
+61% 
+During allogeneic stem cell transplantation, donor T cells can perceive host tissue as a 
+foreign antigen and mount an immune response, resulting in acute GvHD within 100 days 
+of transplantation. It commonly affects the skin, mucosa, liver, and intestine; thus, 
+patients present with maculopapular rash, diarrhea, jaundice, and hepatosplenomegaly, 
+as observed in this patient. 
+ 
+Newly formed anti-HLA antibodies 
+12% 
+Newly formed anti-HLA antibodies mediate a humoral immune response in acute graft rejection. 
+Antigen-antibody complexes activate the complement cascade, which mediates tissue injury; 
+hence, complement fragments (C4d) can be observed upon graft tissue staining. Patients with 
+acute graft rejection present with fever, pain in the graft region, and graft vessel vasculitis within 
+6 months of transplantation. Although this patient presented within 2 weeks of transplantation, 
+he has involvement of intestine, liver, and skin, making acute graft rejection unlikely. 
+ 
+Proliferating transplanted B cells 
+4% 
+Although proliferating transplanted B cells have been shown to have a role in chronic GvHD in 
+studies with animal models, its role in patients with allogeneic stem cell transplantation is not 
+well defined. Chronic GvHD is observed 100 days after transplantation and presents with clinical 
+
+
+features of chronic enteritis, chronic sicca syndrome, bronchiolitis obliterans, liver dysfunction, 
+and polymyositis. 
+ 
+Activated recipient T cells 
+18% 
+Exposure to graft MHC alloantigen can activate recipient T cells, which orchestrates a type 4 
+hypersensitivity reaction (cell-mediated immune response), that develops into acute graft 
+rejection within weeks to months. Patients present with fever, graft tissue swelling, generalized 
+deterioration, and lymphocytic infiltration of graft vessels; although this patient presented within 
+2 weeks of transplantation, his symptoms are not confined to the transplanted tissue. 
+ 
+Preformed cytotoxic anti-HLA antibodies 
+6% 
+Preformed cytotoxic anti-HLA antibodies react to graft class 1 HLA antigen and mediate 
+hyperacute graft rejection, which is commonly seen in cases with donor recipient ABO 
+incompatibility. Antigen-antibody complexes activate the complement system (type 2 
+hypersensitivity reaction), leading to thrombus formation and graft ischemia. Patients present 
+with intraoperative graft swelling and can develop systemic inflammatory response syndrome 
+within minutes to hours, unlike this patient who presented 2 weeks after transplantation with 
+maculopapular rash, diarrhea, and features of liver injury. 
+ 
+12. A 42-year-old man comes to the emergency department because of a 1-week history of 
+palpitations and tingling in his hands. He has also had severe cramping in his hands, feet, 
+and abdomen during this period. Three months ago, he was hospitalized for acute 
+pancreatitis. He discharged himself against medical advice at that time. There is no family 
+history of illness. He does not smoke. He drinks two to three beers and a pint of vodka daily. 
+He has a history of using intravenous heroin. He is only oriented to place and person. 
+Temperature is 37.1°C (98.8°F), pulse is 90/min, and blood pressure is 110/96 mm Hg. 
+There is a carpopedal spasm while measuring his blood pressure. Cardiopulmonary 
+examination shows no abnormalities. Deep tendon reflexes are 4+ bilaterally. Neurologic 
+examination shows no focal findings. Which of the following is the most appropriate 
+pharmacotherapy? 
+ 
+Tip: The presence of paresthesias, muscle cramps, and Trousseau sign is highly suggestive of 
+hypocalcemia. 
+ 
+Sodium bicarbonate 
+12% 
+Sodium bicarbonate is the antidote for overdose from barbiturates, salicylates, and tricyclic 
+antidepressants, among other drugs. It works by alkalizing the urine and enhancing the 
+excretion of these substances. Barbiturate overdose manifests with respiratory depression and 
+a decreased level of consciousness. The overdose of salicylates causes tinnitus, 
+hyperventilation, vomiting, and abdominal pain. Tricyclic antidepressant overdose causes an 
+anticholinergic toxidrome with fever, mydriasis, confusion, and tachycardia. This patient's 
+presentation is inconsistent with any of these overdoses. 
+ 
+Lorazepam 
+7% 
+Benzodiazepines such as lorazepam are used to treat alcohol withdrawal. This patient may 
+have a history of excessive alcohol intake, but he does not currently have any symptoms of 
+
+
+alcohol withdrawal such as anxiety, diaphoresis, tachycardia, tremors, hallucinations, or 
+seizures. 
+ 
+Magnesium sulfate 
+53% 
+Chronic heavy alcohol use is associated with increased excretion of magnesium with 
+urine and is one of the most common causes of hypomagnesemia-induced 
+hypocalcemia. Because magnesium plays an important role in the production and 
+release of PTH, patients with hypomagnesemia develop decreased levels of, and tissue 
+resistance to PTH, both of which result in hypocalcemia. Therefore, patients with 
+hypomagnesemia-induced hypocalcemia require magnesium supplementation before 
+calcium replacement therapy can be initiated. 
+ 
+Fomepizole 
+3% 
+Fomepizole is used to treat alcohol intoxication, particularly for toxic alcohols such as ethylene 
+glycol or methanol. This patient does not present with classic symptoms of alcohol intoxication 
+such as slurred speech, nausea and vomiting, flushed skin, confusion, or ataxia. 
+ 
+Naloxone 
+1% 
+Naloxone is used to treat opioid overdose. While this patient does have a history of intravenous 
+heroin use, he does not currently have any signs of opioid overdose (i.e., miosis, respiratory 
+depression, or decreased level of consciousness). 
+ 
+Thiamine 
+24% 
+Thiamine is used to treat Wernicke-Korsakoff syndrome caused by long-standing vitamin B1 
+deficiency. This patient is only oriented to place and person, but further symptoms associated 
+with Wernicke-Korsakoff syndrome are missing, such as ophthalmoplegia, ataxia, or 
+confabulations. 
+ 
+13. A 65-year-old man is admitted to the hospital for elective surgical repair of a right-sided 
+inguinal hernia. His medical history is remarkable for hypertension and colorectal carcinoma, 
+for which he underwent right-sided hemicolectomy 7 years ago. His medications are 
+metoprolol and lisinopril. Physical examination shows a soft and reducible mass in the 
+patient's right inguinal region and a well-healed midline scar. The patient is scheduled for an 
+open hernioplasty on the next day. The attending surgeon who will perform the procedure 
+expects no significant complications. A fourth-year medical student who is on rotation in the 
+surgical ward asks if she may scrub in and participate as a second assistant in the 
+procedure. She has sufficient experience in the operating room from previous clerkships. 
+Which of the following is the most appropriate action by the attending surgeon? 
+Tip: Student participation in patient care is an important method for developing critical 
+competencies (e.g., empathy, clinical thinking, patient management). 
+ 
+Allow the student to observe the procedure only 
+3% 
+ 
+Allow the student to participate under supervision 
+7% 
+ 
+
+
+Introduce the student as a colleague and inform the patient about her participation in the 
+procedure 
+5% 
+ 
+Ask the student to inform the patient about her participation in the procedure 
+5% 
+ 
+Disclose the student’s identity and training status to the patient and ask for consent 
+80% 
+ 
+Before surgery, a patient (or their surrogate) should be briefed about the risks, benefits, 
+and alternatives to the procedure and authorize the plan. A physician should balance 
+their responsibility to train medical students with their obligation to provide optimal care 
+(nonmaleficence) while upholding the rights of the patient (autonomy). If a student 
+wishes to assist in surgery, the attending surgeon should inform the patient about the 
+student's identity and level of training, and the patient must give informed consent for 
+participation. As with any other decision, the patient has the right to refuse student 
+involvement in their care at any time. 
+ 
+14. A 73-year-old man comes to the physician because of a 4-kg (9-lb) weight loss over the last 
+month. During this time he has not been able to eat more than one bite without coughing 
+immediately and sometimes he regurgitates food through his nose. His symptoms are worse 
+with liquids. One month ago he had a stroke in the right middle cerebral artery. He has a 
+history of hypertension, type 2 diabetes mellitus, and hyperlipidemia. Current medications 
+include aspirin, amlodipine, metformin, and simvastatin. Examination of the oropharynx, 
+chest, and abdomen shows no abnormalities. Neurological examination shows facial 
+drooping on the left and decreased strength in the left upper and lower extremities. Which of 
+the following is the most appropriate next step in management? 
+ 
+Tip: Dysphagia early in the swallowing process that worsens with liquids, coughing, and nasal 
+regurgitation indicate oropharyngeal dysphagia. Oropharyngeal dysphagia commonly affects 
+patients with neuromuscular dysfunction, such as this patient who recently had a stroke. 
+ 
+Videofluoroscopy 
+43% 
+A videofluoroscopic modified barium swallow is considered the test of choice for 
+evaluating oropharyngeal dysphagia. It involves direct visualization of the entire 
+swallowing process using continuous x-rays and barium contrast. This diagnostic test 
+evaluates the patient's risk of aspiration and determines whether the patient might 
+benefit from supervised feedings, swallow rehabilitation therapy, and/or enteral nutrition. 
+ 
+CT scan of the neck 
+3% 
+ 
+Esophagram 
+15% 
+ 
+Esophageal manometry 
+23% 
+ 
+Transnasal laryngoscopy 
+
+
+4% 
+ 
+Upper endoscopy 
+12% 
+ 
+15. A 73-year-old woman is brought to the emergency department because of a 2-day history of 
+diffuse abdominal pain, nausea, and vomiting. She has hypertension, congestive heart 
+failure, atrial fibrillation, and osteoarthritis. She underwent an exploratory laparotomy for an 
+ovarian mass a year ago where a mucinous cystadenoma was excised. Her medications 
+include aspirin, nifedipine, lisinopril, metoprolol, warfarin, and acetaminophen as needed for 
+pain. She does not drink alcohol or smoke cigarettes. She appears ill and disoriented. Her 
+temperature is 37.9°C (100.3°F), pulse is 110/min and irregular, respirations are 16/min, and 
+blood pressure is 102/60 mm Hg. Examination shows diffuse tenderness to palpation of the 
+abdomen. The abdomen is tympanitic on percussion. Bowel sounds are hyperactive. The 
+lungs are clear to auscultation bilaterally. There is a soft crescendo-decrescendo murmur 
+best auscultated in the right second intercostal space. Laboratory studies show: 
+ 
+Hemoglobin 
+10.2 g/dL 
+Leukocyte count 
+14,000/mm3 
+Platelet count 130,000/mm3 
+Prothrombin time 
+38 seconds 
+INR 
+3.2 
+Serum  
+Na+ 
+132 mEq/dL 
+K+ 
+3.6 mEq/dL 
+Cl- 
+102 mEq/dL 
+HCO3- 19 mEq/dL 
+Urea nitrogen 44 mg/dl 
+Creatinine 
+2.1 mg/dL 
+Lactate 
+2.8 mEq/dL (N= 0.5–2.2 mEq/dL) 
+ 
+An x-ray of the abdomen shows multiple centrally located dilated loops of gas-filled bowel. 
+There is no free air under the diaphragm. A nasogastric tube is inserted and IV fluids and 
+empiric antibiotic therapy are started. An emergency exploratory laparotomy is planned. Which 
+of the following is the next best step in management? 
+ 
+Tip: Diffuse abdominal pain, nausea, vomiting, abdominal tenderness, hyperactive bowel 
+sounds, elevated serum lactate, leukocytosis, prerenal kidney injury, and multiple loops of gas-
+filled bowel on x-ray are consistent with small bowel obstruction with possible bowel ischemia. 
+Although this patient requires immediate surgery, she has an increased bleeding risk, as 
+indicated by prolonged prothrombin time (PT) and elevated INR. 
+ 
+Administer low molecular weight heparin 
+10% 
+Low molecular weight heparin (LMWH) should not be administered in this patient, as she is 
+already over-anticoagulated with an elevated INR of 3.2 from warfarin therapy. The priority is to 
+reverse her anticoagulation before the emergency surgery to reduce the risk of bleeding. 
+Additionally, LMWH should be used with caution in patients with impaired renal function, such 
+as this patient with a creatinine level of 2.1 mg/dL, since renal impairment decreases LMWH 
+clearance and further increases the risk of bleeding. 
+ 
+
+
+Administer unfractionated heparin 
+7% 
+Unfractionated heparin (UFH) is commonly used for risk reduction of peri- and postoperative 
+thrombotic events. However, this patient is currently on oral anticoagulation with warfarin and 
+has a higher risk of excessive bleeding during surgery than thrombotic events. Treatment with 
+UFH perioperatively would further increase the risk of bleeding in this patient. UFH can be 
+administered postoperatively until therapeutic anticoagulation is resumed and on target level. 
+ 
+Administer protamine sulfate 
+4% 
+Protamine sulfate is used for heparin neutralization and low molecular weight heparin overdose. 
+This patient's history and laboratory studies, do not suggest heparin use as a reason for her 
+impaired coagulation; protamine sulfate would not be indicated. 
+ 
+Administer vitamin K 
+14% 
+Administration of vitamin K is used to prevent and treat hypoprothrombinemia caused by vitamin 
+K antagonists such as warfarin. Although this patient requires immediate reversal of her 
+anticoagulation in order to undergo surgery, the effect of vitamin K takes at least 1–2 hours with 
+a peak after 12–24 hours if administered intravenously, and even longer if administered orally. 
+Therefore, vitamin K alone would not be the appropriate therapy for this patient. 
+ 
+Administer prothrombin complex concentrate and vitamin K 
+59% 
+Prothrombin complex concentrate and vitamin K can both be used for anticoagulation 
+reversal in patients with decreased vitamin K-dependent coagulation factors (factors II, 
+VII, IX, and X), e.g., due to warfarin intake. Administration of vitamin K alone would be 
+insufficient, as it takes hours to days to produce further coagulation factors and take full 
+effect. Additional administration of prothrombin complex concentrate is therefore 
+indicated as it replaces those coagulation factors needed to immediately establish 
+sufficient coagulation for surgery. 
+ 
+After surgery, this patient requires anticoagulant treatment to decrease her thrombotic 
+risk. In this patient with reduced renal function, administering unfractionated heparin 
+would be appropriate. 
+ 
+Administer platelet concentrate 
+3% 
+Platelet concentrate can be administered either therapeutically to treat active bleeding or 
+prophylactically to prevent active bleeding in patients with thrombocytopenia. Indications include 
+actively bleeding patients or a platelet count of < 50,000/mm3 for major surgeries, or < 
+100,000/mm3 for neurosurgical procedures. Because this patient's laboratory studies reveal 
+only slight thrombocytopenia with a platelet count of 130,000/mm3, platelet concentrates are not 
+indicated. 
+ 
+Administer recombinant activated factor VII 
+3% 
+Recombinant activated factor VII is used in patients with isolated factor VII deficiency. In other 
+patients, administration of recombinant activated factor VII should be avoided because of the 
+significant risk of arterial thrombosis. This patient's history suggests warfarin therapy and not 
+factor VII deficiency as the cause of her impaired coagulation. 
+
+
+ 
+16. A 69-year-old man comes to the physician because of progressive difficulty swallowing and 
+a 5-kg (11-lb) weight loss over the past 3 months. He first had trouble swallowing solid foods 
+and then also developed difficulty swallowing liquids over the past week. Endoscopy shows 
+a large mass 3 cm proximal to the esophagogastric junction. Biopsy of the mass shows 
+significant distortion of glandular architecture. Which of the following is the strongest 
+predisposing factor for this patient's condition? 
+ 
+Tip: Visualization of a mass in the distal third of the esophagus with histopathologic examination 
+that shows distorted glandular architecture confirms a diagnosis of esophageal 
+adenocarcinoma. 
+ 
+Atrophic gastritis 
+22% 
+Atrophic gastritis increases the risk of esophageal squamous cell carcinoma (eSCC). Bacterial 
+overgrowth in the achlorhydric stomach generates reactive carcinogenic nitrogen products that 
+can induce eSCC transformation. Although eSCC manifests with dysphagia and weight loss, as 
+seen in this patient, a biopsy would show pathognomonic circular areas of keratinization. 
+Atrophic gastritis is not associated with an increased risk of esophageal adenocarcinoma. 
+ 
+Consumption of hot liquids 
+12% 
+Chronic consumption of hot liquids and food increases the risk of esophageal squamous cell 
+carcinoma (eSCC) due to thermal damage of the esophageal mucosa. The resulting 
+inflammation stimulates the production of reactive nitrogen species, which are carcinogenic. 
+Although eSCC manifests with dysphagia and weight loss, as seen in this patient, a biopsy 
+would show pathognomonic circular areas of keratinization. Consumption of hot liquids is not 
+associated with an increased risk of esophageal adenocarcinoma. 
+ 
+Chronic alcohol use 
+33% 
+Chronic and excessive alcohol consumption increases the risk of esophageal squamous cell 
+carcinoma (eSCC). Although eSCC manifests with dysphagia and weight loss, as seen in this 
+patient, biopsy findings would show pathognomonic circular areas of keratinization. While 
+chronic alcohol use can cause gastroesophageal reflux disease, alcohol consumption has not 
+been associated with an increased risk of esophageal adenocarcinoma. Moreover, another 
+predisposing factor is more strongly associated with an increased risk of esophageal 
+adenocarcinoma. 
+ 
+Visceral obesity 
+26% 
+Obesity is an important risk factor for esophageal adenocarcinoma. Although the exact 
+mechanism is unknown, it is hypothesized that obesity increases the risk of 
+adenocarcinoma by increasing the risk of reflux and via mechanisms independent of 
+reflux. Gastroesophageal reflux disease induces metaplasia (Barrett esophagus), which 
+can progress to adenocarcinoma. In addition, excessive visceral fat increases the risk of 
+inflammation, the production of cytokines and growth factors, and insulin resistance, all 
+of which are risk factors for carcinoma. Other risk factors for esophageal 
+adenocarcinoma include smoking, achalasia, and certain diets (high in animal protein or 
+cholesterol, low in fiber). Smoking and achalasia furthermore increase the risk of 
+esophageal squamous cell carcinoma. 
+
+
+ 
+Consumption of cured meats 
+7% 
+Chronic consumption of nitrosamine-rich foods (e.g., bacon, other cured meats, pickles, alcohol) 
+is associated with an increased risk of esophageal squamous cell carcinoma (eSCC). Although 
+eSCC manifests with dysphagia and weight loss, as seen in this patient, a biopsy would show 
+pathognomonic circular areas of keratinization. Consumption of cured meats is not associated 
+with an increased risk of esophageal adenocarcinoma. 
+ 
+17. A 72-year-old man comes to the emergency department because of severe, acute, right leg 
+pain for 2 hours. The patient's symptoms started suddenly while he was doing household 
+chores. He has no history of leg pain at rest or with exertion. He has hypertension treated 
+with ramipril. He appears uncomfortable. His temperature is 37.4°C (99.3°F), pulse is 
+105/min and irregular, and blood pressure is 146/92 mm Hg. The right lower extremity is 
+cool and tender to touch. A photograph of the limb is shown. Femoral pulses are palpable 
+bilaterally; popliteal and pedal pulses are decreased on the right side. Sensation to pinprick 
+and light touch and muscle strength are decreased in the right lower extremity. Which of the 
+following is most likely to have shown the underlying cause prior to the onset of this patient's 
+current symptoms? 
+ 
+ 
+ 
+Tip: Pain, pallor, pulselessness, paralysis, paresthesia, and poikilothermia (6 Ps) are hallmarks 
+of acute limb ischemia (ALI). 
+ 
+Gadolinium-enhanced MRA of the legs 
+3% 
+Gadolinium-enhanced magnetic resonance angiography (MRA) of the legs is a confirmatory test 
+for ALI and is useful for identifying arterial thrombi and dissections as an underlying etiology of 
+ALI. It would not, however, help to confirm the most likely underlying source of this patient's ALI. 
+ 
+Echocardiography 
+41% 
+Echocardiography can be used to visualize an atrial thrombus, which can develop as a 
+complication of atrial fibrillation (Afib). This patient's irregular pulse is suggestive of Afib. 
+The atrial thrombus (or parts of it) may dislodge and embolize into the systemic 
+circulation, thereby leading to arterial occlusion and subsequent ischemia. The most 
+common location of arterial occlusion due to arterial embolism is the femoropopliteal 
+artery. 
+
+
+ALI is commonly caused by thrombosis secondary to peripheral artery disease (PAD); 
+however, the absence of preexisting claudication in this case makes PAD a less likely 
+diagnosis. 
+ 
+Doppler ultrasonography of the legs 
+17% 
+Doppler ultrasonography of the legs is the best initial test for detecting arterial and venous 
+thrombosis and assessing the severity of ALI. It would not, however, help to confirm the most 
+likely underlying cause of this patient's current symptoms. 
+ 
+Digital subtraction angiography 
+10% 
+Digital subtraction angiogram (DSA) is an imaging modality used to diagnose ALI. It should only 
+be performed if treatment can be delayed for further imaging without posing a threat to the 
+extremity. DSA is useful for identifying arterial occlusions or dissections as an underlying 
+etiology of ALI and facilitates immediate therapeutic intervention, e.g., catheter-directed 
+thrombolysis. DSA would not, however, help to confirm the most likely underlying source of this 
+patient's ALI. 
+ 
+Manometry of the right leg 
+1% 
+Needle manometry of the limb is the diagnostic test of choice for suspected compartment 
+syndrome, which typically occurs secondary to trauma (e.g., expanding hematoma, closed 
+fracture, crush injury) and leads to extrinsic compression of the arteries. Symptoms (the 6 Ps) 
+are difficult to distinguish from those caused by acute intraluminal occlusion of an artery. 
+However, manometry would not help to identify the underlying etiology of ALI. 
+ 
+Ankle-brachial index 
+28% 
+The ankle-brachial index is primarily used to diagnose peripheral artery disease (PAD), but it is 
+also used to assess ALI. Values < 0.4 indicate severe occlusion and ischemia. This patient has 
+no history of claudication or trophic changes to his lower extremities, making PAD unlikely. 
+Although this test quantifies the severity of arterial occlusion in ALI, it does not help to confirm 
+the underlying etiology. 
+ 
+18. Three days after undergoing an open cholecystectomy, a 76-year-old man is evaluated for 
+confusion and fever. He has hypertension, type 2 diabetes mellitus, and chronic obstructive 
+pulmonary disease. He smoked 1 pack of cigarettes daily for 40 years but quit 1 year ago. 
+He does not drink alcohol. Prior to admission to the hospital, his medications included 
+lisinopril, metformin, and ipratropium. He appears acutely ill and lethargic. His temperature is 
+39.5°C (103.1°F), pulse is 108/min, respirations are 22/min, and blood pressure is 110/84 
+mm Hg. He is oriented to person but not to place and time. Examination shows a 10-cm 
+subcostal incision that appears dry and mildly erythematous; there is tenderness to 
+palpation of the lower abdomen without guarding or rebound. Pulmonary examination shows 
+scattered expiratory wheezing throughout both lung fields and no crackles. The remainder of 
+the physical examination shows no abnormalities. A urinary catheter is in place and urine 
+output is normal. Which of the following is most likely to establish the diagnosis? 
+ 
+Tip: Fever, altered mental status, tachycardia, and tachypnea raise concern for postoperative 
+sepsis. Certain postoperative measures that help to prevent sepsis may have been missed in 
+this patient. 
+
+
+ 
+Wound swab for Gram stain and culture 
+8% 
+A wound swab for Gram stain and culture is used to diagnose incisional surgical site infection 
+(SSI), which can cause postoperative fever and sepsis. Manifestations of SSI include localized 
+swelling, tenderness, erythema, and purulent discharge from the incision, whereas this patient's 
+surgical wound is dry and only mildly erythematous. Moreover, SSI is uncommon during the first 
+four days after surgery. 
+ 
+Chest x-ray 
+22% 
+Pneumonia, which can be diagnosed on chest x-ray, is a common cause of early postoperative 
+fever and the most common source of sepsis. However, this patient does not have further 
+features of pneumonia, such as productive cough, dyspnea, pleuritic chest pain, and typical 
+auscultation findings (e.g., decreased breath sounds, crackles). The scattered bilateral 
+wheezing is likely related to his chronic obstructive pulmonary disease. While underlying 
+pneumonia cannot be definitively ruled out, it is not the most likely cause of sepsis in this case. 
+ 
+Peritoneal fluid analysis 
+7% 
+Peritoneal fluid analysis can be used to diagnose biliary leak following cholecystectomy. Biliary 
+leak can manifest with abdominal discomfort and fever, but jaundice, nausea, and vomiting are 
+also typically seen. If secondary bacterial peritonitis develops, patients present with signs and 
+symptoms of sepsis; however, peritoneal signs such as rebound tenderness and/or guarding are 
+also expected. Diagnosis of postoperative biliary leak is usually established with imaging (e.g., 
+CT abdomen, HIDA scan) rather than peritoneal fluid analysis alone. Finally, biliary leak is a 
+typical complication of laparoscopic rather than open cholecystectomy. 
+ 
+Urine culture 
+50% 
+Catheter-associated urinary tract infections (CAUTIs) are a common cause of 
+postoperative fever and sepsis in patients with indwelling urinary catheters. Symptoms 
+are often nonspecific (e.g., fever, altered mental status, lower abdominal pain), 
+particularly in older patients. Urine culture as well as two sets of blood cultures should 
+ideally be obtained before initiating empiric broad-spectrum antibiotic therapy (e.g., 
+imipenem plus vancomycin) in order to identify the causative organism and determine 
+antibiotic susceptibility. This patient's qSOFA score of 2 (respiratory rate ≥ 22/min and 
+altered mental status) indicates that he is at high risk of in-hospital mortality due to 
+sepsis and should be admitted to the intensive care unit. Complete evaluation for organ 
+dysfunction, continuous cardiac and respiratory monitoring, as well as frequent 
+reassessments of hemodynamic parameters and serial serum lactate, are indicated. 
+In patients undergoing surgery not involving the urinary tract, urinary catheters should 
+be removed as soon as possible to prevent CAUTIs, preferably within 24 hours 
+postoperatively. 
+ 
+Abdominal CT 
+14% 
+Abdominal CT scan can be used to diagnose postoperative complications such as organ or 
+space surgical site infection (e.g., intraabdominal abscess) and biliary leak. While an abscess 
+can manifest with fever and abdominal pain, the tenderness is usually located in the region 
+where surgery was performed. Moreover, surgical site infections most often occur ≥ 4 days after 
+
+
+surgery. Biliary leak can manifest with abdominal discomfort and fever, but jaundice, nausea, 
+and vomiting are also typically seen. Both intraabdominal abscess and biliary leak can lead to 
+secondary bacterial peritonitis, which can manifest with signs and symptoms of sepsis; however, 
+peritoneal signs such as rebound tenderness and/or guarding are also expected. 
+ 
+19. A 65-year-old woman comes to the physician because of a 1-month history of persistent 
+epigastric abdominal pain. She reports dull, aching pain that sometimes radiates to the back 
+and wakes her up at night. She has had a 2-kg (4.4-lb) weight loss during this time. She has 
+smoked a pack of cigarettes daily for the past 40 years. Her only medication is a calcium 
+supplement. Her vital signs are within normal limits. She appears thin. Examination shows 
+yellow discoloration of the sclera. Abdominal examination shows a nontender, enlarged 
+gallbladder. The remainder of the examination shows no abnormalities. Laboratory studies 
+show a total bilirubin of 9.8 mg/dL, direct bilirubin of 8.6 mg/dL, and an alkaline phosphatase 
+of 560 IU/L. Abdominal ultrasonography shows dilation of the gallbladder and biliary and 
+pancreatic ducts but no pancreatic or extrahepatic biliary lesions. Which of the following is 
+the most appropriate next step in management? 
+ 
+Tip: Although ultrasonography does not show a pancreatic lesion, a combination of obstructive 
+jaundice (↑ ALP, conjugated hyperbilirubinemia) with nontender enlarged gallbladder 
+(Courvoisier sign), worsening epigastric pain that radiates to the back, weight loss, and a double 
+duct sign in a 65-year-old patient with a history of smoking is highly suggestive of carcinoma of 
+the pancreatic head. 
+ 
+Colonoscopy 
+0% 
+Colonoscopy is used to diagnose colon cancer, which would cause weight loss and abdominal 
+pain. Smoking is a risk factor for colon cancer, and obstructive jaundice can occur in patients 
+with liver metastasis. However, in the case of colon cancer, vague or diffuse abdominal pain is 
+usually present, in contrast to this patient with epigastric pain, and dilation of the pancreatic 
+ducts would not be expected. Instead, patients would have evidence of liver metastases on 
+abdominal ultrasonography. 
+ 
+Plain abdominal CT 
+7% 
+Pancreatic carcinoma is typically ill-defined and often has the same tissue density as the 
+surrounding normal pancreatic tissue. Plain abdominal CT scans, therefore, have poor 
+sensitivity and specificity for pancreatic carcinoma. 
+ 
+Contrast-enhanced abdominal CT 
+47% 
+This was a challenging question! A contrast-enhanced abdominal CT is the investigation 
+of choice to confirm pancreatic carcinoma and determine its resectability. On contrast 
+CT, a pancreatic carcinoma typically appears as an ill-defined, hypodense mass (because 
+it is poorly vascularized). If abdominal CT is inconclusive or shows a borderline 
+resectable or unresectable tumor, endoscopic ultrasonography (EUS) and EUS-guided 
+biopsy should be performed to histologically confirm the diagnosis. If metastases are 
+absent and the tumor is resectable, surgical resection should be performed (e.g., 
+Whipple procedure for pancreatic head tumors), followed by adjuvant chemotherapy. 
+Borderline resectable tumors are treated with neoadjuvant chemotherapy followed by 
+resection. Most often, though, metastases are discovered and/or the tumor is 
+unresectable. Such patients are typically treated palliatively or can join a clinical trial. 
+
+
+This question is especially challenging because the patient's presentation resembles 
+gallstone disease, which can also cause epigastric pain, obstructive jaundice, and 
+dilation of both the biliary and pancreatic ducts if the stone is located near the ampulla of 
+Vater. Also, such a stone may not be evident on ultrasound because ultrasonographic 
+visualization of the most distal portions of the biliary tree is often not feasible. However, 
+it is important to keep in mind that patients with gallstone disease will invariably have 
+one or more of the following features on ultrasonography (especially in an exam 
+question): thickening of walls of the biliary tree or gallbladder, pericystic fluid 
+accumulation, scarring or shrinking of the gallbladder, and/or biliary sludge. Additionally, 
+the epigastric pain is often worse after meals and does not radiate to the back. Lastly, 
+Courvoisier sign usually makes gallstones an unlikely cause of biliary obstruction. 
+ 
+Endoscopic ultrasonography 
+4% 
+In a patient with suspected pancreatic cancer, endoscopic ultrasonography (EUS) and an EUS-
+guided biopsy would be performed only if the most appropriate next step is inconclusive, or if it 
+shows a borderline resectable or unresectable tumor. Upper GI endoscopy and endoscopic 
+ultrasonography would be indicated in the initial workup of a patient with suspected gastric 
+cancer, which would manifest with weight loss and epigastric pain. Smoking is a risk factor for 
+gastric cancer, and obstructive jaundice can occur in patients with liver metastasis. However, 
+dilation of the pancreatic ducts would not be expected. Instead, evidence of liver metastases 
+would be present on abdominal ultrasound. 
+ 
+Endoscopic retrograde cholangiopancreatography 
+41% 
+Although ERCP is not the most appropriate next step for this case, this was a good option to 
+consider for two reasons: 
+• First, duct brushing cytology performed during ERCP has a high sensitivity for pancreatic head 
+tumors and was performed in the past to confirm the diagnosis. However, ERCP is invasive and 
+cannot define the extent of the tumor, which is important for determining its resectability. ERCP 
+is therefore no longer performed in the initial diagnostic workup of pancreatic carcinoma. 
+• Second, after ultrasonography, some centers perform ERCP as the next step without obtaining 
+any additional imaging if gallstone disease is suspected to be the underlying cause of biliary 
+tract obstruction because the procedure is simultaneously diagnostic and therapeutic. Gallstone 
+disease can cause epigastric pain, obstructive jaundice, and dilation of both the biliary and 
+pancreatic ducts if the stone is located near the ampulla of Vater. Also, such a stone may not be 
+evident on ultrasound because ultrasonographic visualization of the most distal portions of the 
+biliary tree is often not feasible. However, it is important to keep in mind that patients with 
+gallstone disease will invariably have one or more of the following features on ultrasonography 
+(especially in an exam question): thickening of walls of the biliary tree or gallbladder, pericystic 
+fluid accumulation, scarring or shrinking of the gallbladder, and/or biliary sludge. Additionally, the 
+epigastric pain is often worse after meals and does not radiate to the back. Lastly, Courvoisier 
+sign usually makes gallstones an unlikely cause of biliary obstruction. 
+ 
+20. A 68-year-old woman comes to the physician because of increasing heartburn for the last 
+few months. During this period, she has taken famotidine several times a day without relief 
+and has lost 10 kg (22 lbs). She has retrosternal pressure and burning with every meal. She 
+has had heartburn for several years and took famotidine as needed. She has hypertension. 
+She has smoked one pack of cigarettes daily for the last 40 years and drinks one glass of 
+wine occasionally. Other current medications include amlodipine and hydrochlorothiazide. 
+She appears pale. Her height is 163 cm (5 ft 4 in), weight is 75 kg (165 lbs), and BMI is 28 
+
+
+kg/m2. Her temperature is 37.2°C (99.0°F), pulse is 78/min, and blood pressure is 135/80 
+mm Hg. Cardiovascular examination shows no abnormalities. Abdominal examination shows 
+mild tenderness to palpation in the epigastric region. Bowel sounds are normal. The 
+remainder of the examination shows no abnormalities. Laboratory studies show: 
+ 
+Hemoglobin 
+10.2 g/dL 
+Mean corpuscular volume 
+78 μm 
+Mean corpuscular hemoglobin 
+23 pg/cell 
+Leukocyte count 
+9500/mm3 
+Platelet count 330,000/mm3 
+Serum  
+Na+ 
+137 mEq/L 
+K+ 
+3.8 mEq/L 
+Cl- 
+100 mEq/L 
+HCO3- 25 mEq/L 
+Creatinine 
+1.2 mg/dL 
+Lactate dehydrogenase 
+260 U/L 
+Alanine aminotransferase 
+18 U/L 
+Aspartate aminotransferase 15 U/L 
+Lipase 40 U/L (N < 280) 
+Troponin I 
+0.029 ng/mL 
+ 
+An ECG shows normal sinus rhythm without ST-T changes. Which of the following is the most 
+appropriate next step in management? 
+ 
+Tip: Increasing retrosternal pain, weight loss, and anemia in this patient with long-standing reflux 
+and a 40 pack-year smoking history raise suspicion for esophageal cancer. She has risk factors 
+for both adenocarcinoma (gastroesophageal reflux, smoking) and squamous cell carcinoma 
+(alcohol consumption, smoking) of the esophagus. 
+ 
+24-hour esophageal pH monitoring 
+4% 
+Twenty-four-hour esophageal pH monitoring is used to confirm the diagnosis in patients with 
+suspected nonerosive reflux disease. While this patient presents with retrosternal chest pain 
+and a burning sensation with meals, suggesting acid reflux, the next step in management 
+should rule out a potential malignancy. 
+ 
+CT scan of the chest 
+4% 
+A CT scan of the chest is useful to visualize the entire thorax, including the lungs and the 
+mediastinum. Although this patient presents with red flag symptoms of esophageal malignancy, 
+a CT is more appropriate during the staging process after a malignancy has been confirmed. 
+ 
+Trial of proton-pump inhibitor 
+12% 
+An empiric trial of proton-pump inhibitors may be administered if gastroesophageal reflux 
+disease (GERD) is clinically suspected and there are no indications for further diagnostic 
+testing. Although this patient presents with symptoms of heartburn that may suggest GERD, she 
+also has alarm symptoms (e.g., weight loss, anemia) for esophageal cancer, which must be 
+ruled out first. 
+ 
+
+
+Esophageal manometry 
+2% 
+Esophageal manometry can be used to diagnose motor disorders of the esophagus, e.g., 
+achalasia or esophageal spasms, which may also present with retrosternal pain and weight 
+loss. Because this patient presents with additional alarm symptoms for esophageal malignancy, 
+another diagnostic test is preferred. 
+ 
+Barium swallow 
+2% 
+A barium swallow can be used to identify anatomical defects in the esophagus. It is indicated as 
+the initial step in the evaluation of patients with features suggestive of proximal esophageal 
+obstruction, as well as in patients with complicated esophageal strictures (secondary to 
+surgery/radiation/caustic injuries) or with a suspected tracheoesophageal fistula. However, it is 
+not typically considered the best initial step for the evaluation of dysphagia in patients with 
+symptoms predominantly affecting the lower esophagus (e.g., retrosternal pain, heartburn). 
+ 
+Esophagogastroduodenoscopy 
+77% 
+Esophagogastroduodenoscopy is the best initial and confirmatory test for suspected 
+esophageal cancer and can also be used to classify reflux esophagitis as well as to 
+detect a peptic ulcer. It should be conducted in all patients presenting with symptoms of 
+gastroesophageal reflux disease (e.g., retrosternal burning pain, regurgitation) and 
+additional alarm symptoms (e.g., weight loss, anemia, melena, dysphagia). If a biopsy 
+confirms esophageal cancer in this patient, further staging of the disease will include an 
+endoscopic ultrasound to determine the infiltration depth and register regional lymph 
+node disease as well as a chest and abdominal PET-CT. Treatment depends on the exact 
+location of the tumor, histopathologic type (adenocarcinoma or squamous cell 
+carcinoma), and the stage. 
+ 
+21. A 42-year-old man with HIV infection comes to the physician because of several episodes of 
+rectal bleeding over the past 2 weeks. He has had pain around the anal area for the past 
+month. Six months ago, he was diagnosed with esophageal candidiasis and was treated 
+with oral fluconazole. He has had 9 male sexual partners over his lifetime and uses 
+condoms inconsistently. The patient's current medications include dolutegravir, tenofovir, 
+and emtricitabine. He is 179 cm (5 ft 10 in) and weighs 66 kg (146 lb); BMI is 21 kg/m2. Vital 
+signs are within normal limits. Digital rectal examination and anoscopy show a hard 2-cm 
+mass palpable 0.5 cm above the anal verge that bleeds on contact. There is no inguinal 
+lymphadenopathy. The abdomen is soft and nontender. The CD4+ T-lymphocyte count is 
+95/mm3. A biopsy confirms the diagnosis. This patient is most likely to benefit from which of 
+the following interventions? 
+ 
+Tip: Anal canal cancer typically presents as an exophytic, hard anal mass that is often tender 
+and bleeds easily. Squamous cell carcinoma (SCC) is the most common histological type of 
+anal canal cancer (approx. 90% of cases) and it typically arises just above the anal verge and 
+below the dentate line, which is located approx. 2 cm away from the anal verge. 
+ 
+Radiochemotherapy 
+31% 
+The incidence of anal canal SCC is higher in individuals that are immunodeficient (e.g., 
+due to HIV infection) and in men who have sex with men (MSM), such as this patient. The 
+combination of chemotherapy and radiation is the treatment of choice for patients with 
+
+
+anal canal SCC. Subsequent surgery is only indicated if a residual tumor is confirmed 
+with biopsy after the completion of radiochemotherapy. 
+ 
+Abdominoperineal resection 
+9% 
+Abdominoperineal resection (APR) was formerly the treatment of choice in patients with anal 
+canal SCC. However, a less radical treatment option has been established that has been shown 
+to have higher survival rates than APR. APR is indicated in patients with low-lying rectal 
+adenocarcinomas that can not be treated with sphincter-sparing procedures and those with anal 
+canal adenocarcinomas. Anal canal adenocarcinoma, however, is rare and arises above the 
+dentate line. 
+ 
+Topical trichloroacetic acid therapy 
+10% 
+Topical cytodestructive treatment with trichloroacetic acid is indicated in patients with anogenital 
+warts (i.e., condylomata acuminata), for which HIV infection and unprotected sexual intercourse 
+are risk factors. However, condylomata acuminata are usually asymptomatic. They are painful 
+only in a small percentage of cases, and rectal bleeding is a rare sequela. Topical trichloroacetic 
+acid therapy is not appropriate for the treatment of anal canal cancer. 
+ 
+Total mesorectal excision 
+25% 
+Total mesorectal excision is usually performed in combination with low anterior resection in 
+patients with rectal adenocarcinoma. However, the patient's tumor is just above the anal verge, 
+within the anal canal, rather than the rectum. In addition, rectal adenocarcinoma is unlikely in a 
+young patient without predisposing factors such as inflammatory bowel disease or a family 
+history of colorectal cancer. 
+ 
+Injection sclerotherapy 
+5% 
+Injection sclerotherapy is used in the treatment of patients with rectal prolapse. Rectal prolapse 
+may present with an anal mass and possibly with bleeding, but the mass tends to be painless 
+and typically exhibits radial (partial prolapse) or concentric (full-thickness prolapse) mucosal 
+folds. Furthermore, the patient does not have fecal incontinence, which does occur in most 
+patients with rectal prolapse, nor does he have predisposing factors for this condition such as 
+elevated intraabdominal pressure (e.g., due to constipation or chronic cough) or weakness of 
+the pelvic floor muscles (e.g., due to advanced age or previous perineal surgery). 
+ 
+Submucosal hemorrhoidectomy 
+20% 
+Submucosal hemorrhoidectomy is indicated for the treatment of grade IV internal hemorrhoids 
+and lower-grade internal hemorrhoids that are resistant to initial treatment. While internal 
+hemorrhoids may present as an anal mass with bright red bleeding, digital rectal examination 
+and anoscopy would reveal a mass arising above the dentate line rather than just above the 
+anal verge. 
+ 
+ 
+22. A 61-year-old woman with a history of stage IV pancreatic cancer comes to the emergency 
+department with insomnia due to intractable midepigastric pain. The pain had been constant 
+for months but has worsened over the past few weeks despite her taking hydrocodone 10 
+mg and ibuprofen 400 mg. She has chronic pain and major depressive disorder. In the past 
+
+
+month, she has been taking her pain medications with increasing frequency, going from 
+twice a day to four times a day. Her other medications include venlafaxine and eszopiclone. 
+She describes her mood as low without suicidal ideation. She appears fatigued and 
+cachectic. Her temperature is 36°C (96.8°F), pulse is 100/min, and blood pressure is 128/65 
+mm Hg. Physical examination shows a mass in the midepigastric region. Which of the 
+following is the most appropriate next step in management? 
+ 
+Tip: This patient has chronic cancer pain that is not sufficiently controlled by her current 
+analgesic regimen (as evidenced by insomnia and increasing frequency and total dose of pain 
+medication). 
+ 
+Discontinue hydrocodone and ibuprofen, and start IV ketorolac 
+13% 
+Discontinuing her current medications, which include an NSAID (ibuprofen), and starting a 
+different NSAID (ketorolac) is not recommended. Her pain control regimen should be escalated 
+according to the WHO analgesic ladder. 
+ 
+Switch from hydrocodone to hydromorphone 
+48% 
+This patient's current pain medications (hydrocodone and ibuprofen) are not providing 
+her with enough pain relief. A switch from hydrocodone to a stronger opioid (e.g., 
+hydromorphone) is the appropriate next step according to the WHO analgesic ladder. 
+When converting between opioids (opioid rotation), patients will likely have less 
+tolerance to the new opioid than to their previous opioid (i.e., incomplete cross-
+tolerance). Therefore, the new opioid should be given at a 25–50% lower dose, then 
+adjusted according to the patient's pain score. Additionally, this patient should continue 
+taking ibuprofen, as nonopioid analgesics should be used at each step of the ladder for 
+effective and balanced pain relief. 
+ 
+Administer regional block of the celiac plexus using lidocaine 
+18% 
+Although nerve blocks using local anesthetics (e.g., lidocaine) may relieve this patient's pain, 
+there are other, less invasive, pharmacological regimens that should be tried first. 
+ 
+Switch from eszopiclone to zolpidem 
+3% 
+Switching hypnotics (e.g., from eszopiclone to zolpidem) is not recommended, as this patient's 
+insomnia is most likely due to her uncontrolled pain. 
+ 
+Allow the patient to take hydrocodone and ibuprofen up to every four hours 
+18% 
+Increasing the frequency of this patient's current pain control regimen (hydrocodone and 
+ibuprofen) would not be effective. Her current regimen should be escalated according to the 
+WHO analgesic ladder. 
+ 
+23. A 65-year-old man with hypertension and type 2 diabetes mellitus is brought to the 
+emergency department 20 minutes after the onset of severe anterior chest pain and 
+shortness of breath. He has smoked one pack of cigarettes daily for 30 years. He appears 
+distressed. His pulse is 116/min, respirations are 22/min, and blood pressure is 156/88 mm 
+Hg. Pulse oximetry on room air shows an oxygen saturation of 98%. A grade 3/6, high-
+
+
+pitched, blowing, diastolic murmur is heard over the right upper sternal border. Which of the 
+following is the most likely cause of this patient's symptoms? 
+ 
+Tip: Dyspnea with a high-pitched, blowing, diastolic murmur at the right upper sternal border 
+suggests aortic regurgitation. 
+ 
+Tear in the tunica intima 
+67% 
+An aortic dissection is typically caused by a tear in the tunica intima and subsequent 
+longitudinal extension of the dissecting hematoma. Hypertension, which increases the 
+risk of endothelial injury, is the most common predisposing factor for aortic dissection. 
+Most aortic dissections begin in the ascending portion of the thoracic aorta because this 
+is the region of maximum hydraulic stress. Patients present with sudden and severe pain 
+in the chest or interscapular region. The pain can migrate as the dissection progresses. 
+Proximal extension of the dissection into the aortic valve ring can cause acute aortic 
+regurgitation (AR), as seen here. Other features of aortic dissection include syncope, 
+diminished distal pulses, and asymmetrical blood pressure and pulse readings between 
+limbs. Unlike the murmur of AR from aortic valve disease, which is prominent along the 
+left sternal border, the murmur of AR from aortic dissection is prominent along the right 
+sternal border. 
+Nonmodifiable risk factors for aortic dissection include advanced age, male sex, and 
+certain genetic conditions that weaken the tunica media (e.g., Marfan syndrome, vascular 
+Ehlers-Danlos syndrome, Turner syndrome). 
+ 
+Fibrofatty plaque in the aortic wall 
+14% 
+The formation of a fibrofatty plaque in the aortic wall is characteristic of atherosclerosis, which 
+typically involves the abdominal portion of the descending aorta. Atherosclerosis is implicated in 
+the formation of abdominal aortic aneurysms; atheroma ulceration has been reported in some 
+patients with abdominal aortic dissections and descending thoracic aortic dissections. Although 
+both aortic dissection and atherosclerosis share similar risk factors (e.g., smoking, hypertension, 
+advanced age, and male sex), atherosclerosis is not a major risk factor for most aortic 
+dissections, which tend to occur in the ascending aorta. 
+ 
+Obstruction of the pulmonary arteries 
+5% 
+Obstruction of the pulmonary arteries is seen in pulmonary embolism, which can manifest with 
+acute-onset dyspnea, chest pain, tachypnea, and tachycardia. However, pulmonary embolism 
+would not explain the AR seen here. 
+ 
+Rupture of a bulla in the lung 
+1% 
+Rupture of a bulla in the lung causes pneumothorax, which can manifest with dyspnea, chest 
+pain, tachypnea, and tachycardia. However, pneumothorax would not explain the AR seen here. 
+Instead, chest auscultation would reveal decreased breath sounds caused by pneumothorax. 
+ 
+Perforation of the esophageal wall 
+0% 
+Esophageal rupture can manifest with chest pain, tachycardia, tachypnea, and dyspnea (due to 
+mediastinitis and/or pleural effusion). However, esophageal rupture would not cause a murmur. 
+Instead, chest auscultation might reveal a crunching sound over the precordium that is 
+
+
+synchronous with each heartbeat (Hamman sign) due to a pneumomediastinum and/or 
+decreased breath sounds due to a pleural effusion. Furthermore, esophageal rupture usually 
+has a distinct precipitating cause (e.g., retching or forceful vomiting). 
+ 
+Infarction of the ventricular wall 
+13% 
+Infarction of the ventricular wall (myocardial infarction) can cause acute-onset chest pain, 
+dyspnea, tachypnea, tachycardia, and a murmur due to mitral regurgitation that is caused by 
+papillary muscle rupture. However, the murmur due to mitral regurgitation is systolic rather than 
+diastolic and heard best at the cardiac apex, not the right upper sternal border. Moreover, 
+papillary muscle rupture typically occurs 2–7 days after infarction, not at the outset. 
+ 
+24. Three days after being admitted to the hospital because of a fall from the roof of a two-story 
+building, a 27-year-old man is being monitored in the intensive care unit. On arrival, the 
+patient was somnolent and not oriented to person, place, or time. A CT scan of the head 
+showed an epidural hemorrhage that was 45 cm3 in size and a midline shift of 7 mm; no 
+skull fracture was shown. Emergency surgery was performed with craniotomy and 
+hematoma evacuation on the day of admission. Perioperatively, a bleeding vessel was 
+identified and ligated. Postoperatively, the patient was transferred to the intensive care unit 
+and placed on a ventilator. His temperature is 37.0°C (98.6°F), pulse is 67/min, and blood 
+pressure is 117/78 mm Hg. The ventilator is set at a FiO2 of 55%, tidal volume of 520 mL, 
+and positive end-expiratory pressure of 5.0 cm H2O. In addition to intravenous 
+administration of fluids, which of the following is the most appropriate next step in managing 
+this patient's nutrition? 
+ 
+Tip: Nutritional support primarily depends on whether a patient is on ventilation (and, if so, for 
+how long) and whether intestinal decompression is required. 
+ 
+Oral feeding 
+3% 
+Oral feeding would be inappropriate because the patient is on mechanical ventilation with an 
+endotracheal tube. He cannot ingest food by mouth. 
+ 
+Total parenteral nutrition 
+23% 
+Total parenteral nutrition (TPN) via an intravenous line bypasses the gastrointestinal tract. The 
+lack of intestinal stimulation increases the risk of intestinal atrophy, increases bowel wall 
+permeability, and alters the gut flora, making TPN inferior to other feeding methods. TPN is only 
+indicated in patients without a functioning gastrointestinal tract (e.g., short bowel syndrome, 
+severe malabsorption) or when complete bowel rest is indicated (e.g., bowel obstruction). 
+ 
+Keep patient NPO 
+8% 
+Nutritional support is indicated in critically ill patients with a low Glasgow coma scale who 
+cannot be fed. Keeping the patient nil per os would only be indicated for the first 48 hours 
+following surgery in case repeat surgery is necessary. 
+ 
+Enteral feeding via nasogastric tube 
+57% 
+Critically ill patients with an intact gastrointestinal tract can receive short-term enteral feeding via 
+nasogastric tube (< 2–3 weeks) if there are no contraindications (e.g., bowel obstruction, 
+
+
+intractable vomiting, hemodynamic instability). Enteral feeding is preferred over parenteral 
+nutrition because it stimulates intestinal motility and prevents mucosal atrophy. As long as there 
+is no facial trauma or basilar skull fractures, a nasogastric tube can be used for enteral feeding. 
+When feeding, patients should have their backrest elevated to prevent aspiration and reduce the 
+incidence of nosocomial pneumonia. 
+ 
+Enteral feeding using a percutaneous endoscopic gastrostomy tube 
+9% 
+A percutaneous endoscopic gastrostomy (PEG) tube would only be considered for long-term 
+enteral feeding, as temporary routes such as nasogastric or nasoenteric tubes often fail with 
+long-term use because of clogging and inadvertent dislodgement. However, for the short term, a 
+PEG tube would be too invasive in a patient with a potentially reversible condition. 
+ 
+25. A 33-year-old man comes to the physician because of right scrotal swelling for the past 2 
+weeks. He has had mild lower abdominal discomfort for the past 3 weeks. There is no 
+personal or family history of serious illness. He appears healthy. Vital signs are within 
+normal limits. Examination shows gynecomastia. There is no inguinal lymphadenopathy. 
+There is a firm nontender nodule over the right testicle. When a light is held behind the 
+scrotum, it does not shine through. When the patient is asked to cough, the nodule does not 
+cause a bulge. The abdomen is soft and nontender. The liver is palpated 2 cm below the 
+right costal margin. Digital rectal examination is unremarkable. Serum alpha-fetoprotein, 
+LDH, and hCG levels are markedly elevated. An x-ray of the chest shows no abnormalities. 
+Ultrasound of the testis shows a cystic 3-cm mass with variable echogenicity. A CT of the 
+abdomen shows multiple hypoattenuating lesions on the liver and retroperitoneal lymph 
+nodes. Radical inguinal orchiectomy with retroperitoneal lymph node dissection is 
+performed. Which of the following is the most appropriate next step in management? 
+ 
+Tip: A nonhomogenous, cystic testicular mass with a negative transillumination test and multiple 
+hepatic and lymphatic lesions is highly suggestive of metastatic testicular carcinoma. 
+Extranodal/distant metastases at the time of presentation and increased alpha-fetoprotein (AFP) 
+levels make a nonseminomatous germ cell tumor (NSGCT) the most likely type of tumor in this 
+patient. 
+ 
+Radiation therapy 
+26% 
+External beam radiation is used to clear the retroperitoneal lymph nodes off of micro-
+/macrometastases in early stage (I, IIA, IIB) seminomatous germ cell tumors, which are 
+extremely radiosensitive. However, radiation therapy is generally not used in the treatment of 
+NSGCTs because these tumors are comparatively radioresistant. The only indication for 
+radiation therapy in patients with a NSGCT is brain metastases (e.g., whole brain irradiation). 
+ 
+Cisplatin, etoposide, and bleomycin therapy 
+44% 
+Adjuvant chemotherapy with cisplatin, etoposide, and bleomycin (BEP regimen) can be 
+considered in stage I nonseminoma in select patients and is usually indicated in stages II 
+and III. This patient has signs of advanced NSGCT with metastases to his liver and 
+increased tumor markers (stage IIIC). In addition to the radical inguinal orchiectomy, he 
+would likely require 4 cycles of this regimen due to the advanced nature of his cancer. 
+Patients with nonseminomas have a significantly poorer prognosis than patients with 
+seminomas, but still an excellent overall survival rate. 
+ 
+
+
+Leucovorin, 5-fluorouracil and oxaliplatin therapy 
+20% 
+The combination of leucovorin, 5-fluorouracil, and oxaliplatin (FOLFOX) is used for the 
+treatment of colorectal cancer. It is not used for testicular cancer. 
+ 
+Active surveillance 
+10% 
+After an inguinal orchiectomy, active surveillance consisting of regular follow-up exams, serial 
+monitoring of tumor markers, and imaging (abdominal and pelvic CT, chest x-ray) may be 
+indicated in select patients with early-stage (IA, IB) nonseminomatous germ cell tumors 
+(NSGCTs) without elevated tumor markers. However, any NSGCT of stage II and above or any 
+NSGCT with elevated tumor markers requires a specific form of adjuvant therapy after 
+orchiectomy. 
+ 
+Stem cell transplant 
+0% 
+A peripheral blood stem cell transplantation is indicated for patients who require high-dose 
+chemotherapy, which has a myeloablative effect. However, high-dose chemotherapy is preferred 
+in testicular cancer over conventional chemotherapy only in patients with an incomplete 
+response or recurrent disease following the first-line of adjuvant therapy. Stem cell 
+transplantation is not required following the conventional first-line adjuvant therapy. 
+ 
+ 
+ 

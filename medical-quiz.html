@@ -175,21 +175,29 @@
 
         .question-images {
             margin: 15px 0;
-            display: flex;
+            display: flex !important;
             flex-direction: column;
             gap: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 2px dashed #4caf50;
+            border-radius: 8px;
+            min-height: 50px;
         }
 
         .question-image {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid #e0e0e0;
+            max-width: 100% !important;
+            height: auto !important;
+            border: 2px solid #2196F3 !important;
             border-radius: 4px;
             padding: 5px;
-            background: white;
+            background: white !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
 
         .question-image:hover {
@@ -509,8 +517,8 @@
              
              可用题库：
              - questions.json：从临床指南生成的 200 道题目
-             - qbank_questions.json：从 Qbank PDF 解析的 249 道题目
-             - all：合并所有题库（449 道题目）
+             - qbank_combined.json：合并的题库（Surgery + Amboss）
+             - all：合并所有题库（自动去重）
              
              元素说明：
              - #qbank-selector：下拉选择框
@@ -521,8 +529,8 @@
                 <label style="font-weight: 600; color: #666;">题库选择:</label>
                 <select id="qbank-selector" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #e0e0e0; font-size: 14px;">
                     <option value="questions.json">Clinical Guidelines (200题)</option>
-                    <option value="qbank_questions.json">Qbanks PDF解析 (249题)</option>
-                    <option value="all">全部题目 (449题)</option>
+                    <option value="qbank_combined.json">Combined Qbank (Surgery + Amboss)</option>
+                    <option value="all">全部题目 (合并所有)</option>
                 </select>
                 <span id="qbank-status" style="color: #666; font-size: 13px;"></span>
             </div>
@@ -776,7 +784,7 @@
         // 
         // @param {string} source - 题目来源，可选值：
         //   - 'questions.json'：临床指南生成的题目
-        //   - 'qbank_questions.json'：Qbank PDF 解析的题目
+        //   - 'qbank_combined.json'：合并的题库（Surgery + Amboss）
         //   - 'all'：合并所有题库
         //
         // 加载流程：
@@ -797,23 +805,50 @@
                 let questions = [];
                 
                 if (source === 'all') {
-                    // 加载所有题库
-                    const [clinical, qbank] = await Promise.all([
-                        fetch('questions.json').then(r => r.json()).catch(() => []),
-                        fetch('qbank_questions.json').then(r => r.json()).catch(() => [])
+                    // 加载所有题库（包括合并后的文件）
+                    // 添加时间戳参数强制浏览器重新加载（避免缓存问题）
+                    const timestamp = new Date().getTime();
+                    const [clinical, combined] = await Promise.all([
+                        fetch(`questions.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
+                        fetch(`qbank_combined.json?t=${timestamp}`).then(r => r.json()).catch(() => [])
                     ]);
-                    questions = [...clinical, ...qbank];
-                    if (statusEl) statusEl.textContent = `已加载全部 ${questions.length} 题`;
+                    // 合并所有题目，去重（基于question文本）
+                    const allQuestions = [...clinical, ...combined];
+                    const seen = new Set();
+                    questions = allQuestions.filter(q => {
+                        const key = q.question?.substring(0, 100) || JSON.stringify(q);
+                        if (seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    });
+                    if (statusEl) statusEl.textContent = `已加载全部 ${questions.length} 题（去重后）`;
                 } else {
-                    const response = await fetch(source);
+                    // 添加时间戳参数强制浏览器重新加载（避免缓存问题）
+                    const timestamp = new Date().getTime();
+                    const url = source.includes('?') ? `${source}&t=${timestamp}` : `${source}?t=${timestamp}`;
+                    const response = await fetch(url);
                     if (!response.ok) throw new Error('Failed to fetch');
                     questions = await response.json();
-                    if (statusEl) statusEl.textContent = `已加载 ${questions.length} 题`;
+                    if (statusEl) {
+                        const fileName = source.replace('.json', '');
+                        statusEl.textContent = `已加载 ${questions.length} 题 (${fileName})`;
+                    }
                 }
                 
                 allQuestions = questions;
                 currentGeneratedIndex = 0;
                 console.log(`✓ Loaded ${allQuestions.length} questions from ${source}`);
+                
+                // 调试：检查 Amboss 题目的 images 字段
+                if (source === 'qbank_combined.json' || source === 'all') {
+                    console.log('🔍 检查 Amboss 题目（前 25 题）的 images 字段:');
+                    for (let i = 0; i < Math.min(25, allQuestions.length); i++) {
+                        const q = allQuestions[i];
+                        if (q && (q.images || i === 7 || i === 16)) {
+                            console.log(`  题目 ${i + 1} (索引 ${i}): images=${q.images}, type=${typeof q.images}, isArray=${Array.isArray(q.images)}`);
+                        }
+                    }
+                }
                 
                 if (allQuestions.length > 0) {
                     loadQuestionByIndex(0);
@@ -943,7 +978,19 @@
             
             currentGeneratedIndex = index;
             selectedAnswer = null;
+            
+            // 清空消息列表（每次切换题目时刷新）
+            const conversationList = document.getElementById('conversation-list');
+            if (conversationList) {
+                conversationList.innerHTML = '';
+            }
+            
             const q = allQuestions[index];
+            // 调试信息：检查图片字段
+            if (q && q.images) {
+                console.log(`🔍 题目 ${index + 1} (索引 ${index}) 的图片字段:`, q.images);
+                console.log(`   类型: ${typeof q.images}, 是数组: ${Array.isArray(q.images)}, 长度: ${Array.isArray(q.images) ? q.images.length : 'N/A'}`);
+            }
             const converted = convertQuestionFormat(q, index);
             
             // 如果转换失败，跳到下一题
@@ -1337,6 +1384,29 @@
             let labData = labAndAfter.substring(0, labEndIndex);
             const afterLab = labAndAfter.substring(labEndIndex);
             
+            // 第一步：修复项目名和数字之间的换行问题
+            // 确保项目名后面有一个空格，然后接着数字，而不是换行
+            // 匹配模式：项目名（大写字母开头，可能包含空格、括号等）+ 换行符 + 数字
+            // 例如："Hemoglobin \n14.0" -> "Hemoglobin 14.0"
+            labData = labData
+                // 修复：项目名后换行，然后数字和单位（可能有空格）
+                // 匹配：项目名 + 换行符 + 数字 + 单位（可选）
+                .replace(/([A-Z][a-zA-Z\s\+\-\(\)]+?)\s*\n\s*(\d+\.?\d*)\s*([a-zA-Z\/\s\(\)=+\-°]*?)(?=\s*\n|$|,)/g, (match, name, value, unit) => {
+                    // 确保项目名和数字之间只有一个空格
+                    const cleanName = name.trim();
+                    const cleanValue = value.trim();
+                    const cleanUnit = unit.trim();
+                    return cleanUnit ? `${cleanName} ${cleanValue} ${cleanUnit}` : `${cleanName} ${cleanValue}`;
+                })
+                // 修复：项目名后换行，然后只有数字（没有单位）
+                .replace(/([A-Z][a-zA-Z\s\+\-\(\)]+?)\s*\n\s*(\d+\.?\d*)(?=\s*\n|$|,|[A-Z])/g, '$1 $2')
+                // 修复：多个连续换行符，保留一个
+                .replace(/\n\s*\n+/g, '\n\n')
+                // 确保项目名和数字之间只有一个空格（移除多余空格）
+                .replace(/([A-Z][a-zA-Z\s\+\-\(\)]+?)\s{2,}(\d+\.?\d*)/g, '$1 $2')
+                // 修复：项目名和数字之间没有空格的情况（直接连接）
+                .replace(/([A-Z][a-zA-Z\s\+\-\(\)]+?)(\d+\.?\d*)/g, '$1 $2');
+            
             // 改进实验数据格式化：
             // 1. 如果实验数据被合并成一行（没有换行符），尝试重新格式化
             // 2. 检测常见的实验数据格式（如 "Hemoglobin 14.0 g/dL"）
@@ -1379,30 +1449,58 @@
                 }
             } else {
                 // 已经有换行符，但可能需要改进对齐
-                // 尝试识别每行的格式并对齐
+                // 先修复项目名和数字之间的换行问题（合并到同一行）
                 const lines = labData.split('\n');
-                const formattedLines = lines.map(line => {
+                const mergedLines = [];
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) {
+                        mergedLines.push('');
+                        continue;
+                    }
+                    
+                    // 检查当前行是否是项目名（大写字母开头，不包含数字）
+                    const isItemName = /^[A-Z][a-zA-Z\s\+\-\(\)]+$/.test(line) && !/\d/.test(line);
+                    
+                    // 检查下一行是否是数字（可能带单位）
+                    if (isItemName && i + 1 < lines.length) {
+                        const nextLine = lines[i + 1].trim();
+                        const isValue = /^\d+\.?\d*\s*[a-zA-Z\/\s\(\)=+\-°]*$/.test(nextLine);
+                        
+                        if (isValue) {
+                            // 合并：项目名 + 空格 + 数字和单位
+                            mergedLines.push(`${line} ${nextLine}`);
+                            i++; // 跳过下一行，因为已经合并了
+                            continue;
+                        }
+                    }
+                    
+                    mergedLines.push(line);
+                }
+                
+                // 现在处理合并后的行，进行对齐格式化
+                const formattedLines = mergedLines.map(line => {
                     line = line.trim();
                     if (!line) return '';
                     
                     // 尝试匹配：项目名 + 数值 + 单位
-                    const match = line.match(/^([A-Z][a-zA-Z\s\+\-\(\)]+?)\s+(\d+\.?\d*)\s*([a-zA-Z\/\s\(\)=+\-°]+?)$/);
+                    const match = line.match(/^([A-Z][a-zA-Z\s\+\-\(\)]+?)\s+(\d+\.?\d*)\s*([a-zA-Z\/\s\(\)=+\-°]*?)$/);
                     if (match) {
                         const itemName = match[1].trim();
                         const value = match[2].trim();
                         const unit = match[3].trim();
                         // 对齐格式
                         const paddedName = itemName.padEnd(35, ' ');
-                        return `${paddedName}${value.padStart(8, ' ')} ${unit}`;
+                        return unit ? `${paddedName}${value.padStart(8, ' ')} ${unit}` : `${paddedName}${value.padStart(8, ' ')}`;
                     }
                     // 如果包含冒号（如 "Hemoglobin: 14.0 g/dL"），也尝试格式化
-                    const colonMatch = line.match(/^([A-Z][a-zA-Z\s\+\-\(\)]+?):\s*(\d+\.?\d*)\s*([a-zA-Z\/\s\(\)=+\-°]+?)$/);
+                    const colonMatch = line.match(/^([A-Z][a-zA-Z\s\+\-\(\)]+?):\s*(\d+\.?\d*)\s*([a-zA-Z\/\s\(\)=+\-°]*?)$/);
                     if (colonMatch) {
                         const itemName = colonMatch[1].trim() + ':';
                         const value = colonMatch[2].trim();
                         const unit = colonMatch[3].trim();
                         const paddedName = itemName.padEnd(35, ' ');
-                        return `${paddedName}${value.padStart(8, ' ')} ${unit}`;
+                        return unit ? `${paddedName}${value.padStart(8, ' ')} ${unit}` : `${paddedName}${value.padStart(8, ' ')}`;
                     }
                     // 无法格式化，返回原行
                     return line;
@@ -1457,36 +1555,106 @@
             
             // 如果有图片，显示图片
             if (qa.images && qa.images.length > 0) {
+                console.log('🖼️ Loading images for question:', qa.images);
+                console.log('🖼️ Images type:', typeof qa.images, Array.isArray(qa.images));
+                console.log('🖼️ Images length:', qa.images.length);
+                console.log('🖼️ Question text element:', questionTextEl);
                 // 创建图片容器
                 let imagesContainer = document.getElementById('question-images');
                 if (!imagesContainer) {
+                    console.log('🖼️ Creating new images container');
                     imagesContainer = document.createElement('div');
                     imagesContainer.id = 'question-images';
                     imagesContainer.className = 'question-images';
-                    // 插入到题目文本后面
-                    questionTextEl.parentNode.insertBefore(imagesContainer, questionTextEl.nextSibling);
+                    imagesContainer.style.margin = '15px 0';
+                    imagesContainer.style.display = 'block';
+                    // 插入到题目文本后面（在 choices-container 之前）
+                    const choicesContainer = document.querySelector('.choices-container');
+                    if (choicesContainer && choicesContainer.parentNode) {
+                        console.log('🖼️ Inserting before choices-container');
+                        choicesContainer.parentNode.insertBefore(imagesContainer, choicesContainer);
+                    } else {
+                        // 备用方案：插入到题目文本后面
+                        console.log('🖼️ Inserting after question-text (fallback)');
+                        questionTextEl.parentNode.insertBefore(imagesContainer, questionTextEl.nextSibling);
+                    }
+                } else {
+                    console.log('🖼️ Using existing images container');
                 }
                 
                 // 清空之前的图片
                 imagesContainer.innerHTML = '';
+                // 确保容器可见
+                imagesContainer.style.display = 'block';
+                imagesContainer.style.visibility = 'visible';
+                imagesContainer.style.opacity = '1';
+                imagesContainer.style.minHeight = '50px'; // 确保有最小高度
+                imagesContainer.style.width = '100%';
+                imagesContainer.style.position = 'relative';
+                imagesContainer.style.zIndex = '10';
+                console.log(`📦 Images container prepared. Display: ${imagesContainer.style.display}`);
+                console.log(`📦 Container parent:`, imagesContainer.parentNode);
+                console.log(`📦 Container next sibling:`, imagesContainer.nextSibling);
+                console.log(`📦 Container previous sibling:`, imagesContainer.previousSibling);
                 
                 // 添加每张图片
                 qa.images.forEach((imagePath, index) => {
+                    console.log(`🖼️ Processing image ${index + 1}:`, imagePath, typeof imagePath);
                     const img = document.createElement('img');
-                    img.src = imagePath;
+                    // 统一路径格式：将反斜杠转换为正斜杠（Web 路径使用正斜杠）
+                    let normalizedPath = imagePath.replace(/\\/g, '/');
+                    console.log(`🖼️ Normalized path: ${normalizedPath}`);
+                    // URL 编码路径（处理空格和特殊字符）
+                    // 只编码路径部分，不编码斜杠
+                    const pathParts = normalizedPath.split('/');
+                    const encodedParts = pathParts.map(part => encodeURIComponent(part));
+                    const encodedPath = encodedParts.join('/');
+                    
+                    console.log(`🖼️ Loading image ${index + 1}: ${normalizedPath} -> ${encodedPath}`);
+                    
+                    // 先尝试原始路径，如果失败再尝试编码路径
+                    img.src = encodedPath;
                     img.alt = `Question image ${index + 1}`;
                     img.className = 'question-image';
                     img.title = '点击放大查看';
+                    img.onload = function() {
+                        console.log(`✅ Image loaded successfully: ${encodedPath}`);
+                        console.log(`   Image dimensions: ${this.naturalWidth}x${this.naturalHeight}`);
+                        console.log(`   Image display style: ${window.getComputedStyle(this).display}`);
+                        console.log(`   Image visibility: ${window.getComputedStyle(this).visibility}`);
+                        console.log(`   Image container:`, imagesContainer);
+                        console.log(`   Image container display: ${window.getComputedStyle(imagesContainer).display}`);
+                        console.log(`   Image in DOM:`, document.body.contains(this));
+                    };
                     img.onerror = function() {
-                        // 如果图片加载失败，隐藏该图片
-                        this.style.display = 'none';
-                        console.warn(`Failed to load image: ${imagePath}`);
+                        // 如果编码路径失败，尝试原始路径
+                        if (img.src !== normalizedPath) {
+                            console.warn(`Encoded path failed, trying original: ${normalizedPath}`);
+                            img.src = normalizedPath;
+                        } else {
+                            // 如果原始路径也失败，显示错误信息
+                            console.error(`Failed to load image: ${normalizedPath}`);
+                            this.style.display = 'none';
+                            // 显示错误提示
+                            const errorDiv = document.createElement('div');
+                            errorDiv.style.color = '#e74c3c';
+                            errorDiv.style.padding = '10px';
+                            errorDiv.textContent = `图片加载失败: ${normalizedPath}`;
+                            imagesContainer.appendChild(errorDiv);
+                        }
                     };
                     // 点击图片放大显示
                     img.onclick = function() {
-                        showImageModal(imagePath);
+                        showImageModal(encodedPath);
                     };
+                    
+                    // 确保图片可见
+                    img.style.display = 'block';
+                    img.style.visibility = 'visible';
+                    img.style.opacity = '1';
+                    
                     imagesContainer.appendChild(img);
+                    console.log(`📸 Image element added to container. Container children: ${imagesContainer.children.length}`);
                 });
             } else {
                 // 如果没有图片，移除图片容器（如果存在）
@@ -1710,9 +1878,17 @@
                 renderFeedback(currentData);
                 
                 // Show source
-                if (currentQuestionMeta.source) {
-                    const feedbackContainer = document.getElementById('feedback-container');
-                    feedbackContainer.innerHTML += `<div style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 4px; font-size: 13px; color: #666;">📄 Source: ${currentQuestionMeta.source}</div>`;
+                const feedbackContainer = document.getElementById('feedback-container');
+                if (feedbackContainer && currentQuestionMeta.source) {
+                    const sourceDiv = document.createElement('div');
+                    sourceDiv.style.cssText = 'margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 4px; font-size: 13px; color: #666;';
+                    sourceDiv.textContent = `📄 Source: ${currentQuestionMeta.source}`;
+                    feedbackContainer.appendChild(sourceDiv);
+                }
+                
+                // Display chunks after answer submission
+                if (feedbackContainer) {
+                    displayChunksAfterAnswer();
                 }
                 return;
             }
@@ -1734,7 +1910,8 @@
             try {
                 const caseText = dataBeforeSubmit.QA.question;
                 const prompt = `Create ${count} multiple-choice questions (MCQ) based strictly on this case. Return ONLY JSON array with fields: serial (number), question (string), options (array of 4), correct (string). No prose.\nCase:\n"""${caseText}"""`;
-                const reply = await callOpenAIDirect(prompt);
+                const result = await callOpenAIDirect(prompt);
+                const reply = (result && typeof result === 'object' && result.response) ? result.response : result;
                 const list = tryExtractJsonArray(reply) || [];
                 if (Array.isArray(list) && list.length) {
                     generatedQuestions = list;
@@ -1843,12 +2020,19 @@
             const loadingId = addMessageToConversation('assistant', 'Thinking...', true);
 
             try {
-                // Call OpenAI API
-                const response = await callOpenAIDirect(message);
+                // Call OpenAI API and get response with chunks info
+                const result = await callOpenAIDirect(message);
+                const response = result.response || result;
+                const chunksInfo = result.chunks || null;
                 
                 // Remove loading message and add real response
                 removeMessageFromConversation(loadingId);
                 addMessageToConversation('assistant', response);
+                
+                // Display chunks in UI if available
+                if (chunksInfo) {
+                    displayChunksInUI(chunksInfo);
+                }
             } catch (error) {
                 console.error('ChatGPT Error:', error);
                 removeMessageFromConversation(loadingId);
@@ -1867,7 +2051,13 @@
             const messageId = 'msg-' + Date.now() + '-' + Math.random();
             messageDiv.id = messageId;
             messageDiv.className = 'message ' + role;
-            messageDiv.textContent = content;
+            
+            // Support both plain text and HTML content
+            if (typeof content === 'string' && content.includes('<')) {
+                messageDiv.innerHTML = content;
+            } else {
+                messageDiv.textContent = content;
+            }
             
             if (isLoading) {
                 messageDiv.style.opacity = '0.6';
@@ -1878,6 +2068,154 @@
             conversationList.scrollTop = conversationList.scrollHeight;
             
             return messageId;
+        }
+        
+        /**
+         * Display chunks after answer submission
+         * Retrieves and displays the original chunk and 5 retrieved chunks
+         */
+        async function displayChunksAfterAnswer() {
+            if (!currentQuestionMeta) return;
+            
+            const feedbackContainer = document.getElementById('feedback-container');
+            if (!feedbackContainer) return;
+            
+            // Create chunks container
+            const chunksContainer = document.createElement('div');
+            chunksContainer.className = 'chunks-display';
+            chunksContainer.style.cssText = 'margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #4CAF50;';
+            
+            const title = document.createElement('div');
+            title.style.cssText = 'font-weight: bold; font-size: 14px; color: #333; margin-bottom: 12px;';
+            title.textContent = '📚 Source Chunks for This Question:';
+            chunksContainer.appendChild(title);
+            
+            let chunkCount = 0;
+            
+            // Display original chunk (Chunk 0) if available
+            if (currentQuestionMeta.sourceChunk) {
+                const chunkDiv = createChunkDisplay({
+                    text: currentQuestionMeta.sourceChunk,
+                    source: currentQuestionMeta.source || 'Unknown PDF',
+                    page: currentQuestionMeta.sourcePage || 'N/A',
+                    type: 'Original Question Source'
+                }, 0, 'Original Question Source');
+                chunksContainer.appendChild(chunkDiv);
+                chunkCount++;
+            }
+            
+            // Retrieve additional chunks using the question text
+            try {
+                const questionText = currentData?.QA?.question || '';
+                if (questionText) {
+                    let retrievedChunks = [];
+                    try {
+                        retrievedChunks = await retrieveRelevantChunksAsync(questionText, 5);
+                    } catch (e) {
+                        console.log('RAG retrieval failed, using fallback');
+                        retrievedChunks = retrieveRelevantChunksKeyword(questionText, 5);
+                    }
+                    
+                    if (retrievedChunks.length > 0) {
+                        retrievedChunks.forEach((chunk) => {
+                            const chunkDiv = createChunkDisplay({
+                                text: chunk.text,
+                                source: chunk.source || 'Unknown PDF',
+                                page: chunk.page !== undefined ? chunk.page : 'N/A',
+                                score: chunk.score ? chunk.score.toFixed(3) : 'N/A',
+                                type: 'Retrieved'
+                            }, chunkCount + 1, 'Retrieved');
+                            chunksContainer.appendChild(chunkDiv);
+                            chunkCount++;
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error retrieving chunks:', error);
+            }
+            
+            if (chunkCount > 0) {
+                feedbackContainer.appendChild(chunksContainer);
+            }
+        }
+        
+        /**
+         * Display RAG chunks in the UI (for ChatGPT conversation)
+         * Shows the original question chunk and retrieved chunks
+         */
+        function displayChunksInUI(chunksInfo) {
+            const conversationList = document.getElementById('conversation-list');
+            
+            // Create chunks container
+            const chunksContainer = document.createElement('div');
+            chunksContainer.className = 'chunks-display';
+            chunksContainer.style.cssText = 'margin-top: 15px; padding: 15px; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #4CAF50;';
+            
+            const title = document.createElement('div');
+            title.style.cssText = 'font-weight: bold; font-size: 14px; color: #333; margin-bottom: 12px;';
+            title.textContent = '📚 Source Chunks Used for This Response:';
+            chunksContainer.appendChild(title);
+            
+            let chunkCount = 0;
+            
+            // Display original chunk (Chunk 0)
+            if (chunksInfo.originalChunk) {
+                const chunkDiv = createChunkDisplay(chunksInfo.originalChunk, 0, 'Original Question Source');
+                chunksContainer.appendChild(chunkDiv);
+                chunkCount++;
+            }
+            
+            // Display retrieved chunks (Chunk 1-5)
+            if (chunksInfo.retrievedChunks && chunksInfo.retrievedChunks.length > 0) {
+                chunksInfo.retrievedChunks.forEach((chunk) => {
+                    const chunkDiv = createChunkDisplay(chunk, chunk.index || chunkCount, 'Retrieved');
+                    chunksContainer.appendChild(chunkDiv);
+                    chunkCount++;
+                });
+            }
+            
+            if (chunkCount > 0) {
+                conversationList.appendChild(chunksContainer);
+                conversationList.scrollTop = conversationList.scrollHeight;
+            }
+        }
+        
+        /**
+         * Create a display element for a single chunk
+         */
+        function createChunkDisplay(chunk, index, type) {
+            const chunkDiv = document.createElement('div');
+            chunkDiv.style.cssText = 'margin-bottom: 12px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd;';
+            
+            // Chunk header
+            const header = document.createElement('div');
+            header.style.cssText = 'font-weight: bold; color: #2196F3; margin-bottom: 8px; font-size: 13px;';
+            header.textContent = `📄 Chunk ${index}: ${chunk.source} (Page ${chunk.page})`;
+            // Score display removed per user request
+            chunkDiv.appendChild(header);
+            
+            // Chunk type badge
+            const typeBadge = document.createElement('span');
+            typeBadge.style.cssText = 'display: inline-block; padding: 2px 8px; background: ' + 
+                (type === 'Original Question Source' ? '#4CAF50' : '#FF9800') + 
+                '; color: white; border-radius: 12px; font-size: 11px; margin-left: 8px;';
+            typeBadge.textContent = type === 'Original Question Source' ? 'Original' : 'Retrieved';
+            header.appendChild(typeBadge);
+            
+            // Chunk content preview
+            const contentDiv = document.createElement('div');
+            contentDiv.style.cssText = 'color: #555; font-size: 12px; line-height: 1.5; margin-top: 6px; max-height: 100px; overflow: hidden; text-overflow: ellipsis;';
+            const previewText = chunk.text.length > 300 ? chunk.text.substring(0, 300) + '...' : chunk.text;
+            contentDiv.textContent = previewText;
+            chunkDiv.appendChild(contentDiv);
+            
+            // Citation format
+            const citationDiv = document.createElement('div');
+            citationDiv.style.cssText = 'margin-top: 6px; font-size: 11px; color: #666; font-style: italic;';
+            citationDiv.textContent = `Citation: [Source: ${chunk.source}, Page ${chunk.page}]`;
+            chunkDiv.appendChild(citationDiv);
+            
+            return chunkDiv;
         }
 
         function removeMessageFromConversation(messageId) {
@@ -1934,7 +2272,8 @@
             const prompt = `Create 5 multiple-choice questions (MCQ) based strictly on this case. Return ONLY JSON array with fields: serial (number), question (string), options (array of 4), correct (string), answer (string). No prose.\nCase:\n"""${caseText}"""`;
             const genId = addMessageToConversation('assistant', 'Generating 5 questions...', true);
             try {
-                const reply = await callOpenAIDirect(prompt);
+                const result = await callOpenAIDirect(prompt);
+                const reply = (result && typeof result === 'object' && result.response) ? result.response : result;
                 removeMessageFromConversation(genId);
                 const data = tryExtractJsonArray(reply);
                 if (Array.isArray(data) && data.length) {
@@ -2191,7 +2530,7 @@ Your response MUST follow this structure:
                     ragContext += `\n#### 📄 CHUNK ${idx + 1}:\n`;
                     ragContext += `**Source PDF:** ${sourcePdf}\n`;
                     ragContext += `**Page Number:** ${sourcePage}\n`;
-                    ragContext += `**Relevance Score:** ${score}\n`;
+                    // Relevance Score removed from display per user request
                     ragContext += `**MANDATORY Citation Format:** **[Source: ${sourcePdf}, Page ${sourcePage}]**\n`;
                     ragContext += `**Example:** "The guidelines **[Source: ${sourcePdf}, Page ${sourcePage}]** state that..."\n`;
                     ragContext += '**Content:**\n```\n' + chunk.text.substring(0, 1000) + (chunk.text.length > 1000 ? '...' : '') + '\n```\n';
@@ -2356,7 +2695,34 @@ Your response MUST follow this structure:
             messageChatHistory.push({ role: 'user', content: message });
             messageChatHistory.push({ role: 'assistant', content: finalResponse });
             
-            return finalResponse;
+            // Return response with chunks info for UI display (only when chunks were retrieved)
+            // Check if this is a conversation message (has retrieved chunks or original chunk)
+            const hasChunks = (currentQuestionMeta?.sourceChunk || retrievedChunks.length > 0);
+            
+            if (hasChunks) {
+                return {
+                    response: finalResponse,
+                    chunks: {
+                        originalChunk: currentQuestionMeta?.sourceChunk ? {
+                            text: currentQuestionMeta.sourceChunk,
+                            source: currentQuestionMeta.source || 'Unknown PDF',
+                            page: currentQuestionMeta.sourcePage || 'N/A',
+                            type: 'Original Question Source'
+                        } : null,
+                        retrievedChunks: retrievedChunks.map((chunk, idx) => ({
+                            text: chunk.text,
+                            source: chunk.source || 'Unknown PDF',
+                            page: chunk.page !== undefined ? chunk.page : 'N/A',
+                            score: chunk.score ? chunk.score.toFixed(3) : 'N/A',
+                            type: 'Retrieved',
+                            index: idx + 1
+                        }))
+                    }
+                };
+            } else {
+                // For non-conversation calls (like question generation), return string directly
+                return finalResponse;
+            }
         }
 
         // ============================================================
@@ -2452,6 +2818,50 @@ Your response MUST follow this structure:
                 modal.classList.remove('active');
             }
         }
+        
+        // ============================================================
+        // 测试函数：直接在控制台测试 Amboss 题目
+        // ============================================================
+        // 在浏览器控制台运行: testAmbossImages()
+        window.testAmbossImages = function() {
+            console.log('🧪 测试 Amboss 题目的图片加载...');
+            console.log(`总题目数: ${allQuestions.length}`);
+            
+            // 详细检查前 25 题
+            console.log('\n🔍 详细检查前 25 题（Amboss）:');
+            for (let i = 0; i < Math.min(25, allQuestions.length); i++) {
+                const q = allQuestions[i];
+                if (q) {
+                    const hasImages = q.images && Array.isArray(q.images) && q.images.length > 0;
+                    if (hasImages || i === 7 || i === 16) {
+                        console.log(`\n题目 ${i + 1} (索引 ${i}):`);
+                        console.log(`  所有字段: ${Object.keys(q)}`);
+                        console.log(`  images 字段存在: ${'images' in q}`);
+                        console.log(`  images 值: ${q.images}`);
+                        console.log(`  images 类型: ${typeof q.images}`);
+                        console.log(`  images 是数组: ${Array.isArray(q.images)}`);
+                        console.log(`  source: ${q.source}`);
+                        
+                        if (hasImages) {
+                            console.log(`\n✅ 找到 Amboss 题目 ${i + 1} (索引 ${i}) 有图片:`);
+                            console.log(`   图片路径: ${q.images}`);
+                            console.log(`   题目开头: ${q.question.substring(0, 50)}...`);
+                            
+                            // 直接加载这个题目
+                            console.log(`\n🔄 正在加载题目 ${i + 1}...`);
+                            loadQuestionByIndex(i);
+                            return;
+                        }
+                    }
+                }
+            }
+            console.log('\n❌ 前 25 题中没有找到有图片的题目');
+            console.log('💡 提示：可能是浏览器缓存了旧版本的 JSON 文件');
+            console.log('   请尝试：');
+            console.log('   1. 按 Ctrl+Shift+R 强制刷新');
+            console.log('   2. 清除浏览器缓存');
+            console.log('   3. 在 Network 标签中检查实际加载的 JSON 内容');
+        };
 
         // ============================================================
         // 初始化完成

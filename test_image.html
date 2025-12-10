@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片路径测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-image {
+            max-width: 100%;
+            border: 2px solid #333;
+            margin: 20px 0;
+        }
+        .info {
+            background: #f0f0f0;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>图片路径测试</h1>
+    
+    <div class="info">
+        <h3>测试图片路径：</h3>
+        <ul>
+            <li>原始路径: <code>images/Amboss Questions/page_8_img_1.png</code></li>
+            <li>编码路径: <code>images/Amboss%20Questions/page_8_img_1.png</code></li>
+        </ul>
+    </div>
+
+    <h2>测试 1: 原始路径（带空格）</h2>
+    <div id="test1-result" class="info">加载中...</div>
+    <img id="test1-img" class="test-image" 
+         src="images/Amboss Questions/page_8_img_1.png" 
+         alt="测试图片 1"
+         onload="document.getElementById('test1-result').innerHTML = '<div class=\'success\'>✓ 图片加载成功！</div>';"
+         onerror="document.getElementById('test1-result').innerHTML = '<div class=\'error\'>✗ 图片加载失败！请检查路径和文件是否存在。</div>';">
+
+    <h2>测试 2: URL 编码路径</h2>
+    <div id="test2-result" class="info">加载中...</div>
+    <img id="test2-img" class="test-image" 
+         src="images/Amboss%20Questions/page_8_img_1.png" 
+         alt="测试图片 2"
+         onload="document.getElementById('test2-result').innerHTML = '<div class=\'success\'>✓ 图片加载成功！</div>';"
+         onerror="document.getElementById('test2-result').innerHTML = '<div class=\'error\'>✗ 图片加载失败！请检查路径和文件是否存在。</div>';">
+
+    <h2>测试 3: 第二张图片</h2>
+    <div id="test3-result" class="info">加载中...</div>
+    <img id="test3-img" class="test-image" 
+         src="images/Amboss%20Questions/page_19_img_1.png" 
+         alt="测试图片 3"
+         onload="document.getElementById('test3-result').innerHTML = '<div class=\'success\'>✓ 图片加载成功！</div>';"
+         onerror="document.getElementById('test3-result').innerHTML = '<div class=\'error\'>✗ 图片加载失败！请检查路径和文件是否存在。</div>';">
+
+    <div class="info" style="margin-top: 30px;">
+        <h3>如何查看控制台：</h3>
+        <ol>
+            <li>按 <strong>F12</strong> 键打开开发者工具</li>
+            <li>点击 <strong>Console</strong> 标签</li>
+            <li>查看是否有错误信息</li>
+            <li>也可以点击 <strong>Network</strong> 标签，查看图片请求的状态</li>
+        </ol>
+    </div>
+
+    <script>
+        console.log('=== 图片路径测试页面 ===');
+        console.log('测试图片 1 路径:', document.getElementById('test1-img').src);
+        console.log('测试图片 2 路径:', document.getElementById('test2-img').src);
+        console.log('测试图片 3 路径:', document.getElementById('test3-img').src);
+    </script>
+</body>
+</html>
+
