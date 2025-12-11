@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+Question Evaluator - Human Evaluation of Medical Question Quality
+================================================================================
+
+Features:
+    1. Load question JSON files (e.g., qbank_amboss_openai.json)
+    2. Display questions, options, correct answers, and explanations
+    3. Provide rating form (1-4 points, 5 dimensions):
+       - Question Clarity
+       - Option Quality
+       - Explanation Quality
+       - Medical Accuracy
+       - Overall Quality
+    4. Allow input of evaluation rationale
+    5. Navigate through all questions (Previous/Next)
+    6. Display evaluation progress
+    7. Save evaluation results to JSON file
+    8. Load existing evaluation results
+
+Usage:
+    1. Start the evaluator server (port 8001, to avoid conflict with main UI):
+       python start_evaluator.py
+       
+       Or specify a port:
+       python start_evaluator.py --port 8001
+    
+    2. Open browser and visit:
+       http://localhost:8001/question_evaluator.html
+    
+    3. Select a question file (e.g., qbank_amboss_openai.json)
+    4. Start evaluating questions
+    
+    Note: This server uses port 8001 and will not conflict with the main UI (port 8000)
+
+Author: AI for Education
+================================================================================
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Evaluator - Human Evaluation</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .file-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .file-selector select {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .file-selector button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .file-selector button:hover {
+            background: #5568d3;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 30px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .nav-button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .nav-button:hover:not(:disabled) {
+            background: #5568d3;
+        }
+
+        .nav-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .question-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .question-text {
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            padding: 20px;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 20px;
+            white-space: pre-line;
+        }
+
+        .question-images {
+            margin: 15px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 2px dashed #4caf50;
+            border-radius: 8px;
+        }
+
+        .question-image {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #2196F3;
+            border-radius: 4px;
+            padding: 5px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+
+        .options-container {
+            margin: 20px 0;
+        }
+
+        .option-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+
+        .option-item.correct {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .option-label {
+            font-weight: 600;
+            color: #667eea;
+            margin-right: 8px;
+        }
+
+        .explanation-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .explanation-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border-left: 3px solid #667eea;
+        }
+
+        .explanation-item.correct {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        .evaluation-form {
+            margin-top: 30px;
+        }
+
+        .rating-group {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .rating-label {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .rating-description {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .rating-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .rating-option {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .rating-option:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .rating-option.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .rating-option input[type="radio"] {
+            display: none;
+        }
+
+        .evaluation-textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            margin-top: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .save-btn {
+            flex: 1;
+            padding: 15px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .save-btn:hover {
+            background: #45a049;
+        }
+
+        .export-btn {
+            flex: 1;
+            padding: 15px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .export-btn:hover {
+            background: #1976D2;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+            display: block;
+        }
+
+        .status-message.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+            display: block;
+        }
+
+        .evaluation-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .summary-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .rating-options {
+                flex-direction: column;
+            }
+
+            .rating-option {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Question Quality Evaluation System</h1>
+            <p>Human evaluation of medical questions - Multi-dimensional rating system</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">File Selection</div>
+            <div class="file-selector">
+                <select id="file-selector">
+                    <option value="">-- Select Question File --</option>
+                    <option value="qbank_amboss_openai.json">Amboss Questions (qbank_amboss_openai.json)</option>
+                    <option value="qbank_combined.json">Combined Questions (qbank_combined.json)</option>
+                    <option value="questions.json">Generated Questions (questions.json)</option>
+                </select>
+                <button onclick="loadQuestions()">Load Questions</button>
+                <button onclick="loadEvaluations()" style="background: #ff9800;">Load Evaluations</button>
+            </div>
+            <div id="status-message" class="status-message"></div>
+        </div>
+
+        <div class="section" id="progress-section" style="display: none;">
+            <div class="section-title">Evaluation Progress</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%;">0%</div>
+            </div>
+            <div class="evaluation-summary" id="evaluation-summary"></div>
+        </div>
+
+        <div class="section" id="question-section" style="display: none;">
+            <div class="navigation">
+                <button class="nav-button" id="prev-btn" onclick="previousQuestion()">← Previous</button>
+                <div class="question-info">
+                    <span id="question-number">Question 1 / 1</span>
+                </div>
+                <button class="nav-button" id="next-btn" onclick="nextQuestion()">Next →</button>
+            </div>
+
+            <div class="section-title">Question Content</div>
+            <div class="question-text" id="question-text"></div>
+            <div class="question-images" id="question-images"></div>
+
+            <div class="options-container">
+                <div class="section-title">Options</div>
+                <div id="options-list"></div>
+            </div>
+
+            <div class="explanation-section">
+                <div class="section-title">Explanations</div>
+                <div id="explanations-list"></div>
+            </div>
+
+            <div class="evaluation-form">
+                <div class="section-title">Evaluation Rating (1-4 points)</div>
+                
+                <div class="rating-group">
+                    <label class="rating-label">1. Question Clarity</label>
+                    <div class="rating-description">
+                        1 point: Question is vague, difficult to understand, or contains ambiguity<br>
+                        2 points: Question is mostly clear but has some unclear aspects<br>
+                        3 points: Question is clear and easy to understand<br>
+                        4 points: Question is very clear, precise, and perfectly worded
+                    </div>
+                    <div class="rating-options">
+                        <label class="rating-option" onclick="selectRating('question_clarity', 1)">
+                            <input type="radio" name="question_clarity" value="1">1
+                        </label>
+                        <label class="rating-option" onclick="selectRating('question_clarity', 2)">
+                            <input type="radio" name="question_clarity" value="2">2
+                        </label>
+                        <label class="rating-option" onclick="selectRating('question_clarity', 3)">
+                            <input type="radio" name="question_clarity" value="3">3
+                        </label>
+                        <label class="rating-option" onclick="selectRating('question_clarity', 4)">
+                            <input type="radio" name="question_clarity" value="4">4
+                        </label>
+                    </div>
+                </div>
+
+                <div class="rating-group">
+                    <label class="rating-label">2. Option Quality</label>
+                    <div class="rating-description">
+                        1 point: Options are clearly unreasonable, or distractors are too obvious<br>
+                        2 points: Some options are reasonable, but distractor quality is average<br>
+                        3 points: Options are mostly reasonable, distractors have some effectiveness<br>
+                        4 points: All options are reasonable, distractors are highly effective
+                    </div>
+                    <div class="rating-options">
+                        <label class="rating-option" onclick="selectRating('option_quality', 1)">
+                            <input type="radio" name="option_quality" value="1">1
+                        </label>
+                        <label class="rating-option" onclick="selectRating('option_quality', 2)">
+                            <input type="radio" name="option_quality" value="2">2
+                        </label>
+                        <label class="rating-option" onclick="selectRating('option_quality', 3)">
+                            <input type="radio" name="option_quality" value="3">3
+                        </label>
+                        <label class="rating-option" onclick="selectRating('option_quality', 4)">
+                            <input type="radio" name="option_quality" value="4">4
+                        </label>
+                    </div>
+                </div>
+
+                <div class="rating-group">
+                    <label class="rating-label">3. Explanation Quality</label>
+                    <div class="rating-description">
+                        1 point: Explanation is insufficient or missing<br>
+                        2 points: Explanation is mostly adequate but not detailed enough<br>
+                        3 points: Explanation is adequate and provides reasonable justification<br>
+                        4 points: Explanation is very thorough, detailed, and helpful for understanding
+                    </div>
+                    <div class="rating-options">
+                        <label class="rating-option" onclick="selectRating('explanation_quality', 1)">
+                            <input type="radio" name="explanation_quality" value="1">1
+                        </label>
+                        <label class="rating-option" onclick="selectRating('explanation_quality', 2)">
+                            <input type="radio" name="explanation_quality" value="2">2
+                        </label>
+                        <label class="rating-option" onclick="selectRating('explanation_quality', 3)">
+                            <input type="radio" name="explanation_quality" value="3">3
+                        </label>
+                        <label class="rating-option" onclick="selectRating('explanation_quality', 4)">
+                            <input type="radio" name="explanation_quality" value="4">4
+                        </label>
+                    </div>
+                </div>
+
+                <div class="rating-group">
+                    <label class="rating-label">4. Medical Accuracy</label>
+                    <div class="rating-description">
+                        1 point: Contains obvious medical errors<br>
+                        2 points: Mostly accurate but may have minor inaccuracies<br>
+                        3 points: Medical content is accurate<br>
+                        4 points: Medical content is very accurate and aligns with current medical knowledge
+                    </div>
+                    <div class="rating-options">
+                        <label class="rating-option" onclick="selectRating('medical_accuracy', 1)">
+                            <input type="radio" name="medical_accuracy" value="1">1
+                        </label>
+                        <label class="rating-option" onclick="selectRating('medical_accuracy', 2)">
+                            <input type="radio" name="medical_accuracy" value="2">2
+                        </label>
+                        <label class="rating-option" onclick="selectRating('medical_accuracy', 3)">
+                            <input type="radio" name="medical_accuracy" value="3">3
+                        </label>
+                        <label class="rating-option" onclick="selectRating('medical_accuracy', 4)">
+                            <input type="radio" name="medical_accuracy" value="4">4
+                        </label>
+                    </div>
+                </div>
+
+                <div class="rating-group">
+                    <label class="rating-label">5. Overall Quality</label>
+                    <div class="rating-description">
+                        1 point: Question quality is poor, not suitable for teaching<br>
+                        2 points: Question quality is average, needs improvement<br>
+                        3 points: Question quality is good, suitable for teaching<br>
+                        4 points: Question quality is excellent, highly suitable for teaching
+                    </div>
+                    <div class="rating-options">
+                        <label class="rating-option" onclick="selectRating('overall_quality', 1)">
+                            <input type="radio" name="overall_quality" value="1">1
+                        </label>
+                        <label class="rating-option" onclick="selectRating('overall_quality', 2)">
+                            <input type="radio" name="overall_quality" value="2">2
+                        </label>
+                        <label class="rating-option" onclick="selectRating('overall_quality', 3)">
+                            <input type="radio" name="overall_quality" value="3">3
+                        </label>
+                        <label class="rating-option" onclick="selectRating('overall_quality', 4)">
+                            <input type="radio" name="overall_quality" value="4">4
+                        </label>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <label class="rating-label">Evaluation Rationale (Optional)</label>
+                    <textarea class="evaluation-textarea" id="evaluation-text" placeholder="Please describe your rating rationale in detail..."></textarea>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="save-btn" onclick="saveEvaluation()">💾 Save Current Evaluation</button>
+                    <button class="export-btn" onclick="exportEvaluations()">📥 Export Evaluation Results</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allQuestions = [];
+        let evaluations = {};
+        let currentIndex = 0;
+        let currentFileName = '';
+
+        // 加载问题
+        async function loadQuestions() {
+            const fileSelector = document.getElementById('file-selector');
+            const fileName = fileSelector.value;
+            
+            if (!fileName) {
+                showMessage('Please select a question file', 'error');
+                return;
+            }
+
+            currentFileName = fileName;
+            showMessage('Loading questions...', 'success');
+
+            try {
+                const response = await fetch(fileName);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                allQuestions = await response.json();
+                
+                // 初始化评估数据
+                evaluations = {};
+                allQuestions.forEach((q, index) => {
+                    evaluations[index] = {
+                        question_clarity: null,
+                        option_quality: null,
+                        explanation_quality: null,
+                        medical_accuracy: null,
+                        overall_quality: null,
+                        evaluation_text: ''
+                    };
+                });
+
+                showMessage(`Successfully loaded ${allQuestions.length} questions`, 'success');
+                document.getElementById('question-section').style.display = 'block';
+                document.getElementById('progress-section').style.display = 'block';
+                
+                currentIndex = 0;
+                loadQuestion(currentIndex);
+                updateProgress();
+            } catch (error) {
+                showMessage(`Loading failed: ${error.message}`, 'error');
+                console.error('Error loading questions:', error);
+            }
+        }
+
+        // 加载已有评估
+        async function loadEvaluations() {
+            const fileSelector = document.getElementById('file-selector');
+            const fileName = fileSelector.value;
+            
+            if (!fileName) {
+                showMessage('Please select a question file first', 'error');
+                return;
+            }
+
+            const evalFileName = fileName.replace('.json', '_human_evaluated.json');
+            
+            try {
+                const response = await fetch(evalFileName);
+                if (!response.ok) {
+                    throw new Error(`File not found: ${evalFileName}`);
+                }
+                const data = await response.json();
+                
+                if (data.evaluations) {
+                    evaluations = data.evaluations;
+                    showMessage(`Successfully loaded ${Object.keys(evaluations).length} evaluation results`, 'success');
+                    loadQuestion(currentIndex);
+                    updateProgress();
+                } else {
+                    throw new Error('Invalid evaluation data format');
+                }
+            } catch (error) {
+                showMessage(`Failed to load evaluations: ${error.message}`, 'error');
+                console.error('Error loading evaluations:', error);
+            }
+        }
+
+        // 加载单个问题
+        function loadQuestion(index) {
+            if (index < 0 || index >= allQuestions.length) {
+                return;
+            }
+
+            currentIndex = index;
+            const question = allQuestions[index];
+            const evaluation = evaluations[index] || {};
+
+            // 更新导航按钮
+            document.getElementById('prev-btn').disabled = index === 0;
+            document.getElementById('next-btn').disabled = index === allQuestions.length - 1;
+            document.getElementById('question-number').textContent = `题目 ${index + 1} / ${allQuestions.length}`;
+
+            // 显示问题
+            document.getElementById('question-text').textContent = question.question || '';
+
+            // 显示图片
+            const imagesContainer = document.getElementById('question-images');
+            imagesContainer.innerHTML = '';
+            if (question.images && question.images.length > 0) {
+                question.images.forEach(imgPath => {
+                    const img = document.createElement('img');
+                    img.src = imgPath;
+                    img.className = 'question-image';
+                    img.onclick = () => window.open(imgPath, '_blank');
+                    imagesContainer.appendChild(img);
+                });
+            }
+
+            // 显示选项
+            const optionsList = document.getElementById('options-list');
+            optionsList.innerHTML = '';
+            if (question.options) {
+                Object.entries(question.options).forEach(([key, value]) => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'option-item';
+                    if (key === question.correct_answer) {
+                        optionDiv.classList.add('correct');
+                    }
+                    optionDiv.innerHTML = `<span class="option-label">${key}:</span> ${value}`;
+                    optionsList.appendChild(optionDiv);
+                });
+            }
+
+            // 显示解释
+            const explanationsList = document.getElementById('explanations-list');
+            explanationsList.innerHTML = '';
+            if (question.explanations) {
+                Object.entries(question.explanations).forEach(([key, value]) => {
+                    if (value) {
+                        const expDiv = document.createElement('div');
+                        expDiv.className = 'explanation-item';
+                        if (key === question.correct_answer) {
+                            expDiv.classList.add('correct');
+                        }
+                        expDiv.innerHTML = `<strong>${key}:</strong> ${value}`;
+                        explanationsList.appendChild(expDiv);
+                    }
+                });
+            }
+
+            // 加载评估数据
+            loadEvaluationForm(evaluation);
+        }
+
+        // 加载评估表单
+        function loadEvaluationForm(evaluation) {
+            // 重置所有选项
+            document.querySelectorAll('.rating-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+
+            // 设置已保存的评分
+            ['question_clarity', 'option_quality', 'explanation_quality', 'medical_accuracy', 'overall_quality'].forEach(field => {
+                const value = evaluation[field];
+                if (value) {
+                    const radio = document.querySelector(`input[name="${field}"][value="${value}"]`);
+                    if (radio) {
+                        radio.checked = true;
+                        radio.closest('.rating-option').classList.add('selected');
+                    }
+                }
+            });
+
+            // 设置评估文本
+            document.getElementById('evaluation-text').value = evaluation.evaluation_text || '';
+        }
+
+        // 选择评分
+        function selectRating(field, value) {
+            const radio = document.querySelector(`input[name="${field}"][value="${value}"]`);
+            if (radio) {
+                // 移除同组其他选项的选中状态
+                document.querySelectorAll(`input[name="${field}"]`).forEach(r => {
+                    r.closest('.rating-option').classList.remove('selected');
+                });
+                
+                radio.checked = true;
+                radio.closest('.rating-option').classList.add('selected');
+                
+                // 自动保存
+                saveEvaluation();
+            }
+        }
+
+        // 保存评估
+        function saveEvaluation() {
+            const evaluation = {
+                question_clarity: getRadioValue('question_clarity'),
+                option_quality: getRadioValue('option_quality'),
+                explanation_quality: getRadioValue('explanation_quality'),
+                medical_accuracy: getRadioValue('medical_accuracy'),
+                overall_quality: getRadioValue('overall_quality'),
+                evaluation_text: document.getElementById('evaluation-text').value
+            };
+
+            evaluations[currentIndex] = evaluation;
+            
+            // 保存到 localStorage
+            localStorage.setItem(`evaluations_${currentFileName}`, JSON.stringify(evaluations));
+            
+            updateProgress();
+            showMessage('Evaluation saved', 'success');
+        }
+
+        // 获取单选按钮值
+        function getRadioValue(name) {
+            const radio = document.querySelector(`input[name="${name}"]:checked`);
+            return radio ? parseInt(radio.value) : null;
+        }
+
+        // 更新进度
+        function updateProgress() {
+            const total = allQuestions.length;
+            const evaluated = Object.values(evaluations).filter(e => 
+                e.question_clarity !== null || 
+                e.option_quality !== null || 
+                e.explanation_quality !== null || 
+                e.medical_accuracy !== null || 
+                e.overall_quality !== null
+            ).length;
+
+            const percentage = total > 0 ? Math.round((evaluated / total) * 100) : 0;
+            document.getElementById('progress-fill').style.width = `${percentage}%`;
+            document.getElementById('progress-fill').textContent = `${evaluated} / ${total} (${percentage}%)`;
+
+            // 更新统计信息
+            updateSummary();
+        }
+
+        // 更新统计信息
+        function updateSummary() {
+            const summary = {
+                question_clarity: [],
+                option_quality: [],
+                explanation_quality: [],
+                medical_accuracy: [],
+                overall_quality: []
+            };
+
+            Object.values(evaluations).forEach(eval => {
+                if (eval.question_clarity !== null) summary.question_clarity.push(eval.question_clarity);
+                if (eval.option_quality !== null) summary.option_quality.push(eval.option_quality);
+                if (eval.explanation_quality !== null) summary.explanation_quality.push(eval.explanation_quality);
+                if (eval.medical_accuracy !== null) summary.medical_accuracy.push(eval.medical_accuracy);
+                if (eval.overall_quality !== null) summary.overall_quality.push(eval.overall_quality);
+            });
+
+            const avg = (arr) => arr.length > 0 ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : '0.00';
+
+            const summaryHtml = `
+                <div class="summary-item">
+                    <div class="summary-label">Question Clarity</div>
+                    <div class="summary-value">${avg(summary.question_clarity)}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Option Quality</div>
+                    <div class="summary-value">${avg(summary.option_quality)}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Explanation Quality</div>
+                    <div class="summary-value">${avg(summary.explanation_quality)}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Medical Accuracy</div>
+                    <div class="summary-value">${avg(summary.medical_accuracy)}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Overall Quality</div>
+                    <div class="summary-value">${avg(summary.overall_quality)}</div>
+                </div>
+            `;
+
+            document.getElementById('evaluation-summary').innerHTML = summaryHtml;
+        }
+
+        // 上一题
+        function previousQuestion() {
+            if (currentIndex > 0) {
+                loadQuestion(currentIndex - 1);
+            }
+        }
+
+        // 下一题
+        function nextQuestion() {
+            if (currentIndex < allQuestions.length - 1) {
+                loadQuestion(currentIndex + 1);
+            }
+        }
+
+        // 导出评估结果
+        function exportEvaluations() {
+            const output = {
+                source_file: currentFileName,
+                total_questions: allQuestions.length,
+                evaluated_count: Object.values(evaluations).filter(e => 
+                    e.question_clarity !== null || 
+                    e.option_quality !== null || 
+                    e.explanation_quality !== null || 
+                    e.medical_accuracy !== null || 
+                    e.overall_quality !== null
+                ).length,
+                evaluations: evaluations,
+                questions: allQuestions.map((q, index) => ({
+                    ...q,
+                    human_evaluation: evaluations[index] || null
+                }))
+            };
+
+            const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentFileName.replace('.json', '_human_evaluated.json');
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showMessage('Evaluation results exported', 'success');
+        }
+
+        // 显示消息
+        function showMessage(message, type) {
+            const msgDiv = document.getElementById('status-message');
+            msgDiv.textContent = message;
+            msgDiv.className = `status-message ${type}`;
+            setTimeout(() => {
+                msgDiv.className = 'status-message';
+            }, 3000);
+        }
+
+        // 从 localStorage 加载评估
+        function loadFromLocalStorage() {
+            if (currentFileName) {
+                const saved = localStorage.getItem(`evaluations_${currentFileName}`);
+                if (saved) {
+                    try {
+                        evaluations = JSON.parse(saved);
+                        updateProgress();
+                    } catch (e) {
+                        console.error('Error loading from localStorage:', e);
+                    }
+                }
+            }
+        }
+
+        // 页面加载时尝试从 localStorage 恢复
+        window.addEventListener('load', () => {
+            // 监听文件选择变化
+            document.getElementById('file-selector').addEventListener('change', () => {
+                loadFromLocalStorage();
+            });
+        });
+    </script>
+</body>
+</html>
+
