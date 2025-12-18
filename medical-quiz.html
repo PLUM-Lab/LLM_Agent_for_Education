@@ -403,6 +403,40 @@ Author: AI for Education (Wenchao Qin)
             white-space: pre-line;  /* Preserve line breaks */
         }
 
+        /* ============================================================
+           Hint System Styles (Integrated into Message Area)
+           ============================================================ */
+        .hint-loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .hint-loading .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hint-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102,126,234,0.4) !important;
+        }
+        
+        .hint-action-btn:active {
+            transform: translateY(0);
+        }
+
         .explanation-container {
             margin: 20px 0;
             padding: 15px;
@@ -531,6 +565,7 @@ Author: AI for Education (Wenchao Qin)
                 <select id="qbank-selector" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #e0e0e0; font-size: 14px;">
                     <option value="questions.json">Clinical Guidelines (200 questions)</option>
                     <option value="qbank_combined.json">Combined Qbank (Surgery + Amboss)</option>
+                    <option value="generated_domain_questions.json">Generated Domain Questions (477 questions)</option>
                     <option value="all">All Questions (Merge All)</option>
                 </select>
                 <span id="qbank-status" style="color: #666; font-size: 13px;"></span>
@@ -593,7 +628,7 @@ Author: AI for Education (Wenchao Qin)
         </div>
 
         <!-- ============================================================
-             ChatGPT Conversation Area
+             ChatGPT Conversation Area (includes Socratic Hints)
              ============================================================
              Function: Chat with ChatGPT to get medical knowledge answers
              
@@ -731,45 +766,77 @@ Author: AI for Education (Wenchao Qin)
 
         // ====================================================================
         // Part 2: Global State Variables
+        // 第二部分：全局状态变量
         // ====================================================================
         // 
         // These variables are shared across the entire application to track 
         // quiz state and user interactions. They are initialized on page load 
         // and updated as users interact.
+        // 这些变量在整个应用程序中共享，用于跟踪测验状态和用户交互。
+        // 它们在页面加载时初始化，并在用户交互时更新。
         //
         // State Flow:
         //   Page Load → Initialize Variables → Load Questions → User Answers → Update State → Display Feedback
+        //   状态流程：页面加载 → 初始化变量 → 加载问题 → 用户回答 → 更新状态 → 显示反馈
         //
         // ====================================================================
         
         let currentData = null;           // Current question data being displayed (includes question, options, feedback, etc.)
+                                          // 当前显示的问题数据（包括问题、选项、反馈等）
         let selectedAnswer = null;        // Student's selected answer index (0=A, 1=B, 2=C, 3=D, 4=E)
+                                          // 学生选择的答案索引（0=A, 1=B, 2=C, 3=D, 4=E）
         let generatedQuestions = [];      // Legacy feature: ChatGPT dynamically generated questions array
+                                          // 遗留功能：ChatGPT动态生成的问题数组
         let currentGeneratedIndex = 0;    // Current question index in allQuestions array (0-based)
+                                          // 当前问题在allQuestions数组中的索引（从0开始）
         let currentQuestionMeta = null;   // Current question metadata object, contains:
+                                          // 当前问题的元数据对象，包含：
                                           //   - correctIndex: Correct answer index
+                                          //     正确答案索引
                                           //   - explanations: Array of explanations for each option
+                                          //     每个选项的解释数组
                                           //   - source: Question source PDF name
+                                          //     问题来源PDF名称
                                           //   - sourceChunk: Original text used to generate the question
+                                          //     用于生成问题的原始文本块
                                           //   - sourcePage: Page number of original text
+                                          //     原始文本的页码
         let allQuestions = [];            // All questions loaded from JSON file
+                                          // 从JSON文件加载的所有问题
         let openAIApiKey = '';            // OpenAI API key for calling ChatGPT
+                                          // 用于调用ChatGPT的OpenAI API密钥
         let messageChatHistory = [];      // ChatGPT conversation history for maintaining context coherence
+                                          // ChatGPT对话历史，用于保持上下文连贯性
                                           // Format: [{role: 'user', content: '...'}, {role: 'assistant', content: '...'}]
+                                          // 格式：[{role: 'user', content: '...'}, {role: 'assistant', content: '...'}]
+        
+        // Hint System State (Socratic Questioning)
+        // 提示系统状态（苏格拉底式提问）
+        let hintConversationHistory = []; // Track hint rounds for progressive guidance
+                                          // 跟踪提示轮次以进行渐进式引导
+        let currentHintRound = 0;         // Current hint round (for reference only, no hard limit)
+                                          // 当前提示轮次（仅用于参考，无硬性限制）
+                                          // 当前提示轮次（1-3，0表示尚未提供提示）
+        let hintSystemEnabled = true;     // Whether hint system is available (requires RAG server)
+                                          // 提示系统是否可用（需要RAG服务器）
 
         // ====================================================================
         // Part 3: Initialization
+        // 第三部分：初始化
         // ====================================================================
 
         // Initialize on page load
+        // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', async function() {
             setupEventListeners();
             setupQbankSelector();
             // Load questions from default source
+            // 从默认源加载问题
             await loadQuestionsFromFile('questions.json');
         });
 
         // Setup question bank selector
+        // 设置问题库选择器
         function setupQbankSelector() {
             const selector = document.getElementById('qbank-selector');
             if (selector) {
@@ -782,22 +849,35 @@ Author: AI for Education (Wenchao Qin)
 
         // ============================================================
         // Load Questions from Specified Source
+        // 从指定源加载问题
         // ============================================================
         // 
         // @param {string} source - Question source, optional values:
+        //   参数：问题源，可选值：
         //   - 'questions.json': Questions generated from clinical guidelines
+        //     从临床指南生成的问题
         //   - 'qbank_combined.json': Combined question bank (Surgery + Amboss)
+        //     合并的问题库（外科+Amboss）
         //   - 'all': Merge all question banks
+        //     合并所有问题库
         //
         // Loading Process:
+        //   加载过程：
         //   1. Determine loading strategy based on source parameter
+        //      根据source参数确定加载策略
         //   2. Use fetch API to asynchronously get JSON data
+        //      使用fetch API异步获取JSON数据
         //   3. Update allQuestions array
+        //      更新allQuestions数组
         //   4. Display first question
+        //      显示第一个问题
         //   5. Update status bar to show question count
+        //      更新状态栏以显示问题数量
         //
         // Error Handling:
+        //   错误处理：
         //   - If loading fails, display error message and server startup instructions
+        //     如果加载失败，显示错误消息和服务器启动说明
         //
         // ============================================================
         async function loadQuestionsFromFile(source = 'questions.json') {
@@ -807,15 +887,26 @@ Author: AI for Education (Wenchao Qin)
                 let questions = [];
                 
                 if (source === 'all') {
-                    // Load all question banks (including merged file)
+                    // Load all question banks (including merged file and generated questions)
+                    // 加载所有问题库（包括合并文件和生成的问题）
                     // Add timestamp parameter to force browser reload (avoid cache issues)
+                    // 添加时间戳参数以强制浏览器重新加载（避免缓存问题）
                     const timestamp = new Date().getTime();
-                    const [clinical, combined] = await Promise.all([
+                    const [clinical, combined, generated] = await Promise.all([
                         fetch(`questions.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
-                        fetch(`qbank_combined.json?t=${timestamp}`).then(r => r.json()).catch(() => [])
+                        fetch(`qbank_combined.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
+                        fetch(`generated_domain_questions.json?t=${timestamp}`).then(async r => {
+                            if (!r.ok) return [];
+                            const text = await r.text();
+                            const lines = text.split('\n').filter(line => line.trim());
+                            return lines.map(line => {
+                                try { return JSON.parse(line); } catch { return null; }
+                            }).filter(q => q !== null);
+                        }).catch(() => [])
                     ]);
                     // Merge all questions, deduplicate (based on question text)
-                    const allQuestions = [...clinical, ...combined];
+                    // 合并所有问题，去重（基于问题文本）
+                    const allQuestions = [...clinical, ...combined, ...generated];
                     const seen = new Set();
                     questions = allQuestions.filter(q => {
                         const key = q.question?.substring(0, 100) || JSON.stringify(q);
@@ -826,13 +917,35 @@ Author: AI for Education (Wenchao Qin)
                     if (statusEl) statusEl.textContent = `Loaded all ${questions.length} questions (after deduplication)`;
                 } else {
                     // Add timestamp parameter to force browser reload (avoid cache issues)
+                    // 添加时间戳参数以强制浏览器重新加载（避免缓存问题）
                     const timestamp = new Date().getTime();
                     const url = source.includes('?') ? `${source}&t=${timestamp}` : `${source}?t=${timestamp}`;
                     const response = await fetch(url);
                     if (!response.ok) throw new Error('Failed to fetch');
-                    questions = await response.json();
+                    
+                    // Check if it's JSONL format (ends with .jsonl)
+                    // 检查是否为JSONL格式（以.jsonl结尾）
+                    if (source.endsWith('.jsonl')) {
+                        // Parse JSONL: each line is a JSON object
+                        // 解析JSONL：每行是一个JSON对象
+                        const text = await response.text();
+                        const lines = text.split('\n').filter(line => line.trim());
+                        questions = lines.map(line => {
+                            try {
+                                return JSON.parse(line);
+                            } catch (e) {
+                                console.warn('Invalid JSON line:', line.substring(0, 50));
+                                return null;
+                            }
+                        }).filter(q => q !== null);
+                    } else {
+                        // Regular JSON array
+                        // 常规JSON数组
+                        questions = await response.json();
+                    }
+                    
                     if (statusEl) {
-                        const fileName = source.replace('.json', '');
+                        const fileName = source.replace('.json', '').replace('.jsonl', '');
                         statusEl.textContent = `Loaded ${questions.length} questions (${fileName})`;
                     }
                 }
@@ -878,40 +991,62 @@ Author: AI for Education (Wenchao Qin)
 
         // ============================================================
         // Convert Question Format: From JSON format to UI display format
+        // 转换问题格式：从JSON格式转换为UI显示格式
         // ============================================================
         //
         // @param {Object} q - Original question object from JSON file
+        //   参数：来自JSON文件的原始问题对象
         //   - q.question: Question text
+        //     问题文本
         //   - q.options: Options object {A: '...', B: '...', C: '...', D: '...', E: '...'}
+        //     选项对象 {A: '...', B: '...', C: '...', D: '...', E: '...'}
         //   - q.correct_answer: Correct answer letter ('A', 'B', 'C', 'D', or 'E')
+        //     正确答案字母（'A', 'B', 'C', 'D'或'E'）
         //   - q.explanations: Explanations object for each option (optional)
+        //     每个选项的解释对象（可选）
         //   - q.explanation: Single explanation text (optional, qbank format)
+        //     单个解释文本（可选，qbank格式）
         //   - q.tip: Tip text (optional, qbank format)
+        //     提示文本（可选，qbank格式）
         //   - q.source: Question source PDF name
+        //     问题来源PDF名称
         //
         // @param {number} index - Question index in array
+        //   参数：问题在数组中的索引
         //
         // @returns {Object|null} - Converted UI format object, or null (if question is invalid)
+        //   返回：转换后的UI格式对象，或null（如果问题无效）
         //   - QA.question: Question text
+        //     问题文本
         //   - QA.choices: Options array ['A. ...', 'B. ...', ...]
+        //     选项数组 ['A. ...', 'B. ...', ...]
         //   - QA.answer: Correct answer index (0-4)
+        //     正确答案索引（0-4）
         //   - QA.source: Question source
+        //     问题来源
         //   - explanations: Explanations array
+        //     解释数组
         //
         // Special handling:
+        //   特殊处理：
         //   - Supports 2-10 options (A-J)
+        //     支持2-10个选项（A-J）
         //   - Automatically skips invalid questions missing options
+        //     自动跳过缺少选项的无效问题
         //   - Compatible with multiple explanation formats (explanations/explanation/tip)
+        //     兼容多种解释格式（explanations/explanation/tip）
         //
         // ============================================================
         function convertQuestionFormat(q, index) {
             // Check if question is valid
+            // 检查问题是否有效
             if (!q || !q.options || !q.question) {
                 console.warn('Invalid question at index', index, q);
                 return null;
             }
             
             // Dynamically get available option letters (supports A-J, up to 10 options)
+            // 动态获取可用选项字母（支持A-J，最多10个选项）
             const allLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
             const letters = allLetters.filter(letter => q.options[letter]);
             
@@ -924,6 +1059,7 @@ Author: AI for Education (Wenchao Qin)
             const correctIndex = letters.indexOf(q.correct_answer);
             
             // Build explanations array
+            // 构建解释数组
             const explanations = letters.map(letter => {
                 if (q.explanations && q.explanations[letter]) {
                     return `${letter}. ${q.explanations[letter]}`;
@@ -955,24 +1091,39 @@ Author: AI for Education (Wenchao Qin)
 
         // ============================================================
         // Load Question by Index
+        // 根据索引加载问题
         // ============================================================
         //
         // @param {number} index - Question index (0-based)
+        //   参数：问题索引（从0开始）
         //
         // Functions:
+        //   功能：
         //   1. Validate index validity
+        //      验证索引有效性
         //   2. Reset user selection state
+        //      重置用户选择状态
         //   3. Convert question format
+        //      转换问题格式
         //   4. Set question metadata (for ChatGPT context)
+        //      设置问题元数据（用于ChatGPT上下文）
         //   5. Render question to UI
+        //      将问题渲染到UI
         //   6. Update progress display
+        //      更新进度显示
         //
         // Metadata (currentQuestionMeta):
+        //   元数据（currentQuestionMeta）：
         //   - correctIndex: Correct answer index
+        //     正确答案索引
         //   - explanations: Explanations array
+        //     解释数组
         //   - source: Source PDF
+        //     来源PDF
         //   - sourceChunk: Original text chunk
+        //     原始文本块
         //   - sourcePage: Page number
+        //     页码
         //
         // ============================================================
         function loadQuestionByIndex(index) {
@@ -981,7 +1132,16 @@ Author: AI for Education (Wenchao Qin)
             currentGeneratedIndex = index;
             selectedAnswer = null;
             
+            // Reset hint system when loading new question
+            // 加载新问题时重置提示系统
+            resetHintState();
+            
+            // Clear message chat history for new question (each question has its own conversation)
+            // 为新问题清除消息聊天历史（每个问题都有自己的对话）
+            messageChatHistory = [];
+            
             // Clear message list (refresh when switching questions)
+            // 清除消息列表（切换问题时刷新）
             const conversationList = document.getElementById('conversation-list');
             if (conversationList) {
                 conversationList.innerHTML = '';
@@ -989,6 +1149,7 @@ Author: AI for Education (Wenchao Qin)
             
             const q = allQuestions[index];
             // Debug info: Check images field
+            // 调试信息：检查images字段
             if (q && q.images) {
                 console.log(`🔍 Question ${index + 1} (index ${index}) images field:`, q.images);
                 console.log(`   Type: ${typeof q.images}, isArray: ${Array.isArray(q.images)}, length: ${Array.isArray(q.images) ? q.images.length : 'N/A'}`);
@@ -996,6 +1157,7 @@ Author: AI for Education (Wenchao Qin)
             const converted = convertQuestionFormat(q, index);
             
             // If conversion fails, skip to next question
+            // 如果转换失败，跳到下一个问题
             if (!converted) {
                 console.warn('Skipping invalid question at index', index);
                 if (index < allQuestions.length - 1) {
@@ -1009,24 +1171,32 @@ Author: AI for Education (Wenchao Qin)
                 explanations: converted.explanations,
                 source: converted.QA.source,
                 // Store the source chunk for RAG context
+                // 存储源文本块用于RAG上下文
                 sourceChunk: q.source_chunk || null,
                 // Store page number if available
+                // 如果可用，存储页码
                 sourcePage: q.source_page || q.page_number || q.page || 'N/A'
             };
             loadData(converted);
             
             // Update progress display
+            // 更新进度显示
             updateProgressDisplay();
         }
 
         // ============================================================
         // Update Progress Display
+        // 更新进度显示
         // ============================================================
         //
         // Updates:
+        //   更新内容：
         //   - Next question button text ("Next →" or "Finish ✓")
+        //     下一个问题按钮文本（"Next →" 或 "Finish ✓"）
         //   - Previous question button state (disabled on first question)
+        //     上一个问题按钮状态（在第一个问题时禁用）
         //   - Progress information ("Question X of Y | 📄 Source")
+        //     进度信息（"Question X of Y | 📄 Source"）
         //
         // ============================================================
         function updateProgressDisplay() {
@@ -1052,21 +1222,33 @@ Author: AI for Education (Wenchao Qin)
 
         // ====================================================================
         // Part 5: RAG (Retrieval-Augmented Generation)
+        // 第五部分：RAG（检索增强生成）
         // ====================================================================
         // 
         // When students ask ChatGPT questions, RAG provides relevant context from medical guidelines.
         // This improves answer quality and supports source citations.
+        // 当学生向ChatGPT提问时，RAG从医学指南中提供相关上下文。
+        // 这提高了答案质量并支持来源引用。
         //
         // Two retrieval methods:
+        //   两种检索方法：
         //   1. FAISS Server (Preferred): Semantic search using vectors
+        //     FAISS服务器（首选）：使用向量的语义搜索
         //      - Requires rag_server.py to be running
+        //        需要运行rag_server.py
         //      - Uses OpenAI vectors for similarity calculation
+        //        使用OpenAI向量进行相似度计算
         //      - ColBERTv2 reranking improves accuracy
+        //        ColBERTv2重排序提高准确性
         //
         //   2. Keyword Fallback: Simple TF-IDF-like matching
+        //     关键词回退：简单的类TF-IDF匹配
         //      - Used when FAISS server is unavailable
+        //        当FAISS服务器不可用时使用
         //      - Searches source_chunk field in questions.json
+        //        在questions.json中搜索source_chunk字段
         //      - Lower accuracy but works offline
+        //        准确性较低但可离线工作
         //
         // ====================================================================
         
@@ -1074,6 +1256,7 @@ Author: AI for Education (Wenchao Qin)
         let ragServerAvailable = false;
         
         // Check if RAG server is available
+        // 检查RAG服务器是否可用
         let ragServerInfo = null;
         
         async function checkRagServer() {
@@ -1106,13 +1289,19 @@ Author: AI for Education (Wenchao Qin)
         /**
          * Retrieve relevant chunks using FAISS + OpenAI Embeddings
          * Falls back to keyword matching if server unavailable
+         * 使用FAISS + OpenAI嵌入检索相关文本块
+         * 如果服务器不可用，回退到关键词匹配
          * 
          * @param {string} query - The student's question
+         *   参数：学生的问题
          * @param {number} topK - Number of chunks to retrieve
+         *   参数：要检索的文本块数量
          * @returns {Array} - Array of {text, source, score} objects
+         *   返回：{text, source, score}对象数组
          */
         async function retrieveRelevantChunksAsync(query, topK = 5) {
             // Try FAISS server first
+            // 首先尝试FAISS服务器
             if (ragServerAvailable) {
                 try {
                     const response = await fetch(`${RAG_SERVER_URL}/search`, {
@@ -1132,11 +1321,13 @@ Author: AI for Education (Wenchao Qin)
             }
             
             // Fallback to keyword matching
+            // 回退到关键词匹配
             return retrieveRelevantChunksKeyword(query, topK);
         }
         
         /**
          * Fallback: Simple keyword-based retrieval
+         * 回退：基于关键词的简单检索
          */
         function retrieveRelevantChunksKeyword(query, topK = 5) {
             if (!allQuestions || allQuestions.length === 0) return [];
@@ -1186,47 +1377,67 @@ Author: AI for Education (Wenchao Qin)
         }
         
         // Sync wrapper for backward compatibility
+        // 同步包装器以保持向后兼容性
         function retrieveRelevantChunks(query, topK = 5) {
             // For sync calls, use keyword fallback
+            // 对于同步调用，使用关键词回退
             return retrieveRelevantChunksKeyword(query, topK);
         }
 
         // ============================================================
         // API Key Initialization
+        // API密钥初始化
         // ============================================================
         //
         // Key Sources (by priority):
+        //   密钥来源（按优先级）：
         //   1. OPENAI_API_KEY global variable from api-key.js (recommended)
+        //     来自api-key.js的OPENAI_API_KEY全局变量（推荐）
         //   2. 'openai_api_key' in browser localStorage
+        //     浏览器localStorage中的'openai_api_key'
         //
         // Key Validation Rules:
+        //   密钥验证规则：
         //   - Must start with 'sk-'
+        //     必须以'sk-'开头
         //   - Length must be greater than 40 characters
+        //     长度必须大于40个字符
         //   - Only contains ASCII characters (filter invisible characters)
+        //     仅包含ASCII字符（过滤不可见字符）
         //
         // cleanApiKey Function:
+        //   cleanApiKey函数：
         //   Cleans non-ASCII characters from API key to prevent API call failures due to encoding issues
+        //   从API密钥中清理非ASCII字符，以防止因编码问题导致的API调用失败
         //
         // ============================================================
         
         /**
          * Clean API key, remove non-ASCII characters
+         * 清理API密钥，移除非ASCII字符
          * @param {string} key - Original API key
+         *   参数：原始API密钥
          * @returns {string} - Cleaned API key
+         *   返回：清理后的API密钥
          */
         function cleanApiKey(key) {
             if (!key) return '';
             // Filter out all non-ASCII characters (charCode > 127)
+            // 过滤所有非ASCII字符（charCode > 127）
             return String(key).split('').filter(c => c.charCodeAt(0) <= 127).join('').trim();
         }
         
         /**
          * Immediately Invoked Function: Initialize API key
          * Automatically executed on page load
+         * 立即执行函数：初始化API密钥
+         * 页面加载时自动执行
          */
         (function initApiKey() {
             // Priority: Read from global variable in api-key.js
             // This is the recommended method, api-key.js is loaded in <script src="api-key.js">
+            // 优先级：从api-key.js中的全局变量读取
+            // 这是推荐的方法，api-key.js在<script src="api-key.js">中加载
             if (typeof OPENAI_API_KEY !== 'undefined' && OPENAI_API_KEY && OPENAI_API_KEY.startsWith('sk-')) {
                 openAIApiKey = cleanApiKey(OPENAI_API_KEY);
                 console.log('✅ API Key loaded from api-key.js');
@@ -1236,12 +1447,16 @@ Author: AI for Education (Wenchao Qin)
             // Fallback: Read from localStorage
             // Users can manually set in browser developer tools:
             // localStorage.setItem('openai_api_key', 'sk-...')
+            // 回退：从localStorage读取
+            // 用户可以在浏览器开发者工具中手动设置：
+            // localStorage.setItem('openai_api_key', 'sk-...')
             const stored = cleanApiKey(localStorage.getItem('openai_api_key'));
             if (stored && /^sk-/.test(stored) && stored.length > 40) {
                 openAIApiKey = stored;
                 console.log('✅ API Key loaded from localStorage');
             } else {
                 // Clean invalid localStorage entry
+                // 清理无效的localStorage条目
                 if (stored) {
                     try { localStorage.removeItem('openai_api_key'); } catch (_) {}
                 }
@@ -1252,49 +1467,67 @@ Author: AI for Education (Wenchao Qin)
 
         // ============================================================
         // Setup Event Listeners
+        // 设置事件监听器
         // ============================================================
         //
         // Bound Events:
+        //   绑定的事件：
         //   - Submit button click → handleSubmit()
+        //     提交按钮点击 → handleSubmit()
         //   - Message input Enter key → handleMessageSubmit()
+        //     消息输入框Enter键 → handleMessageSubmit()
         //   - Send button click → handleMessageSubmit()
+        //     发送按钮点击 → handleMessageSubmit()
         //
         // ============================================================
         function setupEventListeners() {
             // Question submit button
+            // 问题提交按钮
             document.getElementById('submit-btn').addEventListener('click', handleSubmit);
             
             // ChatGPT message area
+            // ChatGPT消息区域
             const messageInput = document.getElementById('message-input');
             const messageSendBtn = document.getElementById('message-send-btn');
             
             // Support Enter key to send message
+            // 支持Enter键发送消息
             messageInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     handleMessageSubmit();
                 }
             });
             // Send button click
+            // 发送按钮点击
             messageSendBtn.addEventListener('click', handleMessageSubmit);
         }
 
         // ============================================================
         // Load Data to UI
+        // 将数据加载到UI
         // ============================================================
         //
         // @param {Object} data - Question data object
+        //   参数：问题数据对象
         //   - data.QA: Question and options
+        //     问题和选项
         //   - data.feedback: Feedback information
+        //     反馈信息
         //   - data.conversation: Conversation history
+        //     对话历史
         //
         // Calls three rendering functions to update UI
+        // 调用三个渲染函数以更新UI
         //
         // ============================================================
         function loadData(data) {
             currentData = data;
             renderQuestion(data);     // Render question and options
+                                    // 渲染问题和选项
             renderFeedback(data);     // Render feedback area
+                                    // 渲染反馈区域
             renderConversation(data); // Render conversation area
+                                    // 渲染对话区域
         }
 
         // ============================================================
@@ -1879,6 +2112,11 @@ Author: AI for Education (Wenchao Qin)
                 renderQuestion(currentData);
                 renderFeedback(currentData);
                 
+                // Trigger hint offer in message area if answer is wrong
+                if (!isCorrect) {
+                    triggerHintAfterWrongAnswer();
+                }
+                
                 // Show source
                 const feedbackContainer = document.getElementById('feedback-container');
                 if (feedbackContainer && currentQuestionMeta.source) {
@@ -2007,6 +2245,33 @@ Author: AI for Education (Wenchao Qin)
             const message = input.value.trim();
             if (!message) return;
 
+            // Clear input immediately
+            input.value = '';
+            
+            // ============================================================
+            // CHECK: Are we in Socratic Dialogue mode? (Figure 1 style)
+            // Natural conversation - route to Socratic processor
+            // ============================================================
+            if (socraticDialogueActive) {
+                // Show user's message
+                addMessageToConversation('user', message, false);
+                
+                input.disabled = true;
+                document.getElementById('message-send-btn').disabled = true;
+                
+                try {
+                    await processSocraticAnswer(message);
+                } finally {
+                    input.disabled = false;
+                    document.getElementById('message-send-btn').disabled = false;
+                    input.focus();
+                }
+                return;  // Don't proceed to normal ChatGPT flow
+            }
+            
+            // ============================================================
+            // Normal ChatGPT message flow
+            // ============================================================
             if (!openAIApiKey) {
                 alert('API Key not configured. Please check the code.');
                 return;
@@ -2014,7 +2279,6 @@ Author: AI for Education (Wenchao Qin)
 
             // Add user message to conversation
             addMessageToConversation('user', message);
-            input.value = '';
             input.disabled = true;
             document.getElementById('message-send-btn').disabled = true;
 
@@ -2226,6 +2490,729 @@ Author: AI for Education (Wenchao Qin)
                 messageDiv.remove();
             }
         }
+
+        // ============================================================
+        // Socratic Hint System (Integrated into Message Area)
+        // ============================================================
+        // 
+        // Implements proactive question generation based on the paper:
+        // "The Art of SOCRATIC QUESTIONING: Recursive Thinking with LLMs"
+        // 
+        // Features:
+        // - Generates guiding sub-questions instead of revealing answers
+        // - Progressive hints: conceptual → analytical → directive
+        // - Up to 3 rounds of hints per question
+        // - Triggers on wrong answer or student request in chat
+        // - Fully integrated into the Message conversation area
+        // ============================================================
+
+        /**
+         * Reset hint state when navigating to new question
+         */
+        function resetHintState() {
+            hintConversationHistory = [];
+            currentHintRound = 0;
+            
+            // Reset Socratic dialogue state
+            socraticDialogueActive = false;
+            socraticContext = null;
+            
+            // Reset message input placeholder
+            const messageInput = document.getElementById('message-input');
+            if (messageInput) {
+                messageInput.placeholder = 'Ask a question or share your thoughts...';
+            }
+        }
+
+        /**
+         * Trigger hint system after wrong answer - shows prompt in message area
+         */
+        function triggerHintAfterWrongAnswer() {
+            if (!currentQuestionMeta || !currentData) return;
+            
+            // Add a system message offering hints
+            const conversationList = document.getElementById('conversation-list');
+            if (!conversationList) return;
+            
+            const hintOfferDiv = document.createElement('div');
+            hintOfferDiv.className = 'message assistant';
+            hintOfferDiv.id = 'hint-offer-message';
+            hintOfferDiv.innerHTML = `
+                <div class="message-content" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 16px;">🧠 Need help with this question?</div>
+                    <div style="margin-bottom: 15px; line-height: 1.5;">Your answer wasn't correct. Would you like some guiding questions to help you discover the right answer?</div>
+                    <button onclick="requestHintsInChat()" class="hint-action-btn" style="
+                        background: white;
+                        color: #667eea;
+                        border: none;
+                        padding: 12px 24px;
+                        border-radius: 25px;
+                        font-weight: 600;
+                        font-size: 15px;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    ">💡 Get Hints</button>
+                </div>
+            `;
+            conversationList.appendChild(hintOfferDiv);
+            conversationList.scrollTop = conversationList.scrollHeight;
+        }
+
+        /**
+         * Request hints and display in the chat/message area
+         */
+        async function requestHintsInChat() {
+            if (!currentQuestionMeta || !currentData) {
+                addMessageToConversation('assistant', 'Please answer a question first before requesting hints.');
+                return;
+            }
+            
+            // Check if student has submitted an answer
+            if (selectedAnswer === null) {
+                addMessageToConversation('assistant', 'Please submit an answer first, then I can help guide you!');
+                return;
+            }
+            
+            // Note: No hard limit on hint rounds - system will intelligently decide when to end
+            // 注意：提示轮次无硬性限制 - 系统将智能决定何时结束
+            
+            // Add user's hint request to chat history (for ChatGPT context)
+            const userHintRequest = currentHintRound === 0 
+                ? "I need some hints to help me understand this question better."
+                : "I still need more help understanding this.";
+            messageChatHistory.push({ role: 'user', content: userHintRequest });
+            
+            // Show loading message
+            const loadingId = addMessageToConversation('assistant', '<div class="hint-loading"><div class="spinner"></div>Analyzing the question...</div>', true);
+            
+            try {
+                // Build request data
+                const questionText = typeof currentData.QA?.question === 'object' 
+                    ? currentData.QA.question.content || JSON.stringify(currentData.QA.question)
+                    : currentData.QA?.question || '';
+                
+                const choices = {};
+                const choicesArray = currentData.QA?.choices || [];
+                choicesArray.forEach((choice, idx) => {
+                    const letter = String.fromCharCode(65 + idx);
+                    const cleanChoice = choice.replace(/^[A-Z]\.\s*/, '');
+                    choices[letter] = cleanChoice;
+                });
+                
+                const studentAnswerLetter = String.fromCharCode(65 + selectedAnswer);
+                const correctAnswerLetter = String.fromCharCode(65 + currentQuestionMeta.correctIndex);
+                
+                const explanations = {};
+                if (currentQuestionMeta.explanations) {
+                    currentQuestionMeta.explanations.forEach((exp, idx) => {
+                        const letter = String.fromCharCode(65 + idx);
+                        explanations[letter] = exp;
+                    });
+                }
+                
+                const requestData = {
+                    question: questionText,
+                    choices: choices,
+                    student_answer: studentAnswerLetter,
+                    correct_answer: correctAnswerLetter,
+                    explanations: explanations,
+                    conversation_history: hintConversationHistory,
+                    source_context: currentQuestionMeta.sourceChunk || ''
+                };
+                
+                // Call the hint generation API
+                const response = await fetch('http://localhost:5000/generate_hints', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                
+                // Remove loading message
+                removeMessageFromConversation(loadingId);
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to generate hints');
+                }
+                
+                // Update hint round (MedTutor-R1 style uses total_steps instead)
+                currentHintRound++;
+                
+                // Store in conversation history for next round
+                hintConversationHistory.push({
+                    role: 'assistant',
+                    content: JSON.stringify(result)
+                });
+                
+                // Display reasoning chain in chat
+                displayHintsInChat(result);
+                
+            } catch (error) {
+                console.error('Error requesting hints:', error);
+                removeMessageFromConversation(loadingId);
+                
+                // Fall back to local hint generation
+                displayFallbackHintsInChat();
+            }
+        }
+
+        // ============================================================
+        // Socratic Dialogue - Natural Conversation Style (Figure 1)
+        // Based on arXiv:2305.14999 "The Art of SOCRATIC QUESTIONING"
+        // ============================================================
+        let socraticDialogueActive = false;   // Are we in Socratic dialogue mode?
+        let socraticContext = null;           // Current question context for Socratic dialogue
+        
+        /**
+         * Start Socratic dialogue - Dynamic decomposition based on complexity
+         * 
+         * From arXiv:2305.14999:
+         * - Complex questions → more sub-questions
+         * - Wrong answers → further decomposition
+         */
+        function displayHintsInChat(hintData) {
+            // Initialize Socratic dialogue
+            socraticDialogueActive = true;
+            socraticContext = {
+                originalQuestion: currentData?.QA?.question || "",
+                choices: currentQuestionMeta?.labels || [],
+                studentAnswer: selectedAnswer,
+                correctAnswer: currentQuestionMeta?.correct || "",
+                conversationTurns: 0,
+                decompositionRounds: 0,  // Track decomposition rounds (for reference only, no hard limit)
+                shouldEnd: false
+            };
+            
+            // Get decomposition
+            const decomp = hintData.decomposition;
+            const steps = decomp?.reasoning_steps || [];
+            const numSteps = steps.length;
+            
+            // Store for context
+            socraticContext.synthesis = decomp?.synthesis_step || "";
+            
+            // Natural conversation opening with complexity indication
+            let openingText = "I see you're having some trouble with this question. Let me help you work through it.";
+            
+            if (numSteps >= 4) {
+                openingText += " This is a complex question that requires understanding several concepts.";
+            } else if (numSteps >= 3) {
+                openingText += " Let's break this down step by step.";
+            }
+            
+            const openingHtml = `
+                <div style="color: #374151; font-size: 14px; line-height: 1.6;">
+                    ${openingText}
+                </div>
+            `;
+            addMessageToConversation('assistant', openingHtml, true);
+            
+            // Ask first question(s) based on complexity
+            // 根据复杂度提问（无数量限制）
+            // Simpler questions: 1 question at a time
+            // 简单问题：一次一个
+            // Complex questions: can show multiple initial questions
+            // 复杂问题：可以显示多个初始问题
+            setTimeout(() => {
+                let questionHtml = "";
+                
+                // Determine how many questions to show initially (no hard limit)
+                // 确定初始显示的问题数量（无硬性限制）
+                const initialCount = numSteps;  // Show all steps, no limit
+                
+                if (initialCount >= 2) {
+                    // Show multiple initial questions for complex topics
+                    // 为复杂主题显示多个初始问题
+                    questionHtml = `<div style="color: #374151; font-size: 14px; line-height: 1.7;">`;
+                    
+                    for (let i = 0; i < initialCount; i++) {
+                        if (steps[i]) {
+                            questionHtml += `<strong>${i + 1}.</strong> 🤔 ${steps[i].key_question}<br><br>`;
+                        }
+                    }
+                    
+                    questionHtml += `<em style="color: #6b7280;">Start with whichever you find easier. If you're unsure, I can break them down.</em></div>`;
+                    
+                    // Store for context
+                    hintConversationHistory.push({
+                        role: 'assistant',
+                        content: `Questions: ${steps.slice(0, initialCount).map((s, i) => `${i+1}. ${s.key_question}`).join(' ')}`
+                    });
+                } else {
+                    // Simple question - just ask one
+                    questionHtml = `
+                        <div style="color: #374151; font-size: 14px; line-height: 1.6;">
+                            🤔 <strong>${steps[0]?.key_question || "What do you think is the key concept here?"}</strong>
+                        </div>
+                    `;
+                    hintConversationHistory.push({
+                        role: 'assistant',
+                        content: `Question: ${steps[0]?.key_question}`
+                    });
+                }
+                
+                addMessageToConversation('assistant', questionHtml, true);
+                
+                // Update input placeholder
+                const messageInput = document.getElementById('message-input');
+                if (messageInput) {
+                    messageInput.focus();
+                    messageInput.placeholder = 'Type your answer...';
+                }
+            }, 800);
+        }
+        
+        /**
+         * Continue Socratic dialogue based on student's response
+         * Features dynamic decomposition based on student understanding
+         */
+        async function processSocraticAnswer(studentAnswer) {
+            if (!socraticDialogueActive || !socraticContext) return false;
+            
+            socraticContext.conversationTurns++;
+            
+            // Show thinking
+            const thinkingId = addMessageToConversation('assistant', 
+                '<span style="color: #6b7280;">🤔 Thinking...</span>', true);
+            
+            try {
+                // Get Socratic response with dynamic decomposition
+                const response = await callSocraticContinuation(studentAnswer);
+                
+                removeMessageFromConversation(thinkingId);
+                
+                // Convert markdown-style formatting to HTML
+                // Format response (simple formatting, no special styling)
+                const formattedResponse = response
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n\n/g, '<br><br>')
+                    .replace(/\n/g, '<br>');
+                
+                // Display the response
+                const responseHtml = `
+                    <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                        ${formattedResponse}
+                    </div>
+                `;
+                addMessageToConversation('assistant', responseHtml, true);
+                
+                // Check if we should end the dialogue
+                // 检查是否应该结束对话（仅基于LLM的智能判断，无硬性限制）
+                if (socraticContext.shouldEnd) {
+                    endSocraticDialogue();
+                }
+                
+            } catch (error) {
+                console.error('Socratic dialogue error:', error);
+                removeMessageFromConversation(thinkingId);
+                
+                // Fallback response with a guiding question
+                const fallbackHtml = `
+                    <div style="color: #374151; font-size: 14px; line-height: 1.6;">
+                        That's an interesting point. Let me ask you this: 
+                        🤔 What do you think is the key factor that distinguishes the correct answer from your original choice?
+                    </div>
+                `;
+                addMessageToConversation('assistant', fallbackHtml, true);
+            }
+            
+            return true;
+        }
+        
+        /**
+         * Call OpenAI for Socratic continuation with dynamic decomposition
+         * 
+         * Key features:
+         * 1. Evaluate if student's answer is correct
+         * 2. If correct → ask next sub-question
+         * 3. If wrong → decompose current question into simpler sub-questions (number determined by complexity)
+         */
+        async function callSocraticContinuation(studentAnswer) {
+            const systemPrompt = `You are a Socratic medical tutor. You guide students by asking questions, NOT by giving answers.
+
+## CRITICAL RULE - DO NOT REVEAL THE ANSWER:
+- NEVER mention which option (A, B, C, D) is correct
+- NEVER state the correct answer directly or indirectly
+- NEVER use phrases that give away the answer like "the answer involves..." or "you should consider that X is better"
+- Your questions should help students DISCOVER the answer themselves
+- Even in feedback, do not confirm what the correct answer is
+
+## YOUR TASK:
+1. Evaluate if student's reasoning is on the right track (not if they got the answer)
+2. Ask questions that guide their thinking
+
+## RESPONSE FORMAT (JSON):
+{
+    "evaluation": "correct" | "partial" | "wrong",
+    "feedback": "Brief encouraging feedback (1 sentence) - NO answer hints!",
+    "next_action": "continue" | "decompose" | "synthesize",
+    "questions": ["question1", ...]  // Number of questions determined by complexity (no hard limit)
+}
+
+## RULES:
+- Questions should guide thinking, not point to the answer
+- Feedback should acknowledge effort, not correctness of answer choice
+- When decomposing: ask about underlying concepts, not about which option is right
+- Number of sub-questions per decomposition should be determined by complexity (no hard limit)
+- Stop decomposing if student shows understanding
+
+## CRITICAL - NO REPEATED SUB-QUESTIONS:
+When decomposing, check ALL previously asked questions (initial questions AND all sub-questions from previous decompositions).
+
+RULES:
+1. Extract ALL questions from conversation history below
+2. New sub-questions must be COMPLETELY DIFFERENT - not rephrased versions
+3. "Different" means: different concept/angle, more fundamental level, or different aspect
+4. **IMPORTANT**: If you cannot think of genuinely different questions that explore NEW concepts, use next_action = "synthesize" instead of forcing decomposition
+5. Better to end early with synthesis than to repeat similar questions
+
+EXAMPLES OF REPETITION (AVOID):
+- Previous: "What is the difference between A and B?"
+- Bad: "How do A and B differ?" or "What distinguishes A from B?" ← Same question rephrased!
+- Good: "What does 'minimally invasive' mean?" ← Different concept
+- If you can only think of rephrased versions → Use "synthesize" instead
+
+## CONTEXT:
+Original Question: ${socraticContext.originalQuestion}
+Student's Wrong Answer: ${socraticContext.studentAnswer}
+Correct Answer: ${socraticContext.correctAnswer} (STRICTLY CONFIDENTIAL - DO NOT reveal in any way!)
+Conversation Turn: ${socraticContext.conversationTurns}
+Decomposition Rounds Used: ${socraticContext.decompositionRounds} (for reference only, no hard limit)
+
+## ALL PREVIOUSLY ASKED QUESTIONS (INCLUDING ALL SUB-QUESTIONS FROM ALL ROUNDS):
+${(() => {
+    const allQuestions = [];
+    hintConversationHistory.forEach(m => {
+        if (m.role === 'assistant') {
+            const content = m.content || '';
+            // Extract questions (lines with 🤔 or numbered questions)
+            const lines = content.split('\n');
+            lines.forEach(line => {
+                const match = line.match(/(?:🤔|^\d+\.|^-\s*)(.+)/);
+                if (match && match[1].trim().length > 10) {
+                    allQuestions.push(match[1].trim());
+                }
+            });
+        }
+    });
+    return allQuestions.length > 0 ? allQuestions.map((q, i) => `${i+1}. ${q}`).join('\n') : 'None yet';
+})()}
+
+## WHEN TO SYNTHESIZE:
+- Student shows clear understanding
+- When you cannot think of genuinely different questions that explore NEW concepts
+- When synthesizing: summarize the REASONING PROCESS, not the answer
+- Final message should encourage student to apply their understanding, NOT tell them the answer`;
+
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${openAIApiKey}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-4o',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...hintConversationHistory.slice(-8),
+                        { role: 'user', content: studentAnswer }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 400,
+                    response_format: { type: "json_object" }
+                })
+            });
+            
+            const data = await response.json();
+            let result;
+            
+            try {
+                result = JSON.parse(data.choices?.[0]?.message?.content || "{}");
+            } catch (e) {
+                // Fallback if JSON parsing fails
+                result = {
+                    evaluation: "partial",
+                    feedback: "Let me help you think about this differently.",
+                    next_action: "continue",
+                    questions: ["🤔 What is the main concept being tested in this question?"]
+                };
+            }
+            
+            // Build natural response
+            let reply = "";
+            
+            // Add feedback
+            if (result.evaluation === "correct") {
+                reply += `✅ ${result.feedback}\n\n`;
+            } else if (result.evaluation === "partial") {
+                reply += `👍 ${result.feedback}\n\n`;
+            } else {
+                reply += `🔄 ${result.feedback}\n\n`;
+            }
+            
+            // Track decomposition rounds (for reference only, no hard limit)
+            // 跟踪分解轮次（仅用于参考，无硬性限制）
+            if (result.next_action === "decompose") {
+                socraticContext.decompositionRounds++;
+                
+                // Make decomposition more obvious
+                // 使分解更加明显
+                if (result.questions && result.questions.length > 1) {
+                    reply += "**🔍 Let me break this down into simpler questions:**\n\n";
+                } else if (result.questions && result.questions.length === 1) {
+                    reply += "**🔍 Let me ask a simpler question:**\n\n";
+                }
+            }
+            
+            // Add questions with clear formatting
+            if (result.questions && result.questions.length > 0) {
+                // Check if questions are too similar to previous ones
+                const previousQuestions = hintConversationHistory
+                    .filter(m => m.role === 'assistant')
+                    .map(m => {
+                        const content = m.content || '';
+                        const matches = content.match(/(?:🤔|^\d+\.|^-\s*|^\*\*\d+\.\*\*)\s*(.+)/gm);
+                        return matches ? matches.map(m => m.replace(/(?:🤔|^\d+\.|^-\s*|^\*\*\d+\.\*\*)\s*/, '').trim()) : [];
+                    })
+                    .flat()
+                    .filter(q => q.length > 10);
+                
+                // Check similarity (simple check)
+                const newQuestions = result.questions.filter(q => {
+                    const qLower = q.toLowerCase();
+                    return !previousQuestions.some(pq => {
+                        const pqLower = pq.toLowerCase();
+                        // Check if too similar (more than 70% word overlap)
+                        const qWords = qLower.split(/\s+/);
+                        const pqWords = pqLower.split(/\s+/);
+                        const commonWords = qWords.filter(w => pqWords.includes(w));
+                        return commonWords.length / Math.max(qWords.length, pqWords.length) > 0.7;
+                    });
+                });
+                
+                // If all questions are too similar, end instead
+                if (newQuestions.length === 0 && previousQuestions.length > 0) {
+                    result.next_action = "synthesize";
+                    reply = reply.replace(/.*Let me break.*/, "");
+                    reply += "We've explored the key concepts. Let me help you put it together:\n\n";
+                } else {
+                    // Use only genuinely different questions
+                    const questionsToShow = newQuestions.length > 0 ? newQuestions : result.questions;
+                    
+                    questionsToShow.forEach((q, i) => {
+                        if (questionsToShow.length > 1) {
+                            reply += `**${i + 1}.** 🤔 ${q}\n\n`;
+                        } else {
+                            reply += `🤔 ${q}`;
+                        }
+                    });
+                    
+                    if (questionsToShow.length > 1) {
+                        reply += "\n*Answer these one at a time.*";
+                    }
+                }
+            }
+            
+            // Check if we should end
+            if (result.next_action === "synthesize") {
+                socraticContext.shouldEnd = true;
+            }
+            
+            // Add to conversation history
+            hintConversationHistory.push({ role: 'user', content: studentAnswer });
+            hintConversationHistory.push({ role: 'assistant', content: reply });
+            
+            return reply;
+        }
+        
+        /**
+         * End Socratic dialogue with synthesis (without revealing answer)
+         * 结束苏格拉底式对话，并将对话历史合并到ChatGPT历史中
+         */
+        function endSocraticDialogue() {
+            socraticDialogueActive = false;
+            
+            // Merge Socratic dialogue history into ChatGPT conversation history
+            // 将苏格拉底式对话历史合并到ChatGPT对话历史中
+            // This allows ChatGPT to have context about the previous Socratic questions and answers
+            // 这样ChatGPT就能获得之前苏格拉底式问题和回答的上下文
+            if (hintConversationHistory.length > 0) {
+                // Convert hint conversation history to a format ChatGPT can understand
+                // 将提示对话历史转换为ChatGPT可以理解的格式
+                const socraticSummary = hintConversationHistory.map(msg => {
+                    // Format the content for ChatGPT context
+                    // 格式化内容以供ChatGPT上下文使用
+                    if (msg.role === 'assistant') {
+                        // Extract questions from assistant messages
+                        // 从助手消息中提取问题
+                        const content = msg.content || '';
+                        // Try to extract meaningful questions/statements
+                        // 尝试提取有意义的问题/陈述
+                        if (content.includes('Question:') || content.includes('Questions:')) {
+                            return {
+                                role: 'assistant',
+                                content: `[Socratic Guidance] ${content}`
+                            };
+                        } else if (content.includes('🤔') || content.match(/\d+\./)) {
+                            return {
+                                role: 'assistant',
+                                content: `[Socratic Question] ${content}`
+                            };
+                        }
+                        return {
+                            role: 'assistant',
+                            content: `[Socratic Guidance] ${content}`
+                        };
+                    } else {
+                        // User responses in Socratic dialogue
+                        // 苏格拉底式对话中的用户回答
+                        return {
+                            role: 'user',
+                            content: `[Student Response to Socratic Question] ${msg.content}`
+                        };
+                    }
+                });
+                
+                // Add to messageChatHistory so ChatGPT can access it
+                // 添加到messageChatHistory，以便ChatGPT可以访问
+                messageChatHistory.push(...socraticSummary);
+            }
+            
+            setTimeout(() => {
+                const synthesisHtml = `
+                    <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left: 4px solid #10b981; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                        <div style="color: #065f46; font-weight: 600; margin-bottom: 8px;">
+                            💡 Now Put It Together
+                        </div>
+                        <div style="color: #047857; font-size: 14px;">
+                            Based on our discussion, apply what you've learned to reconsider the original question. Think about how the concepts we explored relate to each option.
+                        </div>
+                    </div>
+                `;
+                addMessageToConversation('assistant', synthesisHtml, true);
+                
+                // Reset placeholder
+                const messageInput = document.getElementById('message-input');
+                if (messageInput) {
+                    messageInput.placeholder = 'Ask a question or share your thoughts...';
+                }
+            }, 1000);
+        }
+        
+        // Note: Old form-based functions removed. Now using conversational Socratic dialogue
+        // (Figure 1 style from arXiv:2305.14999)
+
+        /**
+         * Fallback hints when server is unavailable
+         * Uses Socratic dialogue format (Figure 1 style)
+         */
+        function displayFallbackHintsInChat() {
+            currentHintRound++;
+            
+            // Get question context for more relevant fallback
+            const questionText = currentData?.QA?.question || "this medical question";
+            const shortQuestion = questionText.length > 50 ? questionText.substring(0, 50) + "..." : questionText;
+            
+            const fallbackHints = {
+                1: {
+                    decomposition: {
+                        original_question: questionText,
+                        reasoning_steps: [
+                            {
+                                step_id: "1",
+                                key_question: `What are the key clinical features or findings mentioned in: "${shortQuestion}"?`,
+                                step_summary: "Start by identifying the important information in the question.",
+                                expected_understanding: "List the relevant clinical details."
+                            },
+                            {
+                                step_id: "2",
+                                key_question: "Based on these features, what conditions or mechanisms might be involved?",
+                                step_summary: "Connect the clinical features to possible explanations.",
+                                expected_understanding: "Identify relevant medical concepts."
+                            },
+                            {
+                                step_id: "3",
+                                key_question: "Which answer option best fits the clinical picture and why?",
+                                step_summary: "Apply your reasoning to select the best answer.",
+                                expected_understanding: "Match evidence to the correct option."
+                            }
+                        ],
+                        synthesis_step: "By systematically analyzing features and applying medical knowledge, you can identify the correct answer.",
+                        current_step_index: 0
+                    }
+                },
+                2: {
+                    decomposition: {
+                        original_question: questionText,
+                        reasoning_steps: [
+                            {
+                                step_id: "1",
+                                key_question: "What makes each answer option different from the others?",
+                                step_summary: "Compare the options to understand their distinctions.",
+                                expected_understanding: "Identify key differences between options."
+                            },
+                            {
+                                step_id: "2",
+                                key_question: "Which options can be eliminated based on the clinical scenario?",
+                                step_summary: "Use process of elimination.",
+                                expected_understanding: "Rule out options that don't fit."
+                            }
+                        ],
+                        synthesis_step: "Through comparison and elimination, the correct answer should become clearer.",
+                        current_step_index: 0
+                    }
+                },
+                3: {
+                    decomposition: {
+                        original_question: questionText,
+                        reasoning_steps: [
+                            {
+                                step_id: "1",
+                                key_question: "What is THE most important factor that determines the answer?",
+                                step_summary: "Identify the key deciding criterion.",
+                                expected_understanding: "Focus on the critical element."
+                            }
+                        ],
+                        synthesis_step: "Focus on this key factor to reach the correct answer.",
+                        current_step_index: 0
+                    }
+                }
+            };
+            
+            const hints = fallbackHints[Math.min(currentHintRound, 3)];
+            displayHintsInChat(hints);
+        }
+
+        /**
+         * Check if user message is asking for hints
+         */
+        function isHintRequest(message) {
+            // Only trigger hints for very explicit requests
+            // Use exact phrases to avoid false positives
+            const exactPhrases = [
+                'give me a hint', 'give me hint', 'need a hint', 'need hint',
+                'more hints', 'another hint', 'get hint', 'want hint',
+                '给我提示', '需要提示', '给个提示', '来点提示'
+            ];
+            
+            // Check if message is very short and contains hint-related word
+            const shortHintWords = ['hint', 'hints', '提示'];
+            
+            const messageLower = message.toLowerCase().trim();
+            
+            // If message is just a hint word by itself (or very short)
+            if (messageLower.length < 15) {
+                if (shortHintWords.some(word => messageLower === word || messageLower.startsWith(word + ' ') || messageLower.endsWith(' ' + word))) {
+                    return true;
+                }
+            }
+            
+            // Check for exact phrases
+            return exactPhrases.some(phrase => messageLower.includes(phrase));
+        }
+
 
         // ============================================================
         // Question Navigation Buttons

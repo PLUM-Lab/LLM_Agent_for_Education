@@ -1,0 +1,536 @@
+{
+  "domains": [
+    {
+      "name": "Cardiology",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Heart Failure",
+          "subtopics": [
+            "Systolic vs Diastolic Heart Failure",
+            "Clinical Presentation and Physical Findings",
+            "Acute Decompensated Heart Failure Management",
+            "Chronic Pharmacologic Therapy (ACEi, ARNI, Beta-blockers, MRA)"
+          ]
+        },
+        {
+          "name": "Acute Coronary Syndromes",
+          "subtopics": [
+            "STEMI Diagnosis and Initial Management",
+            "NSTEMI and Unstable Angina Risk Stratification",
+            "Indications for Reperfusion Therapy",
+            "Complications of Myocardial Infarction"
+          ]
+        },
+        {
+          "name": "Arrhythmias",
+          "subtopics": [
+            "Atrial Fibrillation Mechanisms and Anticoagulation",
+            "Supraventricular Tachycardia Acute Management",
+            "Ventricular Tachycardia and Sudden Cardiac Death",
+            "Bradyarrhythmias and Pacemaker Indications"
+          ]
+        },
+        {
+          "name": "Valvular Heart Disease",
+          "subtopics": [
+            "Aortic Stenosis Clinical Features and Management",
+            "Mitral Regurgitation and Mitral Valve Prolapse",
+            "Endocarditis Prophylaxis Principles"
+          ]
+        },
+        {
+          "name": "Pericardial and Myocardial Disease",
+          "subtopics": [
+            "Acute Pericarditis and Pericardial Effusion",
+            "Cardiac Tamponade Recognition and Management",
+            "Myocarditis and Cardiomyopathy Basics"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pulmonology",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Asthma",
+          "subtopics": [
+            "Pathophysiology and Triggers",
+            "Stepwise Pharmacologic Therapy",
+            "Acute Severe Asthma Exacerbation Management"
+          ]
+        },
+        {
+          "name": "Chronic Obstructive Pulmonary Disease (COPD)",
+          "subtopics": [
+            "Differentiating COPD from Asthma",
+            "GOLD Classification and Pharmacologic Steps",
+            "Acute COPD Exacerbation Management"
+          ]
+        },
+        {
+          "name": "Pulmonary Embolism",
+          "subtopics": [
+            "Clinical Presentation and Wells Score",
+            "Imaging Choices (CTPA vs V/Q Scan)",
+            "Anticoagulation and Thrombolysis Indications"
+          ]
+        },
+        {
+          "name": "Interstitial and Occupational Lung Disease",
+          "subtopics": [
+            "Idiopathic Pulmonary Fibrosis",
+            "Pneumoconioses and Occupational Exposures"
+          ]
+        },
+        {
+          "name": "Respiratory Failure",
+          "subtopics": [
+            "Hypoxemic vs Hypercapnic Respiratory Failure",
+            "Basics of Oxygen Therapy and Noninvasive Ventilation"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Gastroenterology and Hepatology",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Upper GI Bleeding",
+          "subtopics": [
+            "Risk Stratification (Glasgow-Blatchford, Rockall)",
+            "Peptic Ulcer Bleeding Management",
+            "Variceal Bleeding Initial Management"
+          ]
+        },
+        {
+          "name": "Inflammatory Bowel Disease",
+          "subtopics": [
+            "Crohn Disease vs Ulcerative Colitis Features",
+            "Extraintestinal Manifestations",
+            "Step-up Pharmacologic Therapy"
+          ]
+        },
+        {
+          "name": "Liver Disease",
+          "subtopics": [
+            "Cirrhosis Complications (Ascites, Encephalopathy, Varices)",
+            "Viral Hepatitis Evaluation and Staging",
+            "Alcoholic vs Nonalcoholic Fatty Liver Disease"
+          ]
+        },
+        {
+          "name": "Pancreatic and Biliary Disease",
+          "subtopics": [
+            "Acute Pancreatitis Etiology and Management",
+            "Cholelithiasis, Cholecystitis, and Cholangitis"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Nephrology",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Acute Kidney Injury",
+          "subtopics": [
+            "Pre-renal vs Intrinsic vs Post-renal AKI",
+            "Interpretation of Urine Studies (FeNa, Urine Sediment)",
+            "Indications for Renal Replacement Therapy"
+          ]
+        },
+        {
+          "name": "Chronic Kidney Disease",
+          "subtopics": [
+            "Staging of CKD and GFR Thresholds",
+            "Management of Anemia and Mineral Bone Disease",
+            "Blood Pressure Control in CKD"
+          ]
+        },
+        {
+          "name": "Electrolyte Disorders",
+          "subtopics": [
+            "Hyponatremia Evaluation and Management",
+            "Hyperkalemia Acute Treatment",
+            "Metabolic Acidosis vs Alkalosis Interpretation"
+          ]
+        },
+        {
+          "name": "Glomerular Disease",
+          "subtopics": [
+            "Nephritic vs Nephrotic Syndromes",
+            "Basic Approach to Proteinuria and Hematuria"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Endocrinology",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Diabetes Mellitus",
+          "subtopics": [
+            "Diagnostic Criteria for Type 1 vs Type 2 DM",
+            "Oral Hypoglycemic Agents Mechanisms and Indications",
+            "Insulin Regimens Basics",
+            "Diabetic Ketoacidosis Diagnosis and Treatment",
+            "Hyperosmolar Hyperglycemic State"
+          ]
+        },
+        {
+          "name": "Thyroid Disorders",
+          "subtopics": [
+            "Hyperthyroidism Differential Diagnosis",
+            "Hypothyroidism Causes and Clinical Features",
+            "Thyroid Storm and Myxedema Coma"
+          ]
+        },
+        {
+          "name": "Adrenal and Pituitary Disorders",
+          "subtopics": [
+            "Adrenal Insufficiency Diagnosis and Management",
+            "Cushing Syndrome Evaluation",
+            "Pheochromocytoma Clinical Features and Workup",
+            "Pituitary Adenomas (Prolactinoma, Acromegaly)"
+          ]
+        },
+        {
+          "name": "Calcium and Bone Disorders",
+          "subtopics": [
+            "Hypercalcemia and Hypocalcemia",
+            "Osteoporosis and Osteopenia Evaluation and Treatment"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hematology and Oncology",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Anemias",
+          "subtopics": [
+            "Microcytic Anemia Workup (Iron Deficiency vs Thalassemia)",
+            "Hemolytic Anemia Laboratory Features",
+            "Anemia of Chronic Disease vs Iron Deficiency"
+          ]
+        },
+        {
+          "name": "Leukemias and Lymphomas",
+          "subtopics": [
+            "Acute vs Chronic Leukemia Clinical Presentation",
+            "Hodgkin vs Non-Hodgkin Lymphoma Features",
+            "Tumor Lysis Syndrome Prevention and Management"
+          ]
+        },
+        {
+          "name": "Coagulation and Thrombotic Disorders",
+          "subtopics": [
+            "DVT and PE Prophylaxis and Treatment",
+            "Inherited Thrombophilias Basics",
+            "Heparin-Induced Thrombocytopenia"
+          ]
+        },
+        {
+          "name": "Solid Tumors",
+          "subtopics": [
+            "Lung, Breast, Colon Cancer Basics",
+            "Oncologic Emergencies (SVC Syndrome, Spinal Cord Compression)"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Infectious Diseases",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Sepsis and Septic Shock",
+          "subtopics": [
+            "Sepsis Definitions (Sepsis-3, qSOFA)",
+            "Initial Resuscitation and Source Control",
+            "Vasopressor Use in Septic Shock"
+          ]
+        },
+        {
+          "name": "Common Infections",
+          "subtopics": [
+            "Community-Acquired Pneumonia Empiric Therapy",
+            "UTI: Complicated vs Uncomplicated",
+            "Skin and Soft Tissue Infections"
+          ]
+        },
+        {
+          "name": "Special Hosts",
+          "subtopics": [
+            "HIV Opportunistic Infections and Prophylaxis",
+            "Febrile Neutropenia",
+            "Post-splenectomy Infection Risks"
+          ]
+        },
+        {
+          "name": "Hospital-Associated Infections",
+          "subtopics": [
+            "Device-Related Infections (Catheters, Lines)",
+            "Clostridioides difficile Infection Basics"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Neurology",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Stroke and TIA",
+          "subtopics": [
+            "Ischemic vs Hemorrhagic Stroke Initial Evaluation",
+            "tPA Eligibility and Time Windows",
+            "Secondary Prevention After Ischemic Stroke"
+          ]
+        },
+        {
+          "name": "Seizures and Epilepsy",
+          "subtopics": [
+            "First Seizure Evaluation",
+            "Status Epilepticus Management Algorithm",
+            "Antiseizure Medication Selection Basics"
+          ]
+        },
+        {
+          "name": "Headache",
+          "subtopics": [
+            "Red Flags for Secondary Headache",
+            "Migraine vs Tension vs Cluster Headache",
+            "Acute Migraine Treatment Options"
+          ]
+        },
+        {
+          "name": "Neuromuscular and Demyelinating Disease",
+          "subtopics": [
+            "Guillain-Barré Syndrome",
+            "Multiple Sclerosis Clinical Features"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Psychiatry and Behavioral Health",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Mood Disorders",
+          "subtopics": [
+            "Major Depressive Disorder Diagnostic Criteria",
+            "Bipolar I vs Bipolar II Differences",
+            "Antidepressant Classes and Side Effects"
+          ]
+        },
+        {
+          "name": "Anxiety and Trauma-Related Disorders",
+          "subtopics": [
+            "GAD vs Panic Disorder",
+            "PTSD Diagnostic Criteria",
+            "First-line Pharmacologic and Psychotherapy Options"
+          ]
+        },
+        {
+          "name": "Psychotic Disorders",
+          "subtopics": [
+            "Schizophrenia vs Schizoaffective Disorder",
+            "Typical vs Atypical Antipsychotics Side-effect Profiles",
+            "Neuroleptic Malignant Syndrome"
+          ]
+        },
+        {
+          "name": "Substance Use Disorders",
+          "subtopics": [
+            "Alcohol Use Disorder and Withdrawal",
+            "Opioid Use Disorder and Overdose Naloxone Use"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Rheumatology and Immunology",
+      "level": "MS4",
+      "topics": [
+        {
+          "name": "Inflammatory Arthritis",
+          "subtopics": [
+            "Rheumatoid Arthritis Clinical Features and Serology",
+            "Spondyloarthropathies (AS, Psoriatic Arthritis) Key Findings",
+            "Disease-Modifying Antirheumatic Drugs (DMARDs)"
+          ]
+        },
+        {
+          "name": "Systemic Autoimmune Diseases",
+          "subtopics": [
+            "Systemic Lupus Erythematosus Criteria and Organ Involvement",
+            "Vasculitis Syndromes Overview",
+            "Sjögren Syndrome and Systemic Sclerosis Basics"
+          ]
+        },
+        {
+          "name": "Basic Clinical Immunology",
+          "subtopics": [
+            "Primary vs Secondary Immunodeficiency Basics"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dermatology and Musculoskeletal",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Common Inflammatory Dermatoses",
+          "subtopics": [
+            "Atopic Dermatitis",
+            "Psoriasis Clinical Features and Treatment",
+            "Seborrheic Dermatitis vs Tinea"
+          ]
+        },
+        {
+          "name": "Skin Infections and Infestations",
+          "subtopics": [
+            "Impetigo and Cellulitis",
+            "Herpes Zoster vs Herpes Simplex",
+            "Scabies and Pediculosis"
+          ]
+        },
+        {
+          "name": "Fractures and Orthopedic Emergencies",
+          "subtopics": [
+            "Fracture Patterns and Compartment Syndrome",
+            "Back Pain Red Flags and Cauda Equina"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Obstetrics and Gynecology",
+      "level": "MS4",
+      "topics": [
+        {
+          "name": "Normal Pregnancy and Prenatal Care",
+          "subtopics": [
+            "Physiologic Changes in Pregnancy",
+            "Prenatal Screening and Diagnostic Tests",
+            "Management of Common Pregnancy Complaints"
+          ]
+        },
+        {
+          "name": "Obstetric Complications",
+          "subtopics": [
+            "Hypertensive Disorders of Pregnancy",
+            "Preterm Labor and PPROM",
+            "Postpartum Hemorrhage Initial Management"
+          ]
+        },
+        {
+          "name": "Gynecologic Oncology and Benign Disease",
+          "subtopics": [
+            "Cervical Cancer Screening and Abnormal Results Management",
+            "Ovarian Mass Evaluation",
+            "Abnormal Uterine Bleeding Evaluation"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pediatrics",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Well-Child Care and Development",
+          "subtopics": [
+            "Developmental Milestones by Age",
+            "Vaccination Schedule and Contraindications",
+            "Failure to Thrive Evaluation"
+          ]
+        },
+        {
+          "name": "Common Pediatric Infections",
+          "subtopics": [
+            "Otitis Media and Pharyngitis",
+            "Bronchiolitis vs Asthma in Children",
+            "Meningitis in Infants and Children"
+          ]
+        },
+        {
+          "name": "Pediatric Emergencies",
+          "subtopics": [
+            "Pediatric Dehydration Assessment and Rehydration",
+            "Febrile Seizures",
+            "Anaphylaxis Management in Children"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Emergency Medicine and Trauma",
+      "level": "MS4",
+      "topics": [
+        {
+          "name": "Resuscitation and Shock",
+          "subtopics": [
+            "Airway, Breathing, Circulation Priorities",
+            "Types of Shock and Initial Management",
+            "Massive Transfusion Protocols"
+          ]
+        },
+        {
+          "name": "Trauma",
+          "subtopics": [
+            "ATLS Primary and Secondary Survey",
+            "Head Trauma and Spinal Precautions",
+            "Abdominal Trauma and FAST Examination"
+          ]
+        },
+        {
+          "name": "Toxicology and Environmental Injuries",
+          "subtopics": [
+            "Common Poisonings and Antidotes",
+            "Heat Stroke and Hypothermia Basics"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Preventive Medicine, Ethics, and Professionalism",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Screening and Preventive Care",
+          "subtopics": [
+            "Adult Screening Guidelines (Cancer, CV Risk)",
+            "Vaccination in Adults and Special Populations"
+          ]
+        },
+        {
+          "name": "Epidemiology and Biostatistics",
+          "subtopics": [
+            "Study Design Basics",
+            "Sensitivity, Specificity, Predictive Values",
+            "Risk, Odds, and Hazard Ratios"
+          ]
+        },
+        {
+          "name": "Ethics and Communication",
+          "subtopics": [
+            "Informed Consent and Capacity",
+            "End-of-Life Decision-Making",
+            "Breaking Bad News and Shared Decision-Making"
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+

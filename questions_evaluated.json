@@ -1,0 +1,77 @@
+{
+  "statistics": {
+    "total_questions": 2,
+    "average_question_clarity": 4.0,
+    "average_option_quality": 4.0,
+    "average_explanation_quality": 4.0,
+    "average_medical_accuracy": 4.0,
+    "average_overall_quality": 4.0,
+    "average_total_score": 4.0,
+    "questions_evaluated": {
+      "question_clarity": 2,
+      "option_quality": 2,
+      "explanation_quality": 2,
+      "medical_accuracy": 2,
+      "overall_quality": 2,
+      "total_score": 2
+    }
+  },
+  "questions": [
+    {
+      "question": "What advantage does endovascular repair of ruptured infrarenal abdominal aortic aneurysms have over open surgical repair?",
+      "options": {
+        "A": "Lower 30-day mortality and better 5-year survival rates",
+        "B": "Higher complication rates",
+        "C": "Increased need for blood transfusions",
+        "D": "Longer recovery times"
+      },
+      "correct_answer": "A",
+      "explanations": {
+        "A": "Correct. Endovascular repair is associated with lower 30-day mortality and better 5-year survival rates compared to open surgical repair.",
+        "B": "Incorrect. Endovascular repair is known for having lower complication rates compared to open surgical repair.",
+        "C": "Incorrect. Endovascular repair typically requires fewer blood transfusions than open surgical repair due to its less invasive nature.",
+        "D": "Incorrect. Endovascular repair generally leads to shorter recovery times compared to open surgical repair."
+      },
+      "source": "Guidelines for AAA repair.pdf",
+      "source_chunk": "Kreienberg PB, et al. Endovascular repair of ruptured\ninfrarenal abdominal aortic aneurysm is associated with\nlower 30-day mortality and better 5-year survival rates than\nopen surgical repair. J Vasc Surg 2013;57:368-75.\n486. Bown MJ, Nicholson ML, Bell PR, Sayers RD. The systemic\ninﬂammatory response syndrome, organ failure, and mor-\ntality after abdominal aortic aneurysm repair. J Vasc Surg\n2003;37:600-6.\n487. McPhee J, Eslami MH, Arous EJ, Messina LM, Schanzer A.\nEndovascular treatment of ruptured abdominal aortic an-\neurysms in the United States (2001-2006): a signi ﬁcant\nsurvival beneﬁt over open repair is independently associ-\nated with increased institutional volume. J Vasc Surg\n2009;49:817-26.\n488. van Beek SC, Reimerink JJ, Vahl AC, Wisselink W,\nReekers JA, van Geloven N, et al. Effect of regional coop-\neration on outcomes from ruptured abdominal aortic\naneurysm. Br J Surg 2014;101:794-801.\n489. Brake MA, Shalhoub J, Crane JS, Gibbs RG, Franklin IJ.\nInvestigation and treatment of a complicated inﬂamma-\ntory aortoiliac aneurysm. Vasc Endovascular Surg 2012;46:\n190-4.\n490. Fatima J, Gota C, Clair DG, Billings SD, Gornik HL. Inﬂam-\nmatory abdominal aortic aneurysm with retroperitoneal\nﬁbrosis. Circulation 2014;130:1300-2.\n491. Mirault T, Lambert M, Puech P, Argatu D, Renaud A,\nDuhamel A, et al. Malignant retroperitonealﬁbrosis: MRI\ncharacteristics in 50 patients. Medicine (Baltimore) 2012;91:\n242-50.\n492. Ketha SS, Warrington KJ, McPhail IR. In ﬂammatory\nabdominal aortic aneurysm: a case report and review of\nliterature. Vasc Endovascular Surg 2014;48:65-9.\n493. Sterpetti AV. Etiology of inﬂammatory abdominal aortic\naneurysms. Surgery 2013;153:741-2.\n494. Galosi AB, Grilli Cicilioni C, Sbrollini G, Angelini A, Maselli G,\nCarbonari L. In ﬂammatory abdominal aortic aneurysm\npresenting as bilateral hydroureteronephrosis: a case report\nand review of literature. Arch Ital Urol Androl 2014;86:385-6.\n495. Paravastu SC, Ghosh J, Murray D, Farquharson FG, Serra-\ncino-Inglott F, Walker MG. A systematic review of open",
+      "source_page": 67,
+      "llm_judge_evaluation": {
+        "evaluation_text": "评估：\n\n问题清晰度：4\n- 问题表述非常清晰，直接询问了内血管修复与开放手术修复的优点，易于理解且没有歧义。\n\n选项合理性：4\n- 所有选项都合理且具有一定的干扰性。选项A是正确答案，而选项B、C和D都是常见的误解，能够有效测试考生的知识。\n\n解释充分性：4\n- 解释详细且充分，清楚地说明了每个选项的正确与否，并提供了相关的医学背景信息，帮助考生理解。\n\n医学准确性：4\n- 医学内容非常准确，符合最新的医学知识。关于内血管修复的优点与开放手术的比较，解释准确无误。\n\n总体质量：4\n- 问题的质量优秀，清晰、合理且医学准确，非常适合用于教学。\n\n总评分：4",
+        "question_clarity": 4.0,
+        "option_quality": 4.0,
+        "explanation_quality": 4.0,
+        "medical_accuracy": 4.0,
+        "overall_quality": 4.0,
+        "total_score": 4.0
+      }
+    },
+    {
+      "question": "What is the primary reason for recommending antibiotic prophylaxis in patients with an aortic prosthesis before dental procedures?",
+      "options": {
+        "A": "To prevent graft infection due to manipulation of the gingival or periapical region.",
+        "B": "To prevent the need for urgent dental procedures in the future.",
+        "C": "To reduce the risk of general anesthesia complications.",
+        "D": "To enhance the healing process post dental procedures."
+      },
+      "correct_answer": "A",
+      "explanations": {
+        "A": "Correct. Antibiotic prophylaxis is recommended to prevent graft infection specifically in patients with an aortic prosthesis during dental procedures that involve manipulation of the gingival or periapical regions.",
+        "B": "Incorrect. While avoiding the need for urgent dental procedures is important, it is not the primary reason for recommending antibiotic prophylaxis in this context.",
+        "C": "Incorrect. The focus of antibiotic prophylaxis is on preventing infections rather than reducing complications related to general anesthesia.",
+        "D": "Incorrect. The purpose of antibiotic prophylaxis is not to enhance healing but to prevent potential infections associated with dental procedures."
+      },
+      "source": "Guidelines for AAA repair.pdf",
+      "source_chunk": "and dermatologic or musculoskeletal procedures, and\nprophylaxis was not recommended for patients under-\ngoing these procedures unless the procedures were\nperformed in the presence of an infection.\n724 It was also\nstrongly recommended that any potential sources of\ndental sepsis be eliminated at least 2 weeks before im-\nplantation of a prosthetic valve or other intracardiac or\nintravascular foreign material, unless the procedure was\ndeemed urgent. Others have raised concerns that\npatients undergoing colonoscopy or urologic proced-\nures, especially the elderly and those with cancer or who\nare immunocompromised, require antibiotic prophy-\nlaxis.\n725,726 Both the European and ACC/AHA guidelines\nnoted that their recommendations were not based on\nstrong evidence, and further prospective evaluation was\nrecommended.\nFor those patients with an aortic prosthesis, whether\nplaced by OSR or EVAR, we suggest antibiotic prophy-\nlaxis to prevent graft infection before any dental proced-\nure involving the manipulation of the gingival or\nperiapical region of teeth or perforation of the oral\nmucosa, including scaling and root canal procedures.\nWe also suggest antibiotic prophylaxis before respiratory\ntract procedures, gastrointestinal or genitourinary pro-\ncedures, and dermatologic or musculoskeletal proced-\nures if the potential for infection exists or the patient is\nimmunocompromised.\nWe recommend antibiotic prophylaxis to prevent graft\ninfection before any dental procedure involving the\nmanipulation of the gingival or periapical region of teeth or\nperforation of the oral mucosa, including scaling and root\ncanal procedures, for any patient with an aortic prosthesis,\nwhether placed by OSR or EVAR.\nLevel of recommendation 1 (Strong)\nQuality of evidence B (Moderate)\nWe suggest antibiotic prophylaxis before respiratory tract\nprocedures, gastrointestinal or genitourinary procedures,\nand dermatologic or musculoskeletal procedures for any\npatient with an aortic prosthesis if the potential for infection",
+      "source_page": 49,
+      "llm_judge_evaluation": {
+        "evaluation_text": "评估：\n问题清晰度：4  \n该问题表述非常清晰，明确询问了在特定情况下（即有主动脉假体的患者在牙科手术前）推荐抗生素预防的主要原因。没有模糊或歧义的地方，易于理解。\n\n选项合理性：4  \n所有选项均合理且相关。选项A是正确答案，其他选项虽然都是错误的，但它们都与抗生素预防的主题相关，且具有一定的干扰性，能够考察考生对问题的理解。\n\n解释充分性：4  \n解释详细且充分，清楚地阐明了每个选项的正确性与错误性。特别是对于正确答案A的解释，提供了必要的背景信息，使考生能够理解为什么在这种情况下推荐抗生素预防。\n\n医学准确性：4  \n医学内容非常准确，符合当前的医学知识。抗生素预防的目的明确，特别是在有主动脉假体的患者中，强调了防止感染的重要性。\n\n总体质量：4  \n问题质量优秀，所有方面都表现良好，适合用于教学。问题不仅考察了学生的知识，还促进了对相关医学概念的深入理解。\n\n总评分：4",
+        "question_clarity": 4.0,
+        "option_quality": 4.0,
+        "explanation_quality": 4.0,
+        "medical_accuracy": 4.0,
+        "overall_quality": 4.0,
+        "total_score": 4.0
+      }
+    }
+  ]
+}

@@ -1020,6 +1020,304 @@ def rebuild():
 
 
 # =============================================================================
+# 提示生成端点 (Proactive Question Generation)
+# =============================================================================
+
+# 导入提示生成器
+hint_generator = None
+
+def initialize_hint_generator():
+    """
+    初始化苏格拉底式提示生成器。
+    
+    在服务器启动时调用，加载 ProactiveQuestionGenerator。
+    """
+    global hint_generator
+    try:
+        from proactive_question_generator import ProactiveQuestionGenerator
+        hint_generator = ProactiveQuestionGenerator()
+        print("[OK] 提示生成器已加载")
+        return True
+    except Exception as e:
+        print(f"[!] 提示生成器加载失败: {e}")
+        hint_generator = None
+        return False
+
+
+@app.route('/generate_hints', methods=['POST'])
+def generate_hints():
+    """
+    生成苏格拉底式提示问题端点。
+    
+    当学生回答错误或请求提示时，生成引导性子问题帮助学生
+    自己发现正确答案，而不是直接告诉他们。
+    
+    请求：
+        POST /generate_hints
+        Content-Type: application/json
+        {
+            "question": "问题文本",
+            "choices": {"A": "选项A", "B": "选项B", "C": "选项C", "D": "选项D"},
+            "student_answer": "B",
+            "correct_answer": "A",
+            "explanations": {"A": "解释A", ...},  // 可选
+            "conversation_history": [...],  // 可选，多轮提示时使用
+            "source_context": "相关上下文"  // 可选，RAG检索的上下文
+        }
+    
+    响应（基于 arXiv:2305.14999 交互式苏格拉底提问）：
+        {
+            "success": true,
+            "sub_questions": [
+                {
+                    "id": 1,
+                    "question": "学生需要回答的子问题",
+                    "hint": "如果学生困难可以提供的提示",
+                    "expected_concepts": ["期望的关键概念"]
+                },
+                {
+                    "id": 2,
+                    "question": "下一个子问题",
+                    "hint": "提示",
+                    "expected_concepts": ["概念"]
+                }
+            ],
+            "connection_to_main": "解释回答这些问题如何帮助解决主问题",
+            "encouragement": "鼓励信息",
+            "round_number": 1,
+            "is_final_round": false,
+            "formatted_display": "格式化的显示文本"
+        }
+    
+    错误响应：
+        {"success": false, "error": "错误信息"}, 状态码 400 或 500
+    """
+    global hint_generator
+    
+    try:
+        # 检查生成器是否可用
+        if hint_generator is None:
+            # 尝试初始化
+            if not initialize_hint_generator():
+                return jsonify({
+                    "success": False,
+                    "error": "提示生成器未初始化，请检查 API 密钥配置"
+                }), 500
+        
+        data = request.json
+        
+        # 验证必需字段
+        required_fields = ['question', 'choices', 'student_answer', 'correct_answer']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    "success": False,
+                    "error": f"缺少必需字段: {field}"
+                }), 400
+        
+        # 导入请求类
+        from proactive_question_generator import HintRequest
+        
+        # 构建请求
+        hint_request = HintRequest(
+            question=data['question'],
+            choices=data['choices'],
+            student_answer=data['student_answer'],
+            correct_answer=data['correct_answer'],
+            explanations=data.get('explanations'),
+            conversation_history=data.get('conversation_history'),
+            source_context=data.get('source_context')
+        )
+        
+        # 生成推理步骤链 (基于 MedTutor-R1 方法)
+        response = hint_generator.generate_sub_questions(hint_request)
+        
+        # 格式化显示
+        formatted = hint_generator.format_hints_for_display(response)
+        
+        # 转换为可序列化格式
+        response_data = hint_generator.to_dict(response)
+        
+        return jsonify({
+            "success": True,
+            "decomposition": response_data["decomposition"],
+            "active_step_id": response_data["active_step_id"],
+            "total_steps": response_data["total_steps"],
+            "is_complete": response_data["is_complete"],
+            "formatted_display": formatted
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/evaluate_answer', methods=['POST'])
+def evaluate_answer():
+    """
+    评估学生对推理步骤的回答，并根据需要生成更简单的子步骤。
+    
+    基于 MedTutor-R1 方法：如果学生不理解，将步骤分解成更简单的子步骤。
+    
+    请求：
+        POST /evaluate_answer
+        Content-Type: application/json
+        {
+            "question": "原始问题",
+            "choices": {...},
+            "student_answer": "学生对原问题的答案",
+            "correct_answer": "正确答案",
+            "step_id": "1",
+            "key_question": "推理步骤问题",
+            "step_summary": "步骤目的",
+            "expected_understanding": "期望的理解",
+            "student_response": "学生的回答"
+        }
+    
+    响应：
+        {
+            "success": true,
+            "understood": true/false,
+            "feedback": "反馈信息",
+            "sub_steps": [...],  // 如果不理解，更简单的子步骤
+            "missing_concept": "缺失的概念"
+        }
+    """
+    global hint_generator
+    
+    try:
+        if hint_generator is None:
+            if not initialize_hint_generator():
+                return jsonify({
+                    "success": False,
+                    "error": "提示生成器未初始化"
+                }), 500
+        
+        data = request.json
+        
+        from proactive_question_generator import HintRequest, ReasoningStep
+        
+        # 构建请求上下文
+        hint_request = HintRequest(
+            question=data['question'],
+            choices=data['choices'],
+            student_answer=data['student_answer'],
+            correct_answer=data['correct_answer']
+        )
+        
+        # 构建推理步骤
+        step = ReasoningStep(
+            step_id=data['step_id'],
+            key_question=data['key_question'],
+            step_summary=data.get('step_summary', ''),
+            expected_understanding=data.get('expected_understanding', '')
+        )
+        
+        # 评估学生回答
+        result = hint_generator.evaluate_response(
+            request=hint_request,
+            step=step,
+            student_response=data['student_response']
+        )
+        
+        # 转换子步骤为可序列化格式
+        sub_steps = []
+        for s in result.sub_steps:
+            sub_steps.append({
+                "step_id": s.step_id,
+                "key_question": s.key_question,
+                "step_summary": s.step_summary,
+                "expected_understanding": s.expected_understanding
+            })
+        
+        return jsonify({
+            "success": True,
+            "step_id": result.step_id,
+            "understood": result.understood,
+            "feedback": result.feedback,
+            "sub_steps": sub_steps,
+            "missing_concept": result.missing_concept
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/check_hint_trigger', methods=['POST'])
+def check_hint_trigger():
+    """
+    检查是否应该触发提示生成。
+    
+    触发条件：
+        1. 学生回答错误
+        2. 学生请求提示（输入包含 "hint", "help", "提示" 等关键词）
+    
+    请求：
+        POST /check_hint_trigger
+        Content-Type: application/json
+        {
+            "student_answer": "B",
+            "correct_answer": "A",
+            "user_message": "Can you give me a hint?"  // 可选
+        }
+    
+    响应：
+        {
+            "should_trigger": true,
+            "reason": "wrong_answer" | "student_request" | "no_trigger"
+        }
+    """
+    try:
+        data = request.json
+        
+        student_answer = data.get('student_answer', '')
+        correct_answer = data.get('correct_answer', '')
+        user_message = data.get('user_message')
+        
+        # 检查触发条件
+        should_trigger = False
+        reason = "no_trigger"
+        
+        # 条件1：答案错误
+        if student_answer and correct_answer and student_answer != correct_answer:
+            should_trigger = True
+            reason = "wrong_answer"
+        
+        # 条件2：用户请求提示
+        if user_message:
+            hint_keywords = [
+                "hint", "help", "clue", "guide", "stuck",
+                "don't understand", "confused", "explain",
+                "提示", "帮助", "不懂", "不明白", "给我提示"
+            ]
+            message_lower = user_message.lower()
+            if any(keyword in message_lower for keyword in hint_keywords):
+                should_trigger = True
+                reason = "student_request"
+        
+        return jsonify({
+            "should_trigger": should_trigger,
+            "reason": reason
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "should_trigger": False,
+            "reason": "error",
+            "error": str(e)
+        }), 500
+
+
+# =============================================================================
 # 主入口
 # =============================================================================
 
@@ -1045,12 +1343,18 @@ if __name__ == '__main__':
         - http://localhost:5000/search - 搜索 API
     """
     if initialize_rag():
+        # 初始化提示生成器
+        initialize_hint_generator()
+        
         print("\n服务器启动在 http://localhost:5000")
         print("\nAPI 端点：")
-        print("  POST /search     - 搜索相关块")
+        print("  POST /search          - 搜索相关块")
         print("       Body: {\"query\": \"你的问题\"}")
-        print("  GET  /health     - 健康检查")
-        print("  POST /rebuild    - 从 PDF 重建索引")
+        print("  POST /generate_hints  - 生成苏格拉底式提示")
+        print("       Body: {question, choices, student_answer, correct_answer}")
+        print("  POST /check_hint_trigger - 检查是否触发提示")
+        print("  GET  /health          - 健康检查")
+        print("  POST /rebuild         - 从 PDF 重建索引")
         print("\n按 Ctrl+C 停止服务器\n")
         
         # 启动 Flask 服务器
