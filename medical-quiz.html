@@ -559,13 +559,48 @@ Author: AI for Education (Wenchao Qin)
              - #qbank-selector: Dropdown selection box
              - #qbank-status: Display loading status and question count
              ============================================================ -->
+        <!-- ============================================================
+             Student Profile Section
+             学生档案区域
+             ============================================================
+             Function: Display and manage student knowledge profile
+             功能：显示和管理学生知识档案
+             
+             Elements:
+             - #student-profile-section: Profile container
+             - #student-name-input: Student name input
+             - #knowledge-stats: Knowledge statistics display
+             - #knowledge-visualization: Knowledge visualization
+             ============================================================ -->
+        <div class="section" style="padding: 15px; background: #f8f9fa; border-bottom: 2px solid #4a90e2;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <label style="font-weight: 600; color: #333;">👤 Student Name:</label>
+                    <input type="text" id="student-name-input" placeholder="Enter your name" 
+                           style="padding: 8px 15px; border-radius: 4px; border: 1px solid #e0e0e0; font-size: 14px; width: 200px;">
+                    <button id="init-profile-btn" class="submit-btn" style="background: #28a745; padding: 8px 15px; font-size: 14px;">
+                        Initialize Profile
+                    </button>
+                </div>
+                <div id="knowledge-stats" style="font-size: 13px; color: #666;">
+                    <span id="questions-answered">Questions Answered: 0</span> | 
+                    <span id="knowledge-coverage">Knowledge Coverage: 0%</span>
+                </div>
+            </div>
+            <div id="knowledge-visualization" style="max-height: 200px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #e0e0e0;">
+                <div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">
+                    No profile initialized. Please enter your name and click "Initialize Profile".
+                </div>
+            </div>
+        </div>
+
         <div class="section" style="padding: 15px;">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <label style="font-weight: 600; color: #666;">Question Bank:</label>
                 <select id="qbank-selector" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #e0e0e0; font-size: 14px;">
                     <option value="questions.json">Clinical Guidelines (200 questions)</option>
                     <option value="qbank_combined.json">Combined Qbank (Surgery + Amboss)</option>
-                    <option value="generated_domain_questions.json">Generated Domain Questions (477 questions)</option>
+                    <option value="generated_domain_questions.json">Generated Domain Questions (479 questions)</option>
                     <option value="all">All Questions (Merge All)</option>
                 </select>
                 <span id="qbank-status" style="color: #666; font-size: 13px;"></span>
@@ -599,6 +634,57 @@ Author: AI for Education (Wenchao Qin)
                 <button class="submit-btn" id="submit-btn">Submit</button>
                 <button class="submit-btn" id="prev-q" style="margin-left:10px; background: #6c757d;">Previous</button>
                 <button class="submit-btn" id="next-q" style="margin-left:10px;">Next</button>
+                
+                <!-- ============================================================
+                     Jump to Question Control
+                     跳转到指定题目控件
+                     ============================================================
+                     
+                     Function: Allow users to quickly jump to any question by number
+                     功能：允许用户通过输入题目编号快速跳转到任意题目
+                     
+                     Elements:
+                     - #jump-to-input: Number input field for question number (1-based)
+                       跳转输入框：用于输入题目编号的数字输入框（从1开始）
+                     - #jump-to-btn: Button to trigger jump action
+                       跳转按钮：触发跳转操作的按钮
+                     
+                     Usage:
+                     使用方法：
+                     1. Enter question number (1 to total questions) in the input field
+                        在输入框中输入题目编号（1到总题目数）
+                     2. Click "跳转" button or press Enter key
+                        点击"跳转"按钮或按Enter键
+                     3. System validates and jumps to the specified question
+                        系统验证并跳转到指定的题目
+                     
+                     Features:
+                     特性：
+                     - Auto-updates placeholder to show valid range (e.g., "1-477")
+                       自动更新占位符显示有效范围（例如："1-477"）
+                     - Auto-updates input value when navigating questions
+                       导航题目时自动更新输入框的值
+                     - Validates input range before jumping
+                       跳转前验证输入范围
+                     - Supports both button click and Enter key
+                       支持按钮点击和Enter键两种方式
+                     
+                     ============================================================ -->
+                <div style="margin-left: 15px; display: inline-flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 13px; color: #666;">跳转到:</label>
+                    <!-- Number input for question number (1-based, user-friendly)
+                         题目编号输入框（从1开始，用户友好） -->
+                    <input type="number" 
+                           id="jump-to-input" 
+                           placeholder="题号" 
+                           min="1" 
+                           style="width: 80px; padding: 6px 10px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 14px;">
+                    <!-- Jump button to trigger navigation
+                         跳转按钮，触发导航操作 -->
+                    <button class="submit-btn" 
+                            id="jump-to-btn" 
+                            style="padding: 6px 15px; font-size: 13px; background: #17a2b8;">跳转</button>
+                </div>
                 <div id="progress-info" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
             </div>
         </div>
@@ -821,15 +907,1344 @@ Author: AI for Education (Wenchao Qin)
                                           // 提示系统是否可用（需要RAG服务器）
 
         // ====================================================================
+        // Student Profile & Knowledge Tracking System
+        // 学生档案和知识追踪系统
+        // ====================================================================
+        //
+        // Data Structure:
+        //   数据结构：
+        //   {
+        //     userName: string,                    // 学生姓名
+        //     questionsAnswered: number,            // 已回答的问题数
+        //     knowledgeMap: {                       // 知识图谱
+        //       "domain->topic->subtopic": {        // 知识组件键（领域->主题->子主题）
+        //         status: "known" | "unknown",     // 知识状态：已知/未知
+        //         lastUpdated: timestamp,           // 最后更新时间
+        //         questionsAttempted: number,       // 尝试的问题数
+        //         questionsCorrect: number          // 答对的问题数
+        //       }
+        //     }
+        //   }
+        //
+        // Knowledge Tracking Rules:
+        //   知识追踪规则：
+        //   - Correct answer → status = "known" (知道该子主题)
+        //     答对 → 状态 = "known"（知道该子主题）
+        //   - Wrong answer → status = "unknown" (不知道该子主题)
+        //     答错 → 状态 = "unknown"（不知道该子主题）
+        //   - Initial state: All subtopics are "unknown" (假设学生什么都不知道)
+        //     初始状态：所有子主题都是"unknown"（假设学生什么都不知道）
+        //
+        // Storage:
+        //   存储：
+        //   - Uses localStorage with key "student_profile_{userName}"
+        //     使用localStorage，键为"student_profile_{userName}"
+        //   - Auto-saves after each answer submission
+        //     每次提交答案后自动保存
+        //
+        // ====================================================================
+        
+        let studentProfile = null;       // Current student profile object
+                                          // 当前学生档案对象
+        const PROFILE_STORAGE_PREFIX = 'student_profile_';  // localStorage key prefix
+                                                             // localStorage键前缀
+
+        // ====================================================================
         // Part 3: Initialization
         // 第三部分：初始化
         // ====================================================================
+
+        // ====================================================================
+        // Student Profile Management Functions
+        // 学生档案管理函数
+        // ====================================================================
+        
+        /**
+         * Initialize student profile (assume they know nothing initially)
+         * 初始化学生档案（初始假设学生什么都不知道）
+         * @param {string} userName - Student name
+         *   参数：学生姓名
+         * @returns {Object} - Initialized profile object
+         *   返回：初始化后的档案对象
+         */
+        function initializeStudentProfile(userName) {
+            return {
+                userName: userName,
+                questionsAnswered: 0,
+                knowledgeMap: {},  // Will be populated as questions are answered
+                                   // 随着问题回答而填充
+                createdAt: new Date().toISOString(),
+                lastUpdated: new Date().toISOString()
+            };
+        }
+        
+        /**
+         * Get knowledge component key from question
+         * 从问题中获取知识组件键
+         * @param {Object} question - Question object
+         *   参数：问题对象
+         * @returns {string|null} - Knowledge component key (domain->topic->subtopic) or null
+         *   返回：知识组件键（领域->主题->子主题）或null
+         */
+        function getKnowledgeComponentKey(question) {
+            if (!question) return null;
+            
+            // Check if question has domain/topic/subtopic fields
+            // 检查问题是否有domain/topic/subtopic字段
+            if (question.domain && question.topic && question.subtopic) {
+                return `${question.domain}->${question.topic}->${question.subtopic}`;
+            }
+            
+            // Fallback: Try to extract from question text or use question ID
+            // 回退：尝试从问题文本提取或使用问题ID
+            return question.id ? `unknown->unknown->${question.id}` : null;
+        }
+        
+        /**
+         * Generate a unique identifier for a question
+         * 为题目生成唯一标识符
+         * 
+         * This is used to track if a question has been answered correctly before,
+         * preventing duplicate counting when the same question is answered multiple times.
+         * 这用于跟踪一道题目是否之前已经答对过，防止重复答题时重复计数。
+         * 
+         * @param {Object} question - Question object
+         *   参数：问题对象
+         * @param {number} questionIndex - Index of question in allQuestions array (optional)
+         *   参数：题目在allQuestions数组中的索引（可选）
+         * @returns {string} - Unique question identifier
+         *   返回：唯一的题目标识符
+         */
+        function getQuestionId(question, questionIndex = null) {
+            if (!question) return null;
+            
+            // Priority 1: Use question.id if available
+            // 优先级1：如果题目有id字段，使用它
+            if (question.id) {
+                return `id_${question.id}`;
+            }
+            
+            // Priority 2: Use questionIndex if provided (most reliable)
+            // 优先级2：如果提供了questionIndex，使用它（最可靠）
+            if (questionIndex !== null && questionIndex >= 0) {
+                return `index_${questionIndex}`;
+            }
+            
+            // Priority 3: Try to find index in allQuestions
+            // 优先级3：尝试在allQuestions中查找索引
+            if (allQuestions && allQuestions.length > 0) {
+                const index = allQuestions.findIndex(q => q === question);
+                if (index >= 0) {
+                    return `index_${index}`;
+                }
+            }
+            
+            // Priority 4: Generate hash from question text (fallback)
+            // 优先级4：从题目文本生成hash（回退方案）
+            // Simple hash function for question text
+            // 简单的题目文本hash函数
+            const questionText = question.question || JSON.stringify(question);
+            let hash = 0;
+            for (let i = 0; i < questionText.length; i++) {
+                const char = questionText.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            return `hash_${Math.abs(hash)}`;
+        }
+        
+        /**
+         * Update knowledge status based on answer
+         * 根据答案更新知识状态
+         * @param {Object} question - Question object
+         *   参数：问题对象
+         * @param {boolean} isCorrect - Whether answer is correct
+         *   参数：答案是否正确
+         */
+        function updateKnowledgeStatus(question, isCorrect, questionIndexHint = null) {
+            if (!studentProfile) return;
+            
+            const key = getKnowledgeComponentKey(question);
+            if (!key) {
+                console.warn('Cannot track knowledge: question missing domain/topic/subtopic');
+                return;
+            }
+            
+            // Find the actual index of this question in allQuestions
+            // 在allQuestions中找到这道题目的实际索引
+            // This is important because currentGeneratedIndex might have changed
+            // 这很重要，因为currentGeneratedIndex可能已经改变了
+            // 
+            // IMPORTANT: If questionIndexHint is provided, use it directly (most reliable)
+            // 重要：如果提供了questionIndexHint，直接使用它（最可靠）
+            let questionIndex = -1;
+            
+            if (questionIndexHint !== null && questionIndexHint >= 0) {
+                // Use the hint directly - this is the most reliable method
+                // 直接使用提示 - 这是最可靠的方法
+                questionIndex = questionIndexHint;
+                console.log(`✅ Using questionIndexHint: ${questionIndex}`);
+            } else {
+                // Only search for index if hint was not provided
+                // 只有在没有提供提示时才搜索索引
+                console.log(`ℹ️ No questionIndexHint provided, searching for index...`);
+            }
+            
+            if (questionIndex < 0 && allQuestions && allQuestions.length > 0) {
+                // Try to find by reference first (fastest)
+                // 首先尝试通过引用查找（最快）
+                questionIndex = allQuestions.findIndex(q => q === question);
+                
+                // If not found by reference, try to find by content
+                // 如果通过引用找不到，尝试通过内容查找
+                if (questionIndex < 0) {
+                    // Try to match by question text and options
+                    // 尝试通过题目文本和选项匹配
+                    const questionText = question.question || '';
+                    questionIndex = allQuestions.findIndex(q => {
+                        const qText = q.question || '';
+                        return qText === questionText && 
+                               JSON.stringify(q.options) === JSON.stringify(question.options);
+                    });
+                }
+                
+                // If still not found, use currentGeneratedIndex as fallback
+                // 如果仍然找不到，使用currentGeneratedIndex作为回退
+                // BUT: Only use currentGeneratedIndex if the current question actually matches
+                // 但是：只有当当前题目确实匹配时才使用currentGeneratedIndex
+                if (questionIndex < 0 && currentGeneratedIndex >= 0 && currentGeneratedIndex < allQuestions.length) {
+                    const currentQuestion = allQuestions[currentGeneratedIndex];
+                    // Check if current question matches
+                    // 检查当前题目是否匹配
+                    if (currentQuestion === question || 
+                        (currentQuestion.question === question.question && 
+                         JSON.stringify(currentQuestion.options) === JSON.stringify(question.options))) {
+                        questionIndex = currentGeneratedIndex;
+                        console.log(`✅ Found question index using currentGeneratedIndex: ${questionIndex}`);
+                    } else {
+                        console.warn(`⚠️ currentGeneratedIndex (${currentGeneratedIndex}) does not match the question being answered`);
+                        console.warn(`   Current question text: ${(currentQuestion.question || '').substring(0, 50)}...`);
+                        console.warn(`   Answering question text: ${(question.question || '').substring(0, 50)}...`);
+                    }
+                }
+                
+                // Debug: Log index finding result
+                // 调试：记录索引查找结果
+                if (questionIndex < 0) {
+                    console.warn(`⚠️ Could not find question index in allQuestions`);
+                    console.warn(`   Question text: ${(question.question || '').substring(0, 50)}...`);
+                    console.warn(`   Current generated index: ${currentGeneratedIndex}`);
+                    console.warn(`   Total questions: ${allQuestions.length}`);
+                    console.warn(`   Attempting to find by searching all questions...`);
+                    
+                    // Last resort: Search all questions by content
+                    // 最后手段：通过内容搜索所有题目
+                    const questionText = question.question || '';
+                    const questionOptions = JSON.stringify(question.options || {});
+                    for (let i = 0; i < allQuestions.length; i++) {
+                        const q = allQuestions[i];
+                        const qText = q.question || '';
+                        const qOptions = JSON.stringify(q.options || {});
+                        if (qText === questionText && qOptions === questionOptions) {
+                            questionIndex = i;
+                            console.log(`✅ Found question index by content search: ${questionIndex}`);
+                            break;
+                        }
+                    }
+                } else {
+                    console.log(`✅ Found question index: ${questionIndex} (by ${questionIndex === currentGeneratedIndex ? 'currentGeneratedIndex' : 'reference/content match'})`);
+                }
+            }
+            
+            // Initialize knowledge component if not exists
+            // 如果知识组件不存在，则初始化
+            if (!studentProfile.knowledgeMap[key]) {
+                // Count total questions for this subtopic in allQuestions
+                // 统计allQuestions中该子主题的总题目数
+                const totalQuestionsForSubtopic = allQuestions.filter(q => {
+                    const qKey = getKnowledgeComponentKey(q);
+                    return qKey === key;
+                }).length;
+                
+                studentProfile.knowledgeMap[key] = {
+                    status: 'unknown',
+                    lastUpdated: new Date().toISOString(),
+                    questionsAttempted: 0,
+                    questionsCorrect: 0,
+                    totalQuestionsForSubtopic: totalQuestionsForSubtopic,  // Total questions for this subtopic
+                                                                           // 该子主题的总题目数
+                    correctQuestionIds: [],  // Track which questions have been answered correctly (prevent duplicates)
+                                               // 跟踪哪些题目已经答对过（防止重复计数）
+                    domain: question.domain || 'unknown',
+                    topic: question.topic || 'unknown',
+                    subtopic: question.subtopic || 'unknown'
+                };
+            }
+            
+            const component = studentProfile.knowledgeMap[key];
+            
+            // ============================================================
+            // Backward Compatibility: Initialize missing fields
+            // 向后兼容：初始化缺失的字段
+            // ============================================================
+            //
+            // This handles old profiles that were created before these fields were added
+            // 这处理了在这些字段添加之前创建的旧档案
+            //
+            if (component.totalQuestionsForSubtopic === undefined) {
+                // Count total questions for this subtopic in allQuestions
+                // 统计allQuestions中该子主题的总题目数
+                component.totalQuestionsForSubtopic = allQuestions.filter(q => {
+                    const qKey = getKnowledgeComponentKey(q);
+                    return qKey === key;
+                }).length;
+                
+                // Re-evaluate status based on new rule (all questions must be correct)
+                // 根据新规则重新评估状态（所有题目必须都正确）
+                // Use >= instead of === to handle cases where questionsCorrect > totalQuestionsForSubtopic
+                // 使用 >= 而不是 === 来处理questionsCorrect > totalQuestionsForSubtopic的情况
+                if (component.questionsCorrect >= component.totalQuestionsForSubtopic && 
+                    component.totalQuestionsForSubtopic > 0) {
+                    component.status = 'known';
+                } else {
+                    component.status = 'unknown';
+                }
+            }
+            
+            // Initialize correctQuestionIds if missing (for tracking unique correct answers)
+            // 如果缺少correctQuestionIds则初始化（用于跟踪唯一的正确答案）
+            if (!component.correctQuestionIds) {
+                component.correctQuestionIds = [];
+            }
+            
+            component.questionsAttempted += 1;
+            
+            // ============================================================
+            // Update Status: Only "known" if ALL questions are correct
+            // 更新状态：只有当所有题目都答对时才标记为"known"
+            // ============================================================
+            //
+            // New Rule:
+            //   新规则：
+            //   - A subtopic is "known" ONLY if student answered ALL questions correctly
+            //     只有当学生答对该子主题的所有题目时，才标记为"known"
+            //   - If ANY question is wrong, status = "unknown"
+            //     如果有任何题目答错，状态 = "unknown"
+            //
+            // Logic:
+            //   逻辑：
+            //   1. If answer is correct: Increment questionsCorrect
+            //      如果答案正确：增加questionsCorrect
+            //   2. Check if questionsCorrect === totalQuestionsForSubtopic
+            //      检查是否 questionsCorrect === totalQuestionsForSubtopic
+            //   3. If yes: status = "known" (all questions correct)
+            //      如果是：状态 = "known"（所有题目都正确）
+            //   4. If answer is wrong: status = "unknown" (not all correct)
+            //      如果答案错误：状态 = "unknown"（不是全部正确）
+            //
+            // Example:
+            //   示例：
+            //   - Subtopic has 3 questions total
+            //     子主题总共有3道题目
+            //   - Student answers: Question 1 (correct), Question 2 (correct), Question 3 (wrong)
+            //     学生回答：题目1（正确），题目2（正确），题目3（错误）
+            //   - questionsCorrect = 2, totalQuestionsForSubtopic = 3
+            //   - 2 !== 3 → status = "unknown" (not all correct)
+            //   - 2 !== 3 → 状态 = "unknown"（不是全部正确）
+            //
+            //   - If student later answers Question 3 correctly:
+            //     如果学生后来答对题目3：
+            //   - questionsCorrect = 3, totalQuestionsForSubtopic = 3
+            //   - 3 === 3 → status = "known" (all correct!)
+            //   - 3 === 3 → 状态 = "known"（全部正确！）
+            //
+            // ============================================================
+            
+            // ============================================================
+            // Prevent Duplicate Counting: Track Unique Correct Answers
+            // 防止重复计数：跟踪唯一的正确答案
+            // ============================================================
+            //
+            // Problem: In old rule, questionsCorrect was incremented every time student answered correctly,
+            // even if it was the same question multiple times. This caused questionsCorrect to exceed
+            // totalQuestionsForSubtopic, leading to incorrect status evaluation.
+            // 问题：在旧规则下，questionsCorrect每次答对都会递增，即使重复回答同一道题目。
+            // 这导致questionsCorrect超过totalQuestionsForSubtopic，导致状态评估错误。
+            //
+            // Solution: Track which questions have been answered correctly using question IDs.
+            // Only increment questionsCorrect if this is the first time this question is answered correctly.
+            // 解决方案：使用题目ID跟踪哪些题目已经答对过。
+            // 只有当这道题目第一次答对时，才增加questionsCorrect。
+            //
+            // ============================================================
+            
+            // Get unique question identifier
+            // 获取唯一的题目标识符
+            // Use the actual questionIndex we found, not currentGeneratedIndex
+            // 使用我们找到的实际questionIndex，而不是currentGeneratedIndex
+            console.log(`   Generating questionId with questionIndex: ${questionIndex >= 0 ? questionIndex : 'null'}`);
+            let questionId = getQuestionId(question, questionIndex >= 0 ? questionIndex : null);
+            console.log(`   Generated questionId: ${questionId}`);
+            
+            // If questionId is still null or not unique enough, generate a more unique ID
+            // 如果questionId仍然是null或不够唯一，生成更唯一的ID
+            if (!questionId || (questionIndex < 0 && questionId.startsWith('hash_'))) {
+                // Try to generate a unique ID based on question content + domain/topic/subtopic
+                // 尝试基于题目内容 + domain/topic/subtopic生成唯一ID
+                const questionText = question.question || '';
+                const domain = question.domain || '';
+                const topic = question.topic || '';
+                const subtopic = question.subtopic || '';
+                const optionsStr = JSON.stringify(question.options || {});
+                
+                // Create a unique identifier combining all these
+                // 创建一个结合所有这些的唯一标识符
+                const uniqueContent = `${domain}|${topic}|${subtopic}|${questionText.substring(0, 100)}|${optionsStr}`;
+                let hash = 0;
+                for (let i = 0; i < uniqueContent.length; i++) {
+                    const char = uniqueContent.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32-bit integer
+                }
+                questionId = `content_${Math.abs(hash)}`;
+                
+                console.warn(`⚠️ Could not find question index, using content-based ID: ${questionId}`);
+            }
+            
+            // Debug: Log question ID and current state
+            // 调试：记录题目ID和当前状态
+            // Calculate actual total questions for this subtopic
+            // 计算该子主题的实际总题目数
+            const actualTotalForSubtopic = allQuestions.filter(q => {
+                const qKey = getKnowledgeComponentKey(q);
+                return qKey === key;
+            }).length;
+            
+            console.log(`🔍 Updating knowledge for question ID: ${questionId}`);
+            console.log(`   Knowledge component key: ${key}`);
+            console.log(`   questionIndexHint provided: ${questionIndexHint !== null ? questionIndexHint : 'null'}`);
+            console.log(`   Question index: ${questionIndex >= 0 ? questionIndex : 'not found'}`);
+            console.log(`   Question text: ${(question.question || '').substring(0, 50)}...`);
+            console.log(`   Question domain: ${question.domain || 'unknown'}`);
+            console.log(`   Question topic: ${question.topic || 'unknown'}`);
+            console.log(`   Question subtopic: ${question.subtopic || 'unknown'}`);
+            console.log(`   Current questionsCorrect: ${component.questionsCorrect} (答对的不同题目数)`);
+            console.log(`   Current totalQuestionsForSubtopic: ${component.totalQuestionsForSubtopic} (该子主题的总题目数)`);
+            console.log(`   Actual total (from allQuestions): ${actualTotalForSubtopic} (实际总题目数)`);
+            console.log(`   Current correctQuestionIds: [${component.correctQuestionIds.join(', ')}]`);
+            console.log(`   Is correct: ${isCorrect}`);
+            
+            // IMPORTANT: If actualTotalForSubtopic is different from totalQuestionsForSubtopic, update it
+            // 重要：如果actualTotalForSubtopic与totalQuestionsForSubtopic不同，更新它
+            if (actualTotalForSubtopic !== component.totalQuestionsForSubtopic) {
+                console.warn(`⚠️ totalQuestionsForSubtopic MISMATCH!`);
+                console.warn(`   Current: ${component.totalQuestionsForSubtopic}`);
+                console.warn(`   Actual: ${actualTotalForSubtopic}`);
+                console.warn(`   Updating totalQuestionsForSubtopic to ${actualTotalForSubtopic}...`);
+                component.totalQuestionsForSubtopic = actualTotalForSubtopic;
+            }
+            
+            if (isCorrect) {
+                // Answer is correct
+                // 答案正确
+                
+                // Ensure correctQuestionIds is an array (defensive check)
+                // 确保correctQuestionIds是数组（防御性检查）
+                if (!Array.isArray(component.correctQuestionIds)) {
+                    console.warn(`⚠️ correctQuestionIds is not an array, initializing...`);
+                    component.correctQuestionIds = [];
+                }
+                
+                // Check if this question has been answered correctly before
+                // 检查这道题目是否之前已经答对过
+                const isFirstTimeCorrect = !component.correctQuestionIds.includes(questionId);
+                
+                console.log(`   ========================================`);
+                console.log(`   CHECKING IF FIRST TIME CORRECT:`);
+                console.log(`   questionId: "${questionId}"`);
+                console.log(`   questionIndex: ${questionIndex}`);
+                console.log(`   correctQuestionIds.length: ${component.correctQuestionIds.length}`);
+                console.log(`   correctQuestionIds: [${component.correctQuestionIds.join(', ')}]`);
+                console.log(`   includes("${questionId}"): ${component.correctQuestionIds.includes(questionId)}`);
+                console.log(`   isFirstTimeCorrect: ${isFirstTimeCorrect}`);
+                
+                // Note: questionsCorrect and correctQuestionIds.length can be different
+                // questionsCorrect = total number of correct answers (including duplicates)
+                // correctQuestionIds.length = number of unique questions answered correctly
+                // 注意：questionsCorrect和correctQuestionIds.length可以不同
+                // questionsCorrect = 答对的总次数（包括重复）
+                // correctQuestionIds.length = 答对的不同题目数
+                
+                // CRITICAL FIX: If questionsCorrect >= totalQuestionsForSubtopic but correctQuestionIds doesn't contain this questionId,
+                // it means the data is inconsistent. We should trust correctQuestionIds as the source of truth.
+                // 关键修复：如果questionsCorrect >= totalQuestionsForSubtopic但correctQuestionIds不包含此questionId，
+                // 说明数据不一致。我们应该信任correctQuestionIds作为真相来源。
+                if (component.questionsCorrect >= component.totalQuestionsForSubtopic && 
+                    component.totalQuestionsForSubtopic > 0 &&
+                    !component.correctQuestionIds.includes(questionId)) {
+                    console.warn(`⚠️ CRITICAL: questionsCorrect (${component.questionsCorrect}) >= totalQuestionsForSubtopic (${component.totalQuestionsForSubtopic}) but questionId "${questionId}" not in correctQuestionIds!`);
+                    console.warn(`   This means questionsCorrect is inflated. Resetting questionsCorrect to correctQuestionIds.length (${component.correctQuestionIds.length})`);
+                    // Reset questionsCorrect to match correctQuestionIds.length
+                    // 重置questionsCorrect以匹配correctQuestionIds.length
+                    component.questionsCorrect = component.correctQuestionIds.length;
+                    // Now check again if this is first time correct
+                    // 现在再次检查是否是第一次答对
+                    const isFirstTimeCorrectAfterFix = !component.correctQuestionIds.includes(questionId);
+                    console.warn(`   After fix, isFirstTimeCorrect: ${isFirstTimeCorrectAfterFix}`);
+                    if (isFirstTimeCorrectAfterFix) {
+                        // This is actually first time, so we should proceed
+                        // 这实际上是第一次，所以我们应该继续
+                        console.log(`   ✅ Proceeding with first-time correct logic...`);
+                        // IMPORTANT: Override isFirstTimeCorrect flag
+                        // 重要：覆盖isFirstTimeCorrect标志
+                        isFirstTimeCorrect = true;
+                    }
+                }
+                
+                // ADDITIONAL FIX: If isFirstTimeCorrect is false but questionId is not in correctQuestionIds,
+                // it means there's a bug. Force it to be true.
+                // 额外修复：如果isFirstTimeCorrect为false但questionId不在correctQuestionIds中，
+                // 说明有bug。强制将其设置为true。
+                if (!isFirstTimeCorrect && !component.correctQuestionIds.includes(questionId)) {
+                    console.warn(`⚠️ BUG DETECTED: isFirstTimeCorrect is false but questionId "${questionId}" is NOT in correctQuestionIds!`);
+                    console.warn(`   This should not happen. Forcing isFirstTimeCorrect to true...`);
+                    isFirstTimeCorrect = true;
+                }
+                
+                console.log(`   ========================================`);
+                
+                // CRITICAL FIX: If questionsCorrect >= totalQuestionsForSubtopic but questionId is not in correctQuestionIds,
+                // it means the data is inconsistent. We should add it and update questionsCorrect.
+                // 关键修复：如果questionsCorrect >= totalQuestionsForSubtopic但questionId不在correctQuestionIds中，
+                // 说明数据不一致。我们应该添加它并更新questionsCorrect。
+                if (!isFirstTimeCorrect && 
+                    component.questionsCorrect >= component.totalQuestionsForSubtopic && 
+                    component.totalQuestionsForSubtopic > 0 &&
+                    !component.correctQuestionIds.includes(questionId)) {
+                    console.warn(`⚠️ CRITICAL INCONSISTENCY DETECTED!`);
+                    console.warn(`   questionsCorrect (${component.questionsCorrect}) >= totalQuestionsForSubtopic (${component.totalQuestionsForSubtopic})`);
+                    console.warn(`   BUT questionId "${questionId}" is NOT in correctQuestionIds!`);
+                    console.warn(`   This means questionsCorrect is inflated. Fixing...`);
+                    
+                    // Reset questionsCorrect to match correctQuestionIds.length
+                    // 重置questionsCorrect以匹配correctQuestionIds.length
+                    component.questionsCorrect = component.correctQuestionIds.length;
+                    console.warn(`   Reset questionsCorrect to ${component.questionsCorrect} (correctQuestionIds.length)`);
+                    
+                    // Now check again if this is first time correct
+                    // 现在再次检查是否是第一次答对
+                    const isFirstTimeCorrectAfterFix = !component.correctQuestionIds.includes(questionId);
+                    console.warn(`   After fix, isFirstTimeCorrect: ${isFirstTimeCorrectAfterFix}`);
+                    
+                    if (isFirstTimeCorrectAfterFix) {
+                        // This is actually first time, so proceed with normal logic
+                        // 这实际上是第一次，所以继续正常逻辑
+                        console.log(`   ✅ Proceeding with first-time correct logic...`);
+                        isFirstTimeCorrect = true; // Override the flag
+                    }
+                }
+                
+                // IMPORTANT: questionsCorrect now represents "total number of correct answers" (including duplicates)
+                // 重要：questionsCorrect现在表示"答对的总次数"（包括重复）
+                // correctQuestionIds is used to track unique questions answered correctly (for "known" status)
+                // correctQuestionIds用于跟踪答对的不同题目（用于判断"known"状态）
+                
+                // Always increment questionsCorrect when answer is correct (even if duplicate)
+                // 答案正确时总是增加questionsCorrect（即使重复）
+                const oldQuestionsCorrect = component.questionsCorrect;
+                component.questionsCorrect += 1;
+                
+                // Only add to correctQuestionIds if this is the first time answering this question correctly
+                // 只有当第一次答对这道题目时，才添加到correctQuestionIds
+                if (isFirstTimeCorrect) {
+                    // Add question ID to the list of correctly answered questions
+                    // 将题目ID添加到已答对题目列表
+                    component.correctQuestionIds.push(questionId);
+                    
+                    console.log(`✅ First time correct for question: ${questionId ? questionId.substring(0, 50) : 'unknown'}...`);
+                    console.log(`   Updated: questionsCorrect ${oldQuestionsCorrect} → ${component.questionsCorrect} (答对的总次数)`);
+                    console.log(`   Updated: correctQuestionIds now has ${component.correctQuestionIds.length} items (答对的不同题目数)`);
+                    console.log(`   Updated: correctQuestionIds = [${component.correctQuestionIds.join(', ')}]`);
+                } else {
+                    console.log(`✅ Answered correctly again (duplicate): ${questionId ? questionId.substring(0, 50) : 'unknown'}...`);
+                    console.log(`   Updated: questionsCorrect ${oldQuestionsCorrect} → ${component.questionsCorrect} (答对的总次数，包括重复)`);
+                    console.log(`   correctQuestionIds unchanged: [${component.correctQuestionIds.join(', ')}]`);
+                }
+                
+                console.log(`   Progress: ${component.questionsCorrect}/${component.questionsAttempted} (答对的总次数/总尝试次数)`);
+                console.log(`   Status: ${component.correctQuestionIds.length}/${component.totalQuestionsForSubtopic} (答对的不同题目数/该子主题总题目数)`);
+                
+                // IMPORTANT: Recalculate totalQuestionsForSubtopic in case it's wrong
+                // 重要：重新计算totalQuestionsForSubtopic，以防它是错误的
+                const actualTotal = allQuestions.filter(q => {
+                    const qKey = getKnowledgeComponentKey(q);
+                    return qKey === key;
+                }).length;
+                
+                if (actualTotal !== component.totalQuestionsForSubtopic) {
+                    console.warn(`⚠️ totalQuestionsForSubtopic mismatch!`);
+                    console.warn(`   Current: ${component.totalQuestionsForSubtopic}`);
+                    console.warn(`   Actual: ${actualTotal}`);
+                    console.warn(`   Updating totalQuestionsForSubtopic to ${actualTotal}...`);
+                    component.totalQuestionsForSubtopic = actualTotal;
+                }
+                
+                // Force save immediately to ensure persistence
+                // 立即强制保存以确保持久化
+                saveStudentProfile();
+                
+                // Check if ALL questions for this subtopic have been answered correctly at least once
+                // 检查该子主题的所有题目是否都至少答对过一次
+                // 
+                // Rule: A subtopic is "known" if ALL questions have been answered correctly at least once
+                // 规则：如果所有题目都至少答对过一次，则该子主题标记为"known"
+                // 
+                // Note: questionsCorrect now represents "number of unique questions answered correctly",
+                // which is tracked via correctQuestionIds to prevent duplicate counting
+                // 注意：questionsCorrect现在表示"答对的不同题目数"，
+                // 通过correctQuestionIds跟踪以防止重复计数
+                //
+                // Example:
+                //   示例：
+                //   - Subtopic has 3 questions
+                //     子主题有3道题目
+                //   - Question 1: answered correctly → questionsCorrect = 1, correctQuestionIds = ["index_0"]
+                //     题目1：答对 → questionsCorrect = 1, correctQuestionIds = ["index_0"]
+                //   - Question 2: answered correctly → questionsCorrect = 2, correctQuestionIds = ["index_0", "index_5"]
+                //     题目2：答对 → questionsCorrect = 2, correctQuestionIds = ["index_0", "index_5"]
+                //   - Question 3: answered correctly → questionsCorrect = 3, correctQuestionIds = ["index_0", "index_5", "index_12"]
+                //     题目3：答对 → questionsCorrect = 3, correctQuestionIds = ["index_0", "index_5", "index_12"]
+                //   - correctQuestionIds.length (3) === totalQuestionsForSubtopic (3) → status = "known" ✅
+                //     correctQuestionIds.length (3) === totalQuestionsForSubtopic (3) → 状态 = "known" ✅
+                //
+                if (component.correctQuestionIds.length === component.totalQuestionsForSubtopic && 
+                    component.totalQuestionsForSubtopic > 0) {
+                    // All questions for this subtopic have been answered correctly at least once
+                    // → Student knows this subtopic
+                    // 该子主题的所有题目都至少答对过一次 → 学生知道该子主题
+                    component.status = 'known';
+                } else {
+                    // Not all questions have been answered correctly yet → Still unknown
+                    // 还不是所有题目都答对过 → 仍然未知
+                    component.status = 'unknown';
+                }
+            } else {
+                // Answer is wrong: Cannot be "known" (not all questions correct)
+                // 答案错误：不能是"known"（不是所有题目都正确）
+                component.status = 'unknown';
+                // Note: questionsCorrect is NOT incremented for wrong answers
+                // 注意：答错时不会增加questionsCorrect
+                // Note: Wrong answers are not tracked in correctQuestionIds
+                // 注意：错误答案不会记录在correctQuestionIds中
+            }
+            
+            component.lastUpdated = new Date().toISOString();
+            studentProfile.questionsAnswered += 1;
+            studentProfile.lastUpdated = new Date().toISOString();
+            
+            // Save to localStorage
+            // 保存到localStorage
+            saveStudentProfile();
+            
+            // Update UI
+            // 更新UI
+            updateKnowledgeDisplay();
+        }
+        
+        /**
+         * Save student profile to localStorage
+         * 将学生档案保存到localStorage
+         */
+        function saveStudentProfile() {
+            if (!studentProfile || !studentProfile.userName) return;
+            
+            try {
+                const key = PROFILE_STORAGE_PREFIX + studentProfile.userName;
+                
+                // Debug: Log what we're saving
+                // 调试：记录我们正在保存的内容
+                const profileToSave = JSON.parse(JSON.stringify(studentProfile)); // Deep copy
+                const totalCorrectQuestionIds = Object.values(profileToSave.knowledgeMap || {})
+                    .reduce((sum, comp) => sum + (comp.correctQuestionIds ? comp.correctQuestionIds.length : 0), 0);
+                
+                console.log('💾 Saving student profile:', {
+                    userName: profileToSave.userName,
+                    questionsAnswered: profileToSave.questionsAnswered,
+                    totalComponents: Object.keys(profileToSave.knowledgeMap || {}).length,
+                    totalCorrectQuestionIds: totalCorrectQuestionIds
+                });
+                
+                localStorage.setItem(key, JSON.stringify(profileToSave));
+                console.log('✅ Student profile saved to localStorage');
+                
+                // Verify it was saved correctly
+                // 验证它是否被正确保存
+                const saved = localStorage.getItem(key);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    const savedTotalCorrectQuestionIds = Object.values(parsed.knowledgeMap || {})
+                        .reduce((sum, comp) => sum + (comp.correctQuestionIds ? comp.correctQuestionIds.length : 0), 0);
+                    console.log('✅ Verified: Profile saved correctly. Total correctQuestionIds in saved profile:', savedTotalCorrectQuestionIds);
+                }
+            } catch (e) {
+                console.error('❌ Failed to save student profile:', e);
+            }
+        }
+        
+        /**
+         * Re-evaluate all knowledge components based on new rule
+         * 根据新规则重新评估所有知识组件
+         * 
+         * This function updates old profiles to use the new rule:
+         * "known" only if ALL questions for the subtopic are correct
+         * 此函数更新旧档案以使用新规则：
+         * 只有当该子主题的所有题目都答对时，才标记为"known"
+         */
+        function reevaluateKnowledgeStatus() {
+            if (!studentProfile || !allQuestions || allQuestions.length === 0) {
+                return;  // Cannot re-evaluate without profile or questions
+                         // 没有档案或题目无法重新评估
+            }
+            
+            let updatedCount = 0;
+            let knownCount = 0;
+            let unknownCount = 0;
+            let totalComponents = 0;
+            
+            console.log('🔄 Starting knowledge status re-evaluation...');
+            console.log(`   Total components in profile: ${Object.keys(studentProfile.knowledgeMap).length}`);
+            console.log(`   Total questions loaded: ${allQuestions.length}`);
+            
+            // Iterate through all knowledge components
+            // 遍历所有知识组件
+            for (const [key, component] of Object.entries(studentProfile.knowledgeMap)) {
+                totalComponents++;
+                
+                // Initialize correctQuestionIds if missing (for tracking unique correct answers)
+                // 如果缺少correctQuestionIds则初始化（用于跟踪唯一的正确答案）
+                if (!component.correctQuestionIds) {
+                    component.correctQuestionIds = [];
+                }
+                
+                // Check if totalQuestionsForSubtopic is missing (old profile)
+                // 检查是否缺少totalQuestionsForSubtopic（旧档案）
+                if (component.totalQuestionsForSubtopic === undefined) {
+                    // Count total questions for this subtopic
+                    // 统计该子主题的总题目数
+                    component.totalQuestionsForSubtopic = allQuestions.filter(q => {
+                        const qKey = getKnowledgeComponentKey(q);
+                        return qKey === key;
+                    }).length;
+                    
+                    if (component.totalQuestionsForSubtopic === 0) {
+                        // Debug: Try to find why no questions match
+                        // 调试：尝试找出为什么没有题目匹配
+                        console.warn(`⚠️ Component has 0 total questions: ${key}`);
+                        console.warn(`   Component domain: "${component.domain}", topic: "${component.topic}", subtopic: "${component.subtopic}"`);
+                        
+                        // Check if there are similar keys in allQuestions
+                        // 检查allQuestions中是否有类似的键
+                        const similarKeys = [];
+                        for (const q of allQuestions.slice(0, 100)) {  // Check first 100 questions
+                            const qKey = getKnowledgeComponentKey(q);
+                            if (qKey && qKey.includes(component.subtopic)) {
+                                similarKeys.push(qKey);
+                            }
+                        }
+                        if (similarKeys.length > 0) {
+                            console.warn(`   Found similar keys in questions:`, similarKeys.slice(0, 3));
+                        } else {
+                            console.warn(`   No similar keys found. This component might be from a different question bank.`);
+                            console.warn(`   未找到类似键。该组件可能来自不同的题目库。`);
+                        }
+                    }
+                    
+                    updatedCount++;
+                } else if (component.totalQuestionsForSubtopic === 0) {
+                    // Re-check even if totalQuestionsForSubtopic was already set to 0
+                    // 即使totalQuestionsForSubtopic已经设置为0，也重新检查
+                    const newCount = allQuestions.filter(q => {
+                        const qKey = getKnowledgeComponentKey(q);
+                        return qKey === key;
+                    }).length;
+                    
+                    if (newCount > 0) {
+                        console.log(`✅ Found ${newCount} questions for component: ${key.substring(0, 50)}...`);
+                        component.totalQuestionsForSubtopic = newCount;
+                        updatedCount++;
+                    }
+                }
+                
+                // ============================================================
+                // Handle components with 0 totalQuestionsForSubtopic
+                // 处理totalQuestionsForSubtopic为0的组件
+                // ============================================================
+                //
+                // If totalQuestionsForSubtopic is 0, it means no questions in current question bank
+                // match this component. This could happen if:
+                // 如果totalQuestionsForSubtopic为0，说明当前题目库中没有题目匹配该组件。这可能是因为：
+                // 1. Profile was created with a different question bank
+                //    档案是用不同的题目库创建的
+                // 2. Question bank was changed or questions were removed
+                //    题目库被更改或题目被删除
+                //
+                // Solution: If questionsCorrect > 0, we assume the student knows this subtopic
+                // (because they answered correctly before, even if we can't find the questions now)
+                // 解决方案：如果questionsCorrect > 0，我们假设学生知道该子主题
+                // （因为他们之前答对过，即使我们现在找不到这些题目）
+                //
+                if (component.totalQuestionsForSubtopic === 0) {
+                    // Cannot determine if all questions are correct (no questions found)
+                    // 无法确定是否所有题目都正确（找不到题目）
+                    // If student answered correctly before, mark as "known" (conservative approach)
+                    // 如果学生之前答对过，标记为"known"（保守方法）
+                    if (component.questionsCorrect > 0) {
+                        console.log(`ℹ️ Component has 0 total questions but questionsCorrect > 0: ${key.substring(0, 50)}...`);
+                        console.log(`   Marking as "known" (student answered correctly before, questions may be from different bank)`);
+                        component.status = 'known';
+                        knownCount++;
+                    } else {
+                        component.status = 'unknown';
+                        unknownCount++;
+                    }
+                    // Skip further evaluation for this component
+                    // 跳过该组件的进一步评估
+                    continue;
+                }
+                
+                // Re-evaluate status based on new rule (even if totalQuestionsForSubtopic exists)
+                // 根据新规则重新评估状态（即使totalQuestionsForSubtopic已存在）
+                const oldStatus = component.status;
+                
+                // Debug: Log component info for troubleshooting
+                // 调试：记录组件信息以便故障排除
+                if (component.totalQuestionsForSubtopic === 0) {
+                    console.warn(`⚠️ Component has 0 total questions: ${key}`, component);
+                }
+                
+                // Check if questionsCorrect is valid (should be <= totalQuestionsForSubtopic)
+                // 检查questionsCorrect是否有效（应该 <= totalQuestionsForSubtopic）
+                // 
+                // IMPORTANT: In old rule, questionsCorrect was incremented every time student answered correctly,
+                // even if it was the same question multiple times. This could cause questionsCorrect to exceed
+                // totalQuestionsForSubtopic. We need to cap it.
+                // 重要：在旧规则下，questionsCorrect每次答对都会递增，即使重复回答同一道题目。
+                // 这可能导致questionsCorrect超过totalQuestionsForSubtopic。我们需要限制它。
+                //
+                // ============================================================
+                // Handle Old Profile Data: Cap questionsCorrect if it exceeds total
+                // 处理旧档案数据：如果questionsCorrect超过总数，则限制它
+                // ============================================================
+                //
+                // In old profiles, questionsCorrect might exceed totalQuestionsForSubtopic
+                // because it counted duplicate answers. We cap it to totalQuestionsForSubtopic.
+                // 在旧档案中，questionsCorrect可能超过totalQuestionsForSubtopic，
+                // 因为它计算了重复答案。我们将其限制为totalQuestionsForSubtopic。
+                //
+                // This means: if student answered correctly more times than total questions,
+                // we assume they answered all questions correctly (at least once each)
+                // 这意味着：如果学生答对的次数超过总题目数，
+                // 我们假设他们答对了所有题目（每道至少一次）
+                //
+                if (component.questionsCorrect > component.totalQuestionsForSubtopic && component.totalQuestionsForSubtopic > 0) {
+                    console.warn(`⚠️ Component has more correct answers than total questions: ${key}`, {
+                        questionsCorrect: component.questionsCorrect,
+                        totalQuestionsForSubtopic: component.totalQuestionsForSubtopic,
+                        correctQuestionIdsLength: component.correctQuestionIds ? component.correctQuestionIds.length : 0,
+                        reason: '可能是旧规则下重复答题导致的，已自动修正'
+                    });
+                    
+                    // IMPORTANT: If correctQuestionIds exists and has accurate data, use it as source of truth
+                    // 重要：如果correctQuestionIds存在且有准确数据，使用它作为真相来源
+                    if (component.correctQuestionIds && component.correctQuestionIds.length > 0) {
+                        // Use correctQuestionIds.length as the accurate count
+                        // 使用correctQuestionIds.length作为准确计数
+                        console.warn(`   Using correctQuestionIds.length (${component.correctQuestionIds.length}) as accurate count`);
+                        component.questionsCorrect = component.correctQuestionIds.length;
+                    } else {
+                        // Cap questionsCorrect to totalQuestionsForSubtopic
+                        // 将questionsCorrect限制为totalQuestionsForSubtopic
+                        component.questionsCorrect = component.totalQuestionsForSubtopic;
+                    }
+                }
+                
+                // Re-evaluate status
+                // 重新评估状态
+                // 
+                // Rule: A subtopic is "known" if ALL questions have been answered correctly at least once
+                // 规则：如果所有题目都至少答对过一次，则该子主题标记为"known"
+                //
+                // Logic:
+                //   逻辑：
+                //   - questionsCorrect: Number of unique questions answered correctly (tracked via correctQuestionIds)
+                //     questionsCorrect：答对的不同题目数（通过correctQuestionIds跟踪）
+                //   - totalQuestionsForSubtopic: Total number of questions for this subtopic
+                //     totalQuestionsForSubtopic：该子主题的总题目数
+                //   - If questionsCorrect === totalQuestionsForSubtopic: All questions answered correctly at least once
+                //     如果questionsCorrect === totalQuestionsForSubtopic：所有题目都至少答对过一次
+                //   - If questionsCorrect < totalQuestionsForSubtopic: Not all questions answered correctly yet
+                //     如果questionsCorrect < totalQuestionsForSubtopic：还不是所有题目都答对过
+                //
+                // For old profiles without correctQuestionIds:
+                // 对于没有correctQuestionIds的旧档案：
+                //   - questionsCorrect might be inaccurate (includes duplicates)
+                //     questionsCorrect可能不准确（包含重复）
+                //   - Use >= to be lenient: if questionsCorrect >= totalQuestionsForSubtopic,
+                //     assume all questions were answered correctly (even if there were duplicates)
+                //     使用 >= 以更宽松：如果questionsCorrect >= totalQuestionsForSubtopic，
+                //     假设所有题目都答对过（即使有重复）
+                //
+                const hasCorrectQuestionIds = component.correctQuestionIds && component.correctQuestionIds.length > 0;
+                
+                if (hasCorrectQuestionIds) {
+                    // New profile with accurate tracking: Use strict comparison (===)
+                    // 有准确跟踪的新档案：使用严格比较（===）
+                    // questionsCorrect is accurate (no duplicates)
+                    // questionsCorrect是准确的（无重复）
+                    if (component.questionsCorrect === component.totalQuestionsForSubtopic && 
+                        component.totalQuestionsForSubtopic > 0) {
+                        component.status = 'known';
+                        knownCount++;
+                    } else {
+                        component.status = 'unknown';
+                        unknownCount++;
+                    }
+                } else {
+                    // Old profile without accurate tracking: Use lenient comparison (>=)
+                    // 没有准确跟踪的旧档案：使用宽松比较（>=）
+                    // questionsCorrect might include duplicates, so >= is more lenient
+                    // questionsCorrect可能包含重复，所以 >= 更宽松
+                    if (component.questionsCorrect >= component.totalQuestionsForSubtopic && 
+                        component.totalQuestionsForSubtopic > 0) {
+                        component.status = 'known';
+                        knownCount++;
+                    } else {
+                        component.status = 'unknown';
+                        unknownCount++;
+                    }
+                }
+                
+                // Debug: Log detailed information for each component (only for first 5 to avoid spam)
+                // 调试：记录每个组件的详细信息（仅前5个，避免日志过多）
+                if (totalComponents <= 5) {
+                    const hasCorrectQuestionIdsDebug = component.correctQuestionIds && component.correctQuestionIds.length > 0;
+                    const willBeKnown = component.questionsCorrect >= component.totalQuestionsForSubtopic && 
+                                        component.totalQuestionsForSubtopic > 0;
+                    
+                    console.log(`📊 Component: ${key.substring(0, 60)}...`, {
+                        questionsCorrect: component.questionsCorrect,
+                        totalQuestionsForSubtopic: component.totalQuestionsForSubtopic,
+                        questionsAttempted: component.questionsAttempted,
+                        hasCorrectQuestionIds: hasCorrectQuestionIdsDebug,
+                        correctQuestionIdsCount: component.correctQuestionIds ? component.correctQuestionIds.length : 0,
+                        oldStatus: oldStatus,
+                        newStatus: component.status,
+                        willBeKnown: willBeKnown,
+                        reason: willBeKnown ? 'questionsCorrect >= totalQuestionsForSubtopic' : 
+                               (component.totalQuestionsForSubtopic === 0 ? 'totalQuestionsForSubtopic is 0' : 
+                                'questionsCorrect < totalQuestionsForSubtopic')
+                    });
+                }
+                
+                // Debug: Log status changes
+                // 调试：记录状态变化
+                if (oldStatus !== component.status) {
+                    console.log(`🔄 Status changed for ${key}: ${oldStatus} → ${component.status}`, {
+                        questionsCorrect: component.questionsCorrect,
+                        totalQuestionsForSubtopic: component.totalQuestionsForSubtopic,
+                        questionsAttempted: component.questionsAttempted
+                    });
+                    updatedCount++;
+                }
+            }
+            
+            // Summary
+            // 总结
+            const coverage = totalComponents > 0 ? Math.round((knownCount / totalComponents) * 100) : 0;
+            console.log('📈 Re-evaluation summary:', {
+                totalComponents: totalComponents,
+                knownComponents: knownCount,
+                unknownComponents: unknownCount,
+                coverage: coverage,
+                updatedCount: updatedCount
+            });
+            
+            // ============================================================
+            // Detailed Analysis: Why Coverage is 0?
+            // 详细分析：为什么Coverage是0？
+            // ============================================================
+            if (coverage === 0 && totalComponents > 0) {
+                console.warn('⚠️ Coverage is 0%! Analyzing reasons...');
+                
+                // Count components by questionsCorrect vs totalQuestionsForSubtopic
+                // 统计questionsCorrect与totalQuestionsForSubtopic的关系
+                let correctEqualsTotal = 0;
+                let correctLessThanTotal = 0;
+                let correctGreaterThanTotal = 0;
+                let zeroTotal = 0;
+                let examples = [];
+                
+                for (const [key, component] of Object.entries(studentProfile.knowledgeMap)) {
+                    if (component.totalQuestionsForSubtopic === 0) {
+                        zeroTotal++;
+                        if (examples.length < 3) {
+                            examples.push({type: 'zeroTotal', key: key.substring(0, 50), component});
+                        }
+                    } else if (component.questionsCorrect === component.totalQuestionsForSubtopic) {
+                        correctEqualsTotal++;
+                        if (examples.length < 5) {
+                            examples.push({type: 'equals', key: key.substring(0, 50), 
+                                         questionsCorrect: component.questionsCorrect, 
+                                         totalQuestionsForSubtopic: component.totalQuestionsForSubtopic});
+                        }
+                    } else if (component.questionsCorrect < component.totalQuestionsForSubtopic) {
+                        correctLessThanTotal++;
+                        if (examples.length < 5) {
+                            examples.push({type: 'lessThan', key: key.substring(0, 50), 
+                                         questionsCorrect: component.questionsCorrect, 
+                                         totalQuestionsForSubtopic: component.totalQuestionsForSubtopic,
+                                         difference: component.totalQuestionsForSubtopic - component.questionsCorrect});
+                        }
+                    } else {
+                        correctGreaterThanTotal++;
+                        if (examples.length < 5) {
+                            examples.push({type: 'greaterThan', key: key.substring(0, 50), 
+                                         questionsCorrect: component.questionsCorrect, 
+                                         totalQuestionsForSubtopic: component.totalQuestionsForSubtopic});
+                        }
+                    }
+                }
+                
+                console.log('📊 Component analysis:', {
+                    'questionsCorrect === totalQuestionsForSubtopic': correctEqualsTotal,
+                    'questionsCorrect < totalQuestionsForSubtopic': correctLessThanTotal,
+                    'questionsCorrect > totalQuestionsForSubtopic': correctGreaterThanTotal,
+                    'totalQuestionsForSubtopic === 0': zeroTotal
+                });
+                
+                console.log('📋 Example components:', examples);
+                
+                // Show why components are not "known"
+                // 显示为什么组件不是"known"
+                if (correctLessThanTotal > 0) {
+                    console.warn(`⚠️ ${correctLessThanTotal} components have questionsCorrect < totalQuestionsForSubtopic`);
+                    console.warn('   This means students haven\'t answered all questions correctly for these subtopics.');
+                    console.warn('   这意味着学生还没有答对这些子主题的所有题目。');
+                }
+                
+                if (correctGreaterThanTotal > 0) {
+                    console.warn(`⚠️ ${correctGreaterThanTotal} components have questionsCorrect > totalQuestionsForSubtopic`);
+                    console.warn('   This might be due to duplicate answers in old profiles.');
+                    console.warn('   这可能是由于旧档案中的重复答题导致的。');
+                }
+            }
+            
+            if (updatedCount > 0) {
+                console.log(`✅ Re-evaluated ${updatedCount} knowledge components based on new rule`);
+                // Save updated profile
+                // 保存更新后的档案
+                saveStudentProfile();
+                // Update UI
+                // 更新UI
+                updateKnowledgeDisplay();
+            } else {
+                console.log('ℹ️ No components needed re-evaluation');
+            }
+        }
+        
+        /**
+         * Load student profile from localStorage
+         * 从localStorage加载学生档案
+         * @param {string} userName - Student name
+         *   参数：学生姓名
+         * @returns {Object|null} - Profile object or null if not found
+         *   返回：档案对象，如果未找到则返回null
+         */
+        function loadStudentProfile(userName) {
+            if (!userName) return null;
+            
+            try {
+                const key = PROFILE_STORAGE_PREFIX + userName;
+                const stored = localStorage.getItem(key);
+                if (stored) {
+                    const profile = JSON.parse(stored);
+                    
+                    // Debug: Log what we loaded
+                    // 调试：记录我们加载的内容
+                    const totalCorrectQuestionIds = Object.values(profile.knowledgeMap || {})
+                        .reduce((sum, comp) => sum + (comp.correctQuestionIds ? comp.correctQuestionIds.length : 0), 0);
+                    
+                    console.log('📥 Loaded student profile:', {
+                        userName: profile.userName,
+                        questionsAnswered: profile.questionsAnswered,
+                        totalComponents: Object.keys(profile.knowledgeMap || {}).length,
+                        totalCorrectQuestionIds: totalCorrectQuestionIds
+                    });
+                    
+                    // Ensure correctQuestionIds exists for all components
+                    // 确保所有组件都有correctQuestionIds
+                    let fixedCount = 0;
+                    for (const [key, component] of Object.entries(profile.knowledgeMap || {})) {
+                        if (!component.correctQuestionIds) {
+                            component.correctQuestionIds = [];
+                            fixedCount++;
+                        }
+                    }
+                    if (fixedCount > 0) {
+                        console.log(`🔧 Fixed ${fixedCount} components missing correctQuestionIds`);
+                    }
+                    
+                    return profile;
+                }
+            } catch (e) {
+                console.error('Failed to load student profile:', e);
+            }
+            
+            return null;
+        }
+        
+        /**
+         * Update knowledge visualization display
+         * 更新知识可视化显示
+         */
+        function updateKnowledgeDisplay() {
+            if (!studentProfile) {
+                document.getElementById('knowledge-visualization').innerHTML = 
+                    '<div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">No profile initialized.</div>';
+                return;
+            }
+            
+            const statsEl = document.getElementById('questions-answered');
+            const coverageEl = document.getElementById('knowledge-coverage');
+            const vizEl = document.getElementById('knowledge-visualization');
+            
+            // Update statistics
+            // 更新统计信息
+            if (statsEl) {
+                statsEl.textContent = `Questions Answered: ${studentProfile.questionsAnswered}`;
+            }
+            
+            // ============================================================
+            // Calculate Knowledge Coverage
+            // 计算知识覆盖率
+            // ============================================================
+            //
+            // Definition:
+            //   定义：
+            //   Knowledge Coverage = (已知的知识组件数 / 总知识组件数) × 100%
+            //   知识覆盖率 = (已知的知识组件数 / 总知识组件数) × 100%
+            //
+            // Knowledge Component (知识组件):
+            //   - A unique subtopic identified by: domain->topic->subtopic
+            //     由 domain->topic->subtopic 标识的唯一子主题
+            //   - Example: "Cardiology->Heart Failure->Systolic vs Diastolic Heart Failure"
+            //     示例："Cardiology->Heart Failure->Systolic vs Diastolic Heart Failure"
+            //
+            // Component Status (组件状态):
+            //   - "known": Student answered correctly at least once for this subtopic
+            //     "known"：学生对该子主题至少答对过一次
+            //   - "unknown": Student answered incorrectly or never answered correctly
+            //     "unknown"：学生答错或从未答对过
+            //
+            // Calculation Steps:
+            //   计算步骤：
+            //   1. Count total components: All unique subtopics encountered
+            //      统计总组件数：所有遇到的唯一子主题
+            //   2. Count known components: Components with status === "known"
+            //      统计已知组件数：状态为"known"的组件
+            //   3. Calculate percentage: (known / total) × 100%
+            //      计算百分比：(已知数 / 总数) × 100%
+            //
+            // Example:
+            //   示例：
+            //   - Total components: 160 (student has encountered 160 different subtopics)
+            //     总组件数：160（学生遇到了160个不同的子主题）
+            //   - Known components: 119 (student answered correctly for 119 subtopics)
+            //     已知组件数：119（学生对119个子主题答对过）
+            //   - Coverage: (119 / 160) × 100% = 74.4%
+            //     覆盖率：(119 / 160) × 100% = 74.4%
+            //
+            // Important Notes:
+            //   重要说明：
+            //   - Coverage is based on subtopics, NOT individual questions
+            //     覆盖率基于子主题，而非单个题目
+            //   - Multiple questions can belong to the same subtopic
+            //     多个题目可以属于同一个子主题
+            //   - Status is binary: "known" or "unknown" (latest answer determines status)
+            //     状态是二元的："known"或"unknown"（最新答案决定状态）
+            //   - If student answers correctly → status = "known"
+            //     如果学生答对 → 状态 = "known"
+            //   - If student answers incorrectly → status = "unknown"
+            //     如果学生答错 → 状态 = "unknown"
+            //
+            // Edge Cases:
+            //   边界情况：
+            //   - If totalComponents = 0: Coverage = 0% (no questions answered yet)
+            //     如果totalComponents = 0：覆盖率 = 0%（尚未回答任何题目）
+            //   - If knownComponents = 0: Coverage = 0% (no subtopics mastered)
+            //     如果knownComponents = 0：覆盖率 = 0%（没有掌握任何子主题）
+            //   - If knownComponents = totalComponents: Coverage = 100% (all subtopics mastered)
+            //     如果knownComponents = totalComponents：覆盖率 = 100%（所有子主题都已掌握）
+            //
+            // ============================================================
+            
+            // Step 1: Count total knowledge components
+            // 步骤1：统计总知识组件数
+            // 
+            // Each key in knowledgeMap represents a unique subtopic
+            // knowledgeMap中的每个键代表一个唯一的子主题
+            // Key format: "domain->topic->subtopic"
+            // 键格式："domain->topic->subtopic"
+            //
+            // Example keys:
+            //   示例键：
+            //   - "Cardiology->Heart Failure->Systolic vs Diastolic Heart Failure"
+            //   - "Pulmonology->Asthma->Pathophysiology and Triggers"
+            //   - "Gastroenterology->Upper GI Bleeding->Peptic Ulcer Bleeding Management"
+            //
+            const totalComponents = Object.keys(studentProfile.knowledgeMap).length;
+            
+            // Step 2: Count known components (status === "known")
+            // 步骤2：统计已知组件数（状态 === "known"）
+            //
+            // Filter knowledgeMap values to find components with status === "known"
+            // 过滤knowledgeMap的值，找到状态为"known"的组件
+            //
+            // A component is "known" if:
+            //   组件在以下情况下为"known"：
+            //   - Student answered correctly for at least one question of this subtopic
+            //     学生对该子主题的至少一道题目答对过
+            //   - Latest answer for this subtopic was correct
+            //     该子主题的最新答案是正确的
+            //
+            // Note: Status is updated based on the LATEST answer for each subtopic
+            // 注意：状态根据每个子主题的"最新答案"更新
+            // - If latest answer is correct → status = "known"
+            //   如果最新答案正确 → 状态 = "known"
+            // - If latest answer is wrong → status = "unknown"
+            //   如果最新答案错误 → 状态 = "unknown"
+            //
+            const knownComponents = Object.values(studentProfile.knowledgeMap)
+                .filter(c => c.status === 'known').length;
+            
+            // Step 3: Calculate coverage percentage
+            // 步骤3：计算覆盖率百分比
+            //
+            // Formula: Coverage = (Known Components / Total Components) × 100%
+            // 公式：覆盖率 = (已知组件数 / 总组件数) × 100%
+            //
+            // Round to nearest integer for display
+            // 四舍五入到最近的整数以便显示
+            //
+            // Edge case: If no components yet (totalComponents = 0), coverage = 0%
+            // 边界情况：如果还没有组件（totalComponents = 0），覆盖率 = 0%
+            //
+            const coverage = totalComponents > 0 
+                ? Math.round((knownComponents / totalComponents) * 100) 
+                : 0;
+            
+            // Step 4: Update UI display
+            // 步骤4：更新UI显示
+            //
+            // Display format: "Knowledge Coverage: X% (known/total)"
+            // 显示格式："Knowledge Coverage: X% (已知数/总数)"
+            //
+            // Example: "Knowledge Coverage: 74% (119/160)"
+            // 示例："Knowledge Coverage: 74% (119/160)"
+            //
+            if (coverageEl) {
+                coverageEl.textContent = `Knowledge Coverage: ${coverage}% (${knownComponents}/${totalComponents})`;
+            }
+            
+            // Update visualization
+            // 更新可视化
+            if (vizEl && totalComponents > 0) {
+                const components = Object.entries(studentProfile.knowledgeMap)
+                    .sort((a, b) => b[1].lastUpdated.localeCompare(a[1].lastUpdated))
+                    .slice(0, 20);  // Show top 20 most recent
+                                    // 显示最近20个
+                
+                let html = '<div style="font-size: 12px;">';
+                html += '<div style="font-weight: 600; margin-bottom: 10px; color: #333;">Knowledge Components:</div>';
+                
+                components.forEach(([key, component]) => {
+                    const statusColor = component.status === 'known' ? '#28a745' : '#dc3545';
+                    const statusIcon = component.status === 'known' ? '✓' : '✗';
+                    const accuracy = component.questionsAttempted > 0
+                        ? Math.round((component.questionsCorrect / component.questionsAttempted) * 100)
+                        : 0;
+                    
+                    html += `<div style="padding: 8px; margin: 5px 0; background: #f8f9fa; border-left: 3px solid ${statusColor}; border-radius: 3px;">`;
+                    html += `<div style="font-weight: 500; color: #333;">${statusIcon} ${component.subtopic}</div>`;
+                    html += `<div style="font-size: 11px; color: #666; margin-top: 3px;">`;
+                    html += `${component.domain} → ${component.topic} | Accuracy: ${accuracy}% (${component.questionsCorrect}/${component.questionsAttempted})`;
+                    html += `</div>`;
+                    html += `</div>`;
+                });
+                
+                if (totalComponents > 20) {
+                    html += `<div style="margin-top: 10px; color: #666; font-size: 11px;">... and ${totalComponents - 20} more components</div>`;
+                }
+                
+                html += '</div>';
+                vizEl.innerHTML = html;
+            } else if (vizEl) {
+                vizEl.innerHTML = '<div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">No knowledge tracked yet. Answer questions to build your knowledge profile.</div>';
+            }
+        }
+        
+        /**
+         * Initialize profile button handler
+         * 初始化档案按钮处理器
+         */
+        function setupProfileInitialization() {
+            const initBtn = document.getElementById('init-profile-btn');
+            const nameInput = document.getElementById('student-name-input');
+            
+            if (initBtn && nameInput) {
+                initBtn.addEventListener('click', function() {
+                    const userName = nameInput.value.trim();
+                    if (!userName) {
+                        alert('Please enter your name first');
+                        return;
+                    }
+                    
+                    // Try to load existing profile, or create new one
+                    // 尝试加载现有档案，或创建新档案
+                    const existing = loadStudentProfile(userName);
+                    if (existing) {
+                        studentProfile = existing;
+                        console.log('✅ Loaded existing profile for', userName);
+                        
+                        // Re-evaluate knowledge status based on new rule
+                        // 根据新规则重新评估知识状态
+                        // This updates old profiles to use the new "all questions must be correct" rule
+                        // 这更新旧档案以使用新的"所有题目必须都正确"规则
+                        // Note: This will only work if questions are already loaded
+                        // 注意：这只有在题目已经加载时才会工作
+                        if (allQuestions && allQuestions.length > 0) {
+                            reevaluateKnowledgeStatus();
+                        }
+                    } else {
+                        studentProfile = initializeStudentProfile(userName);
+                        saveStudentProfile();
+                        console.log('✅ Created new profile for', userName);
+                    }
+                    
+                    updateKnowledgeDisplay();
+                    nameInput.disabled = true;
+                    initBtn.textContent = 'Profile Active';
+                    initBtn.style.background = '#6c757d';
+                });
+            }
+        }
 
         // Initialize on page load
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', async function() {
             setupEventListeners();
             setupQbankSelector();
+            setupProfileInitialization();
             // Load questions from default source
             // 从默认源加载问题
             await loadQuestionsFromFile('questions.json');
@@ -953,6 +2368,61 @@ Author: AI for Education (Wenchao Qin)
                 allQuestions = questions;
                 currentGeneratedIndex = 0;
                 console.log(`✓ Loaded ${allQuestions.length} questions from ${source}`);
+                
+                // Re-evaluate knowledge status if profile is already loaded
+                // 如果档案已经加载，重新评估知识状态
+                // This ensures old profiles are updated with the new rule
+                // 这确保旧档案使用新规则更新
+                if (studentProfile) {
+                    reevaluateKnowledgeStatus();
+                }
+                
+                // ============================================================
+                // Initialize Jump-to-Question Input Field After Loading Questions
+                // 加载题目后初始化跳转到题目输入框
+                // ============================================================
+                // 
+                // This section initializes the jump-to-question input field
+                // when questions are first loaded from a file.
+                // 此部分在首次从文件加载题目时初始化跳转输入框。
+                //
+                // Initialization Steps:
+                //   初始化步骤：
+                //   1. Set placeholder to show valid range (e.g., "1-477")
+                //      设置占位符以显示有效范围（例如："1-477"）
+                //   2. Set max attribute to total number of questions
+                //      设置max属性为总题目数
+                //   3. Reset value to 1 (first question)
+                //      重置值为1（第一题）
+                //
+                // Why This is Needed:
+                //   为什么需要这个：
+                //   - When questions are loaded, we start at question 1
+                //     加载题目时，我们从第1题开始
+                //   - Input field needs to reflect this initial state
+                //     输入框需要反映这个初始状态
+                //   - Placeholder helps user understand valid input range
+                //     占位符帮助用户理解有效输入范围
+                //
+                // ============================================================
+                const jumpInput = document.getElementById('jump-to-input');
+                if (jumpInput && allQuestions.length > 0) {
+                    // Set placeholder to show valid range
+                    // 设置占位符以显示有效范围
+                    // Example: "1-479" for 479 questions
+                    // 示例：479题时显示"1-479"
+                    jumpInput.placeholder = `1-${allQuestions.length}`;
+                    
+                    // Set maximum value for HTML5 number input validation
+                    // 设置HTML5数字输入框的最大值以进行验证
+                    jumpInput.max = allQuestions.length;
+                    
+                    // Reset to first question (1-based)
+                    // 重置为第一题（从1开始）
+                    // This ensures input field shows correct position after loading
+                    // 这确保加载后输入框显示正确的位置
+                    jumpInput.value = 1;
+                }
                 
                 // Debug: Check Amboss questions' images field
                 if (source === 'qbank_combined.json' || source === 'all') {
@@ -1205,6 +2675,41 @@ Author: AI for Education (Wenchao Qin)
             const progressInfo = document.getElementById('progress-info');
             
             if (nextBtn) {
+                // ============================================================
+                // Update Next Button Text Based on Position
+                // 根据位置更新"下一个"按钮文本
+                // ============================================================
+                // 
+                // Button Text Logic:
+                //   按钮文本逻辑：
+                //   - If NOT on last question: Show "Next →"
+                //     如果不在最后一题：显示"Next →"
+                //   - If on last question: Show "Finish ✓"
+                //     如果在最后一题：显示"Finish ✓"
+                //
+                // Condition Explanation:
+                //   条件说明：
+                //   - currentGeneratedIndex < allQuestions.length - 1
+                //     当前索引 < 总题目数 - 1
+                //     → Not on last question (still has next question)
+                //        → 不在最后一题（还有下一题）
+                //   - Otherwise: currentGeneratedIndex === allQuestions.length - 1
+                //     否则：当前索引 === 总题目数 - 1
+                //     → On last question (no more questions)
+                //        → 在最后一题（没有更多题目）
+                //
+                // Example:
+                //   示例：
+                //   - 479 questions total, currentGeneratedIndex = 477 (0-based)
+                //     总共479题，当前索引 = 477（基于0）
+                //   - 477 < 479 - 1 = 478? No → Show "Finish ✓"
+                //     477 < 479 - 1 = 478？否 → 显示"Finish ✓"
+                //   - 479 questions total, currentGeneratedIndex = 100 (0-based)
+                //     总共479题，当前索引 = 100（基于0）
+                //   - 100 < 479 - 1 = 478? Yes → Show "Next →"
+                //     100 < 479 - 1 = 478？是 → 显示"Next →"
+                //
+                // ============================================================
                 nextBtn.textContent = currentGeneratedIndex < allQuestions.length - 1 ? 'Next →' : 'Finish ✓';
             }
             if (prevBtn) {
@@ -1217,6 +2722,57 @@ Author: AI for Education (Wenchao Qin)
                     <strong>Question ${currentGeneratedIndex + 1} of ${allQuestions.length}</strong>
                     ${q.source ? ` | 📄 ${q.source}` : ''}
                 `;
+            }
+            
+            // ============================================================
+            // Update Jump-to-Question Input Field
+            // 更新跳转到题目输入框
+            // ============================================================
+            // 
+            // This section updates the jump-to-question input field whenever
+            // the current question changes (via Previous/Next buttons or direct jump).
+            // 此部分在题目改变时（通过Previous/Next按钮或直接跳转）更新跳转输入框。
+            //
+            // Updates:
+            //   更新内容：
+            //   1. Placeholder: Shows valid range (e.g., "1-477")
+            //      占位符：显示有效范围（例如："1-477"）
+            //   2. Max attribute: Sets maximum allowed value for number input
+            //      max属性：设置数字输入框的最大允许值
+            //   3. Value: Updates to current question number (1-based)
+            //      值：更新为当前题目编号（从1开始）
+            //
+            // Purpose:
+            //   目的：
+            //   - Provides visual feedback of current position
+            //     提供当前位置的视觉反馈
+            //   - Helps user understand valid input range
+            //     帮助用户理解有效输入范围
+            //   - Keeps input field synchronized with navigation
+            //     保持输入框与导航同步
+            //
+            // ============================================================
+            const jumpInputEl = document.getElementById('jump-to-input');
+            if (jumpInputEl && allQuestions.length > 0) {
+                // Update placeholder to show valid range
+                // 更新占位符以显示有效范围
+                // Example: If 479 questions, placeholder becomes "1-479"
+                // 示例：如果有479题，占位符变为"1-479"
+                jumpInputEl.placeholder = `1-${allQuestions.length}`;
+                
+                // Set maximum value for HTML5 number input validation
+                // 设置HTML5数字输入框的最大值以进行验证
+                // This prevents user from entering numbers greater than total questions
+                // 这防止用户输入大于总题目数的数字
+                jumpInputEl.max = allQuestions.length;
+                
+                // Update value to current question number (1-based, user-friendly)
+                // 更新值为当前题目编号（从1开始，用户友好）
+                // currentGeneratedIndex is 0-based, so add 1 to convert to 1-based
+                // currentGeneratedIndex是基于0的，所以加1转换为基于1的
+                // Example: currentGeneratedIndex = 99 → value = 100 (question 100)
+                // 示例：currentGeneratedIndex = 99 → value = 100（第100题）
+                jumpInputEl.value = currentGeneratedIndex + 1;
             }
         }
 
@@ -1500,6 +3056,125 @@ Author: AI for Education (Wenchao Qin)
             // Send button click
             // 发送按钮点击
             messageSendBtn.addEventListener('click', handleMessageSubmit);
+            
+            // ============================================================
+            // Jump to Question Functionality - Event Listeners Setup
+            // 跳转到指定题目功能 - 事件监听器设置
+            // ============================================================
+            //
+            // This section sets up event listeners for the jump-to-question feature.
+            // 此部分为跳转功能设置事件监听器。
+            //
+            // Event Listeners:
+            //   事件监听器：
+            //   1. Button click event: When user clicks "跳转" button
+            //      按钮点击事件：用户点击"跳转"按钮时
+            //   2. Enter key event: When user presses Enter in the input field
+            //      Enter键事件：用户在输入框中按Enter键时
+            //
+            // Validation:
+            //   验证：
+            //   - Checks if input is a valid positive number
+            //     检查输入是否为有效的正数
+            //   - Calls jumpToQuestion() function if valid
+            //     如果有效则调用jumpToQuestion()函数
+            //   - Shows error alert if invalid
+            //     如果无效则显示错误提示
+            //
+            // ============================================================
+            
+            // Get jump-to-question UI elements
+            // 获取跳转功能的UI元素
+            const jumpToBtn = document.getElementById('jump-to-btn');      // Jump button element
+                                                                           // 跳转按钮元素
+            const jumpInput = document.getElementById('jump-to-input');   // Input field element
+                                                                           // 输入框元素
+            
+            // Only set up listeners if both elements exist
+            // 只有当两个元素都存在时才设置监听器
+            if (jumpToBtn && jumpInput) {
+                // ============================================================
+                // Button Click Event Handler
+                // 按钮点击事件处理器
+                // ============================================================
+                // 
+                // Triggered when user clicks the "跳转" button
+                // 当用户点击"跳转"按钮时触发
+                //
+                // Process:
+                //   处理流程：
+                //   1. Get the value from input field
+                //      从输入框获取值
+                //   2. Parse to integer (question number, 1-based)
+                //      解析为整数（题目编号，从1开始）
+                //   3. Validate: must be a positive number
+                //      验证：必须是正数
+                //   4. Call jumpToQuestion() if valid, show alert if invalid
+                //      如果有效则调用jumpToQuestion()，如果无效则显示提示
+                //
+                // ============================================================
+                jumpToBtn.addEventListener('click', () => {
+                    // Parse input value to integer
+                    // 将输入值解析为整数
+                    const questionNumber = parseInt(jumpInput.value);
+                    
+                    // Validate: check if it's a valid positive number
+                    // 验证：检查是否为有效的正数
+                    if (!isNaN(questionNumber) && questionNumber > 0) {
+                        // Valid input: jump to the question
+                        // 有效输入：跳转到该题目
+                        jumpToQuestion(questionNumber);
+                    } else {
+                        // Invalid input: show error message
+                        // 无效输入：显示错误消息
+                        alert('请输入有效的题目编号 / Please enter a valid question number');
+                    }
+                });
+                
+                // ============================================================
+                // Enter Key Event Handler
+                // Enter键事件处理器
+                // ============================================================
+                // 
+                // Triggered when user presses Enter key in the input field
+                // 当用户在输入框中按Enter键时触发
+                //
+                // This provides keyboard shortcut for better UX
+                // 这提供了键盘快捷键以改善用户体验
+                //
+                // Process: Same as button click handler
+                // 处理流程：与按钮点击处理器相同
+                //
+                // ============================================================
+                jumpInput.addEventListener('keypress', (e) => {
+                    // Check if Enter key was pressed
+                    // 检查是否按下了Enter键
+                    if (e.key === 'Enter') {
+                        // Parse input value to integer
+                        // 将输入值解析为整数
+                        const questionNumber = parseInt(e.target.value);
+                        
+                        // Validate: check if it's a valid positive number
+                        // 验证：检查是否为有效的正数
+                        if (!isNaN(questionNumber) && questionNumber > 0) {
+                            // Valid input: jump to the question
+                            // 有效输入：跳转到该题目
+                            jumpToQuestion(questionNumber);
+                        } else {
+                            // Invalid input: show error message
+                            // 无效输入：显示错误消息
+                            alert('请输入有效的题目编号 / Please enter a valid question number');
+                        }
+                    }
+                });
+            } else {
+                // Debug: Log if elements are not found (should not happen in normal operation)
+                // 调试：如果找不到元素则记录日志（正常操作中不应发生）
+                console.warn('Jump-to-question elements not found:', {
+                    jumpToBtn: !!jumpToBtn,
+                    jumpInput: !!jumpInput
+                });
+            }
         }
 
         // ============================================================
@@ -2107,6 +3782,29 @@ Author: AI for Education (Wenchao Qin)
                 // Update current data with feedback
                 currentData.QA.student_prediction = selectedAnswer;
                 currentData.feedback = feedback;
+                
+                // Update knowledge tracking (if profile is initialized)
+                // 更新知识追踪（如果档案已初始化）
+                if (studentProfile && allQuestions && currentGeneratedIndex >= 0 && currentGeneratedIndex < allQuestions.length) {
+                    const currentQuestion = allQuestions[currentGeneratedIndex];
+                    
+                    // Debug: Log which question we're tracking
+                    // 调试：记录我们正在追踪的题目
+                    console.log(`📝 Tracking knowledge for question at index ${currentGeneratedIndex}`);
+                    console.log(`   Question text: ${(currentQuestion.question || '').substring(0, 50)}...`);
+                    console.log(`   Is correct: ${isCorrect}`);
+                    
+                    // Pass currentGeneratedIndex directly as questionIndexHint to ensure correct tracking
+                    // 直接传递currentGeneratedIndex作为questionIndexHint以确保正确追踪
+                    updateKnowledgeStatus(currentQuestion, isCorrect, currentGeneratedIndex);
+                } else {
+                    console.warn(`⚠️ Cannot track knowledge:`, {
+                        hasProfile: !!studentProfile,
+                        hasQuestions: !!allQuestions,
+                        currentIndex: currentGeneratedIndex,
+                        questionsLength: allQuestions ? allQuestions.length : 0
+                    });
+                }
                 
                 // Re-render with feedback
                 renderQuestion(currentData);
@@ -3234,26 +4932,315 @@ ${(() => {
             }
         });
 
-        /**
-         * Next question button
-         * - If there's a next question, load it
-         * - If it's the last question, show completion prompt and ask if restart
-         */
+        // ============================================================
+        // Next Question Button Event Handler
+        // "下一个"按钮事件处理器
+        // ============================================================
+        //
+        // Function: Handle clicks on the "Next" / "Finish" button
+        // 功能：处理"Next" / "Finish"按钮的点击事件
+        //
+        // Behavior:
+        //   行为：
+        //   1. If NOT on last question: Load next question
+        //      如果不在最后一题：加载下一题
+        //   2. If on last question: Show completion message and ask if restart
+        //      如果在最后一题：显示完成消息并询问是否重新开始
+        //
+        // Completion Flow (when all questions are done):
+        //   完成流程（当所有题目都完成时）：
+        //   1. User clicks "Finish ✓" button (shown on last question)
+        //      用户点击"Finish ✓"按钮（在最后一题时显示）
+        //   2. System detects: next index >= total questions
+        //      系统检测：下一个索引 >= 总题目数
+        //   3. Show congratulation alert with total question count
+        //      显示包含总题目数的祝贺提示
+        //   4. Ask user if they want to restart from beginning
+        //      询问用户是否想从头重新开始
+        //   5. If yes: Load first question (index 0)
+        //      如果是：加载第一题（索引0）
+        //   6. If no: Stay on last question
+        //      如果否：停留在最后一题
+        //
+        // ============================================================
         document.getElementById('next-q')?.addEventListener('click', () => {
+            // Guard: Check if questions are loaded
+            // 保护：检查题目是否已加载
             if (!allQuestions.length) return;
             
+            // Calculate next question index
+            // 计算下一题的索引
             const next = currentGeneratedIndex + 1;
+            
+            // ============================================================
+            // Case 1: There is a next question
+            // 情况1：还有下一题
+            // ============================================================
+            // 
+            // Condition: next < allQuestions.length
+            // 条件：next < allQuestions.length
+            // 
+            // Example:
+            //   示例：
+            //   - Current: question 100 (index 99)
+            //     当前：第100题（索引99）
+            //   - Next: question 101 (index 100)
+            //     下一题：第101题（索引100）
+            //   - 100 < 479? Yes → Load next question
+            //     100 < 479？是 → 加载下一题
+            //
             if (next < allQuestions.length) {
+                // Load the next question
+                // 加载下一题
                 loadQuestionByIndex(next);
-            } else {
-                // Completed all questions
+            } 
+            // ============================================================
+            // Case 2: All questions completed (on last question)
+            // 情况2：所有题目已完成（在最后一题）
+            // ============================================================
+            // 
+            // Condition: next >= allQuestions.length
+            // 条件：next >= allQuestions.length
+            // 
+            // This means:
+            //   这意味着：
+            //   - Current index is the last question (allQuestions.length - 1)
+            //     当前索引是最后一题（allQuestions.length - 1）
+            //   - Next index would be >= total questions (out of bounds)
+            //     下一个索引将 >= 总题目数（超出范围）
+            //   - User has completed all questions
+            //     用户已完成所有题目
+            //
+            // Example:
+            //   示例：
+            //   - Total: 479 questions (indices 0-478)
+            //     总共：479题（索引0-478）
+            //   - Current: question 479 (index 478, last question)
+            //     当前：第479题（索引478，最后一题）
+            //   - Next: index 479
+            //     下一题：索引479
+            //   - 479 >= 479? Yes → All questions completed!
+            //     479 >= 479？是 → 所有题目已完成！
+            //
+            else {
+                // ============================================================
+                // Step 1: Show Completion Congratulations Alert
+                // 步骤1：显示完成祝贺提示
+                // ============================================================
+                // 
+                // Display a congratulatory message to celebrate completion
+                // 显示祝贺消息以庆祝完成
+                // 
+                // Alert Content:
+                //   提示内容：
+                //   - Emoji: 🎉 (celebration)
+                //     表情符号：🎉（庆祝）
+                //   - Message: "Congratulations! You have completed all X questions."
+                //     消息："Congratulations! You have completed all X questions."
+                //   - X: Total number of questions (e.g., 479)
+                //     X：总题目数（例如：479）
+                //
+                // This is a blocking alert (user must click OK to continue)
+                // 这是一个阻塞式提示（用户必须点击OK才能继续）
+                //
                 alert(`🎉 Congratulations! You have completed all ${allQuestions.length} questions.`);
-                // Ask if restart from beginning
+                
+                // ============================================================
+                // Step 2: Ask if User Wants to Restart
+                // 步骤2：询问用户是否想重新开始
+                // ============================================================
+                // 
+                // After showing congratulations, ask if user wants to restart
+                // 显示祝贺后，询问用户是否想重新开始
+                //
+                // Confirm Dialog:
+                //   确认对话框：
+                //   - Shows: "Would you like to restart from the beginning?"
+                //     显示："Would you like to restart from the beginning?"
+                //   - Two buttons: OK (true) and Cancel (false)
+                //     两个按钮：OK（true）和Cancel（false）
+                //
+                // User Choices:
+                //   用户选择：
+                //   - Click OK (true): Restart from question 1
+                //     点击OK（true）：从第1题重新开始
+                //   - Click Cancel (false): Stay on last question
+                //     点击Cancel（false）：停留在最后一题
+                //
                 if (confirm('Would you like to restart from the beginning?')) {
+                    // User chose to restart: Load first question (index 0)
+                    // 用户选择重新开始：加载第一题（索引0）
                     loadQuestionByIndex(0);
                 }
+                // If user chose Cancel, do nothing (stay on last question)
+                // 如果用户选择Cancel，不执行任何操作（停留在最后一题）
             }
         });
+
+        // ============================================================
+        // Jump to Question Functionality - Core Function
+        // 跳转到指定题目功能 - 核心函数
+        // ============================================================
+        //
+        // This function implements the core logic for jumping to a specific question.
+        // 此函数实现跳转到指定题目的核心逻辑。
+        //
+        // Overview:
+        //   概述：
+        //   - Takes a question number (1-based, user-friendly)
+        //     接收题目编号（从1开始，用户友好）
+        //   - Converts to 0-based array index (internal representation)
+        //     转换为从0开始的数组索引（内部表示）
+        //   - Validates the range
+        //     验证范围
+        //   - Loads and displays the target question
+        //     加载并显示目标题目
+        //   - Updates the input field to reflect current position
+        //     更新输入框以反映当前位置
+        //
+        // ============================================================
+        
+        /**
+         * Jump to a specific question by number (1-based)
+         * 跳转到指定题目编号（从1开始）
+         * 
+         * @param {number} questionNumber - Question number (1-based, user-friendly)
+         *   参数：题目编号（从1开始，用户友好）
+         *   Example: questionNumber = 100 means "jump to question 100"
+         *   示例：questionNumber = 100 表示"跳转到第100题"
+         * 
+         * @returns {void}
+         *   返回：无返回值
+         * 
+         * Side Effects:
+         *   副作用：
+         *   - Updates currentGeneratedIndex global variable
+         *     更新全局变量currentGeneratedIndex
+         *   - Calls loadQuestionByIndex() to load and display the question
+         *     调用loadQuestionByIndex()加载并显示题目
+         *   - Updates jump-to-input field value
+         *     更新跳转输入框的值
+         *   - May show alert messages for validation errors
+         *     可能显示验证错误提示
+         * 
+         * Error Handling:
+         *   错误处理：
+         *   - If questions not loaded: Shows alert and returns early
+         *     如果题目未加载：显示提示并提前返回
+         *   - If number out of range: Shows alert with valid range and returns early
+         *     如果数字超出范围：显示包含有效范围的提示并提前返回
+         * 
+         * Example Usage:
+         *   使用示例：
+         *   jumpToQuestion(1);   // Jump to first question
+         *                        // 跳转到第一题
+         *   jumpToQuestion(100); // Jump to 100th question
+         *                        // 跳转到第100题
+         *   jumpToQuestion(479); // Jump to last question (if 479 questions total)
+         *                        // 跳转到最后一题（如果总共479题）
+         */
+        function jumpToQuestion(questionNumber) {
+            // ============================================================
+            // Step 1: Check if questions are loaded
+            // 步骤1：检查题目是否已加载
+            // ============================================================
+            // 
+            // This validation ensures that allQuestions array exists and has content
+            // 此验证确保allQuestions数组存在且有内容
+            // Without this check, the function would fail when called before questions are loaded
+            // 没有此检查，在题目加载前调用函数会失败
+            //
+            if (!allQuestions || allQuestions.length === 0) {
+                alert('请先加载题目 / Please load questions first');
+                return;  // Early return: cannot proceed without questions
+                         // 提前返回：没有题目无法继续
+            }
+            
+            // ============================================================
+            // Step 2: Convert 1-based question number to 0-based array index
+            // 步骤2：将基于1的题目编号转换为基于0的数组索引
+            // ============================================================
+            // 
+            // User input is 1-based (question 1, 2, 3, ...) for user-friendliness
+            // 用户输入是基于1的（题目1、2、3...）以便用户友好
+            // But JavaScript arrays are 0-based (index 0, 1, 2, ...)
+            // 但JavaScript数组是基于0的（索引0、1、2...）
+            // So we need to convert: index = questionNumber - 1
+            // 所以需要转换：索引 = 题目编号 - 1
+            //
+            // Example:
+            //   示例：
+            //   - User enters: 100 (wants question 100)
+            //     用户输入：100（想要第100题）
+            //   - Convert to: index = 100 - 1 = 99 (array index for question 100)
+            //     转换为：索引 = 100 - 1 = 99（第100题的数组索引）
+            //
+            const index = questionNumber - 1;
+            
+            // ============================================================
+            // Step 3: Validate the index is within valid range
+            // 步骤3：验证索引在有效范围内
+            // ============================================================
+            // 
+            // Check if the calculated index is valid:
+            // 检查计算出的索引是否有效：
+            // - index < 0: User entered 0 or negative number (invalid)
+            //   index < 0：用户输入了0或负数（无效）
+            // - index >= allQuestions.length: User entered number greater than total questions (invalid)
+            //   index >= allQuestions.length：用户输入的数字大于总题目数（无效）
+            //
+            // Valid range: 0 <= index < allQuestions.length
+            // 有效范围：0 <= index < allQuestions.length
+            //
+            if (index < 0 || index >= allQuestions.length) {
+                // Invalid range: show error message with valid range
+                // 无效范围：显示包含有效范围的错误消息
+                alert(
+                    `无效的题目编号 / Invalid question number.\n` +
+                    `请输入 1 到 ${allQuestions.length} 之间的数字 / ` +
+                    `Please enter a number between 1 and ${allQuestions.length}`
+                );
+                return;  // Early return: cannot proceed with invalid index
+                         // 提前返回：无效索引无法继续
+            }
+            
+            // ============================================================
+            // Step 4: Jump to the question
+            // 步骤4：跳转到该题目
+            // ============================================================
+            // 
+            // Call loadQuestionByIndex() which:
+            // 调用loadQuestionByIndex()，它会：
+            // - Updates currentGeneratedIndex global variable
+            //   更新全局变量currentGeneratedIndex
+            // - Loads question data from allQuestions array
+            //   从allQuestions数组加载题目数据
+            // - Renders question text, options, and resets answer selection
+            //   渲染题目文本、选项，并重置答案选择
+            // - Updates progress display
+            //   更新进度显示
+            //
+            loadQuestionByIndex(index);
+            
+            // ============================================================
+            // Step 5: Update input field to reflect current position
+            // 步骤5：更新输入框以反映当前位置
+            // ============================================================
+            // 
+            // After jumping, update the input field value to show the current question number
+            // 跳转后，更新输入框的值以显示当前题目编号
+            // This provides visual feedback that the jump was successful
+            // 这提供了视觉反馈，表明跳转成功
+            //
+            const jumpInput = document.getElementById('jump-to-input');
+            if (jumpInput) {
+                jumpInput.value = questionNumber;  // Set to the question number we just jumped to
+                                                     // 设置为刚刚跳转到的题目编号
+            }
+        }
+        
+        // Note: Jump to question button event listeners are set up in setupEventListeners()
+        // 注意：跳转按钮的事件监听器在setupEventListeners()函数中设置
 
         // -------- Generate 5 Questions from current case --------
         document.getElementById('gen-5-btn')?.addEventListener('click', async () => {
