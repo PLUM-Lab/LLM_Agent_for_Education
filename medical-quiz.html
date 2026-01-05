@@ -671,19 +671,19 @@ Author: AI for Education (Wenchao Qin)
                      
                      ============================================================ -->
                 <div style="margin-left: 15px; display: inline-flex; align-items: center; gap: 8px;">
-                    <label style="font-size: 13px; color: #666;">跳转到:</label>
+                    <label style="font-size: 13px; color: #666;">Jump to:</label>
                     <!-- Number input for question number (1-based, user-friendly)
                          题目编号输入框（从1开始，用户友好） -->
                     <input type="number" 
                            id="jump-to-input" 
-                           placeholder="题号" 
+                           placeholder="Question #" 
                            min="1" 
                            style="width: 80px; padding: 6px 10px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 14px;">
                     <!-- Jump button to trigger navigation
                          跳转按钮，触发导航操作 -->
                     <button class="submit-btn" 
                             id="jump-to-btn" 
-                            style="padding: 6px 15px; font-size: 13px; background: #17a2b8;">跳转</button>
+                            style="padding: 6px 15px; font-size: 13px; background: #17a2b8;">Jump</button>
                 </div>
                 <div id="progress-info" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
             </div>
@@ -3127,7 +3127,7 @@ Author: AI for Education (Wenchao Qin)
                     } else {
                         // Invalid input: show error message
                         // 无效输入：显示错误消息
-                        alert('请输入有效的题目编号 / Please enter a valid question number');
+                        alert('Please enter a valid question number');
                     }
                 });
                 
@@ -3163,7 +3163,7 @@ Author: AI for Education (Wenchao Qin)
                         } else {
                             // Invalid input: show error message
                             // 无效输入：显示错误消息
-                            alert('请输入有效的题目编号 / Please enter a valid question number');
+                            alert('Please enter a valid question number');
                         }
                     }
                 });
@@ -5151,7 +5151,7 @@ ${(() => {
             // 没有此检查，在题目加载前调用函数会失败
             //
             if (!allQuestions || allQuestions.length === 0) {
-                alert('请先加载题目 / Please load questions first');
+                alert('Please load questions first');
                 return;  // Early return: cannot proceed without questions
                          // 提前返回：没有题目无法继续
             }
