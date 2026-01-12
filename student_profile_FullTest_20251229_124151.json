@@ -1,0 +1,1448 @@
+{
+  "userName": "FullTest",
+  "questionsAnswered": 479,
+  "knowledgeMap": {
+    "Cardiology->Heart Failure->Systolic vs Diastolic Heart Failure": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.789747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Cardiology",
+      "topic": "Heart Failure",
+      "subtopic": "Systolic vs Diastolic Heart Failure"
+    },
+    "Cardiology->Heart Failure->Clinical Presentation and Physical Findings": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.789747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Cardiology",
+      "topic": "Heart Failure",
+      "subtopic": "Clinical Presentation and Physical Findings"
+    },
+    "Cardiology->Heart Failure->Acute Decompensated Heart Failure Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.789747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Cardiology",
+      "topic": "Heart Failure",
+      "subtopic": "Acute Decompensated Heart Failure Management"
+    },
+    "Cardiology->Heart Failure->Chronic Pharmacologic Therapy (ACEi, ARNI, Beta-blockers, MRA)": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.790775",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Cardiology",
+      "topic": "Heart Failure",
+      "subtopic": "Chronic Pharmacologic Therapy (ACEi, ARNI, Beta-blockers, MRA)"
+    },
+    "Cardiology->Acute Coronary Syndromes->STEMI Diagnosis and Initial Management": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.790775",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Cardiology",
+      "topic": "Acute Coronary Syndromes",
+      "subtopic": "STEMI Diagnosis and Initial Management"
+    },
+    "Cardiology->Acute Coronary Syndromes->NSTEMI and Unstable Angina Risk Stratification": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.790775",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Cardiology",
+      "topic": "Acute Coronary Syndromes",
+      "subtopic": "NSTEMI and Unstable Angina Risk Stratification"
+    },
+    "Cardiology->Acute Coronary Syndromes->Indications for Reperfusion Therapy": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.790775",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Cardiology",
+      "topic": "Acute Coronary Syndromes",
+      "subtopic": "Indications for Reperfusion Therapy"
+    },
+    "Cardiology->Acute Coronary Syndromes->Complications of Myocardial Infarction": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.791746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Cardiology",
+      "topic": "Acute Coronary Syndromes",
+      "subtopic": "Complications of Myocardial Infarction"
+    },
+    "Cardiology->Arrhythmias->Atrial Fibrillation Mechanisms and Anticoagulation": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.791746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Cardiology",
+      "topic": "Arrhythmias",
+      "subtopic": "Atrial Fibrillation Mechanisms and Anticoagulation"
+    },
+    "Cardiology->Arrhythmias->Supraventricular Tachycardia Acute Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.791746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Cardiology",
+      "topic": "Arrhythmias",
+      "subtopic": "Supraventricular Tachycardia Acute Management"
+    },
+    "Cardiology->Arrhythmias->Ventricular Tachycardia and Sudden Cardiac Death": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.791746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Cardiology",
+      "topic": "Arrhythmias",
+      "subtopic": "Ventricular Tachycardia and Sudden Cardiac Death"
+    },
+    "Cardiology->Arrhythmias->Bradyarrhythmias and Pacemaker Indications": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.791746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Cardiology",
+      "topic": "Arrhythmias",
+      "subtopic": "Bradyarrhythmias and Pacemaker Indications"
+    },
+    "Cardiology->Valvular Heart Disease->Aortic Stenosis Clinical Features and Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.791746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Cardiology",
+      "topic": "Valvular Heart Disease",
+      "subtopic": "Aortic Stenosis Clinical Features and Management"
+    },
+    "Cardiology->Valvular Heart Disease->Mitral Regurgitation and Mitral Valve Prolapse": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.791746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Cardiology",
+      "topic": "Valvular Heart Disease",
+      "subtopic": "Mitral Regurgitation and Mitral Valve Prolapse"
+    },
+    "Cardiology->Valvular Heart Disease->Endocarditis Prophylaxis Principles": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.791746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Cardiology",
+      "topic": "Valvular Heart Disease",
+      "subtopic": "Endocarditis Prophylaxis Principles"
+    },
+    "Cardiology->Pericardial and Myocardial Disease->Acute Pericarditis and Pericardial Effusion": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.791746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Cardiology",
+      "topic": "Pericardial and Myocardial Disease",
+      "subtopic": "Acute Pericarditis and Pericardial Effusion"
+    },
+    "Cardiology->Pericardial and Myocardial Disease->Cardiac Tamponade Recognition and Management": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.792753",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Cardiology",
+      "topic": "Pericardial and Myocardial Disease",
+      "subtopic": "Cardiac Tamponade Recognition and Management"
+    },
+    "Cardiology->Pericardial and Myocardial Disease->Myocarditis and Cardiomyopathy Basics": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.792753",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Cardiology",
+      "topic": "Pericardial and Myocardial Disease",
+      "subtopic": "Myocarditis and Cardiomyopathy Basics"
+    },
+    "Pulmonology->Asthma->Pathophysiology and Triggers": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.792753",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pulmonology",
+      "topic": "Asthma",
+      "subtopic": "Pathophysiology and Triggers"
+    },
+    "Pulmonology->Asthma->Stepwise Pharmacologic Therapy": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.792753",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pulmonology",
+      "topic": "Asthma",
+      "subtopic": "Stepwise Pharmacologic Therapy"
+    },
+    "Pulmonology->Asthma->Acute Severe Asthma Exacerbation Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.792753",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Pulmonology",
+      "topic": "Asthma",
+      "subtopic": "Acute Severe Asthma Exacerbation Management"
+    },
+    "Pulmonology->Chronic Obstructive Pulmonary Disease (COPD)->Differentiating COPD from Asthma": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pulmonology",
+      "topic": "Chronic Obstructive Pulmonary Disease (COPD)",
+      "subtopic": "Differentiating COPD from Asthma"
+    },
+    "Pulmonology->Chronic Obstructive Pulmonary Disease (COPD)->GOLD Classification and Pharmacologic Steps": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pulmonology",
+      "topic": "Chronic Obstructive Pulmonary Disease (COPD)",
+      "subtopic": "GOLD Classification and Pharmacologic Steps"
+    },
+    "Pulmonology->Chronic Obstructive Pulmonary Disease (COPD)->Acute COPD Exacerbation Management": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Pulmonology",
+      "topic": "Chronic Obstructive Pulmonary Disease (COPD)",
+      "subtopic": "Acute COPD Exacerbation Management"
+    },
+    "Pulmonology->Pulmonary Embolism->Clinical Presentation and Wells Score": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pulmonology",
+      "topic": "Pulmonary Embolism",
+      "subtopic": "Clinical Presentation and Wells Score"
+    },
+    "Pulmonology->Pulmonary Embolism->Imaging Choices (CTPA vs V/Q Scan)": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Pulmonology",
+      "topic": "Pulmonary Embolism",
+      "subtopic": "Imaging Choices (CTPA vs V/Q Scan)"
+    },
+    "Pulmonology->Pulmonary Embolism->Anticoagulation and Thrombolysis Indications": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Pulmonology",
+      "topic": "Pulmonary Embolism",
+      "subtopic": "Anticoagulation and Thrombolysis Indications"
+    },
+    "Pulmonology->Interstitial and Occupational Lung Disease->Idiopathic Pulmonary Fibrosis": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pulmonology",
+      "topic": "Interstitial and Occupational Lung Disease",
+      "subtopic": "Idiopathic Pulmonary Fibrosis"
+    },
+    "Pulmonology->Interstitial and Occupational Lung Disease->Pneumoconioses and Occupational Exposures": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pulmonology",
+      "topic": "Interstitial and Occupational Lung Disease",
+      "subtopic": "Pneumoconioses and Occupational Exposures"
+    },
+    "Pulmonology->Respiratory Failure->Hypoxemic vs Hypercapnic Respiratory Failure": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Pulmonology",
+      "topic": "Respiratory Failure",
+      "subtopic": "Hypoxemic vs Hypercapnic Respiratory Failure"
+    },
+    "Pulmonology->Respiratory Failure->Basics of Oxygen Therapy and Noninvasive Ventilation": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Pulmonology",
+      "topic": "Respiratory Failure",
+      "subtopic": "Basics of Oxygen Therapy and Noninvasive Ventilation"
+    },
+    "Gastroenterology and Hepatology->Upper GI Bleeding->Risk Stratification (Glasgow-Blatchford, Rockall)": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Gastroenterology and Hepatology",
+      "topic": "Upper GI Bleeding",
+      "subtopic": "Risk Stratification (Glasgow-Blatchford, Rockall)"
+    },
+    "Gastroenterology and Hepatology->Upper GI Bleeding->Peptic Ulcer Bleeding Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.793749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Gastroenterology and Hepatology",
+      "topic": "Upper GI Bleeding",
+      "subtopic": "Peptic Ulcer Bleeding Management"
+    },
+    "Gastroenterology and Hepatology->Upper GI Bleeding->Variceal Bleeding Initial Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.794772",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Gastroenterology and Hepatology",
+      "topic": "Upper GI Bleeding",
+      "subtopic": "Variceal Bleeding Initial Management"
+    },
+    "Gastroenterology and Hepatology->Inflammatory Bowel Disease->Crohn Disease vs Ulcerative Colitis Features": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.794772",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Gastroenterology and Hepatology",
+      "topic": "Inflammatory Bowel Disease",
+      "subtopic": "Crohn Disease vs Ulcerative Colitis Features"
+    },
+    "Gastroenterology and Hepatology->Inflammatory Bowel Disease->Extraintestinal Manifestations": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.794772",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Gastroenterology and Hepatology",
+      "topic": "Inflammatory Bowel Disease",
+      "subtopic": "Extraintestinal Manifestations"
+    },
+    "Gastroenterology and Hepatology->Inflammatory Bowel Disease->Step-up Pharmacologic Therapy": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.794772",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Gastroenterology and Hepatology",
+      "topic": "Inflammatory Bowel Disease",
+      "subtopic": "Step-up Pharmacologic Therapy"
+    },
+    "Gastroenterology and Hepatology->Liver Disease->Cirrhosis Complications (Ascites, Encephalopathy, Varices)": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Gastroenterology and Hepatology",
+      "topic": "Liver Disease",
+      "subtopic": "Cirrhosis Complications (Ascites, Encephalopathy, Varices)"
+    },
+    "Gastroenterology and Hepatology->Liver Disease->Viral Hepatitis Evaluation and Staging": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Gastroenterology and Hepatology",
+      "topic": "Liver Disease",
+      "subtopic": "Viral Hepatitis Evaluation and Staging"
+    },
+    "Gastroenterology and Hepatology->Liver Disease->Alcoholic vs Nonalcoholic Fatty Liver Disease": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Gastroenterology and Hepatology",
+      "topic": "Liver Disease",
+      "subtopic": "Alcoholic vs Nonalcoholic Fatty Liver Disease"
+    },
+    "Gastroenterology and Hepatology->Pancreatic and Biliary Disease->Acute Pancreatitis Etiology and Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Gastroenterology and Hepatology",
+      "topic": "Pancreatic and Biliary Disease",
+      "subtopic": "Acute Pancreatitis Etiology and Management"
+    },
+    "Gastroenterology and Hepatology->Pancreatic and Biliary Disease->Cholelithiasis, Cholecystitis, and Cholangitis": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Gastroenterology and Hepatology",
+      "topic": "Pancreatic and Biliary Disease",
+      "subtopic": "Cholelithiasis, Cholecystitis, and Cholangitis"
+    },
+    "Nephrology->Acute Kidney Injury->Pre-renal vs Intrinsic vs Post-renal AKI": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Nephrology",
+      "topic": "Acute Kidney Injury",
+      "subtopic": "Pre-renal vs Intrinsic vs Post-renal AKI"
+    },
+    "Nephrology->Acute Kidney Injury->Interpretation of Urine Studies (FeNa, Urine Sediment)": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Nephrology",
+      "topic": "Acute Kidney Injury",
+      "subtopic": "Interpretation of Urine Studies (FeNa, Urine Sediment)"
+    },
+    "Nephrology->Acute Kidney Injury->Indications for Renal Replacement Therapy": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Nephrology",
+      "topic": "Acute Kidney Injury",
+      "subtopic": "Indications for Renal Replacement Therapy"
+    },
+    "Nephrology->Chronic Kidney Disease->Staging of CKD and GFR Thresholds": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 0,
+      "domain": "Nephrology",
+      "topic": "Chronic Kidney Disease",
+      "subtopic": "Staging of CKD and GFR Thresholds"
+    },
+    "Nephrology->Chronic Kidney Disease->Management of Anemia and Mineral Bone Disease": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Nephrology",
+      "topic": "Chronic Kidney Disease",
+      "subtopic": "Management of Anemia and Mineral Bone Disease"
+    },
+    "Nephrology->Chronic Kidney Disease->Blood Pressure Control in CKD": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Nephrology",
+      "topic": "Chronic Kidney Disease",
+      "subtopic": "Blood Pressure Control in CKD"
+    },
+    "Nephrology->Electrolyte Disorders->Hyponatremia Evaluation and Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Nephrology",
+      "topic": "Electrolyte Disorders",
+      "subtopic": "Hyponatremia Evaluation and Management"
+    },
+    "Nephrology->Electrolyte Disorders->Hyperkalemia Acute Treatment": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Nephrology",
+      "topic": "Electrolyte Disorders",
+      "subtopic": "Hyperkalemia Acute Treatment"
+    },
+    "Nephrology->Electrolyte Disorders->Metabolic Acidosis vs Alkalosis Interpretation": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.795751",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Nephrology",
+      "topic": "Electrolyte Disorders",
+      "subtopic": "Metabolic Acidosis vs Alkalosis Interpretation"
+    },
+    "Nephrology->Glomerular Disease->Nephritic vs Nephrotic Syndromes": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Nephrology",
+      "topic": "Glomerular Disease",
+      "subtopic": "Nephritic vs Nephrotic Syndromes"
+    },
+    "Nephrology->Glomerular Disease->Basic Approach to Proteinuria and Hematuria": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Nephrology",
+      "topic": "Glomerular Disease",
+      "subtopic": "Basic Approach to Proteinuria and Hematuria"
+    },
+    "Endocrinology->Diabetes Mellitus->Diagnostic Criteria for Type 1 vs Type 2 DM": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Endocrinology",
+      "topic": "Diabetes Mellitus",
+      "subtopic": "Diagnostic Criteria for Type 1 vs Type 2 DM"
+    },
+    "Endocrinology->Diabetes Mellitus->Oral Hypoglycemic Agents Mechanisms and Indications": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Endocrinology",
+      "topic": "Diabetes Mellitus",
+      "subtopic": "Oral Hypoglycemic Agents Mechanisms and Indications"
+    },
+    "Endocrinology->Diabetes Mellitus->Insulin Regimens Basics": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Endocrinology",
+      "topic": "Diabetes Mellitus",
+      "subtopic": "Insulin Regimens Basics"
+    },
+    "Endocrinology->Diabetes Mellitus->Diabetic Ketoacidosis Diagnosis and Treatment": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Endocrinology",
+      "topic": "Diabetes Mellitus",
+      "subtopic": "Diabetic Ketoacidosis Diagnosis and Treatment"
+    },
+    "Endocrinology->Diabetes Mellitus->Hyperosmolar Hyperglycemic State": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Endocrinology",
+      "topic": "Diabetes Mellitus",
+      "subtopic": "Hyperosmolar Hyperglycemic State"
+    },
+    "Endocrinology->Thyroid Disorders->Hyperthyroidism Differential Diagnosis": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Endocrinology",
+      "topic": "Thyroid Disorders",
+      "subtopic": "Hyperthyroidism Differential Diagnosis"
+    },
+    "Endocrinology->Thyroid Disorders->Hypothyroidism Causes and Clinical Features": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Endocrinology",
+      "topic": "Thyroid Disorders",
+      "subtopic": "Hypothyroidism Causes and Clinical Features"
+    },
+    "Endocrinology->Thyroid Disorders->Thyroid Storm and Myxedema Coma": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Endocrinology",
+      "topic": "Thyroid Disorders",
+      "subtopic": "Thyroid Storm and Myxedema Coma"
+    },
+    "Endocrinology->Adrenal and Pituitary Disorders->Adrenal Insufficiency Diagnosis and Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Endocrinology",
+      "topic": "Adrenal and Pituitary Disorders",
+      "subtopic": "Adrenal Insufficiency Diagnosis and Management"
+    },
+    "Endocrinology->Adrenal and Pituitary Disorders->Cushing Syndrome Evaluation": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Endocrinology",
+      "topic": "Adrenal and Pituitary Disorders",
+      "subtopic": "Cushing Syndrome Evaluation"
+    },
+    "Endocrinology->Adrenal and Pituitary Disorders->Pheochromocytoma Clinical Features and Workup": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Endocrinology",
+      "topic": "Adrenal and Pituitary Disorders",
+      "subtopic": "Pheochromocytoma Clinical Features and Workup"
+    },
+    "Endocrinology->Adrenal and Pituitary Disorders->Pituitary Adenomas (Prolactinoma, Acromegaly)": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Endocrinology",
+      "topic": "Adrenal and Pituitary Disorders",
+      "subtopic": "Pituitary Adenomas (Prolactinoma, Acromegaly)"
+    },
+    "Endocrinology->Calcium and Bone Disorders->Hypercalcemia and Hypocalcemia": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Endocrinology",
+      "topic": "Calcium and Bone Disorders",
+      "subtopic": "Hypercalcemia and Hypocalcemia"
+    },
+    "Endocrinology->Calcium and Bone Disorders->Osteoporosis and Osteopenia Evaluation and Treatment": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.796746",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Endocrinology",
+      "topic": "Calcium and Bone Disorders",
+      "subtopic": "Osteoporosis and Osteopenia Evaluation and Treatment"
+    },
+    "Hematology and Oncology->Anemias->Microcytic Anemia Workup (Iron Deficiency vs Thalassemia)": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Hematology and Oncology",
+      "topic": "Anemias",
+      "subtopic": "Microcytic Anemia Workup (Iron Deficiency vs Thalassemia)"
+    },
+    "Hematology and Oncology->Anemias->Hemolytic Anemia Laboratory Features": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Hematology and Oncology",
+      "topic": "Anemias",
+      "subtopic": "Hemolytic Anemia Laboratory Features"
+    },
+    "Hematology and Oncology->Anemias->Anemia of Chronic Disease vs Iron Deficiency": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Hematology and Oncology",
+      "topic": "Anemias",
+      "subtopic": "Anemia of Chronic Disease vs Iron Deficiency"
+    },
+    "Hematology and Oncology->Leukemias and Lymphomas->Acute vs Chronic Leukemia Clinical Presentation": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Hematology and Oncology",
+      "topic": "Leukemias and Lymphomas",
+      "subtopic": "Acute vs Chronic Leukemia Clinical Presentation"
+    },
+    "Hematology and Oncology->Leukemias and Lymphomas->Hodgkin vs Non-Hodgkin Lymphoma Features": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Hematology and Oncology",
+      "topic": "Leukemias and Lymphomas",
+      "subtopic": "Hodgkin vs Non-Hodgkin Lymphoma Features"
+    },
+    "Hematology and Oncology->Leukemias and Lymphomas->Tumor Lysis Syndrome Prevention and Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Hematology and Oncology",
+      "topic": "Leukemias and Lymphomas",
+      "subtopic": "Tumor Lysis Syndrome Prevention and Management"
+    },
+    "Hematology and Oncology->Coagulation and Thrombotic Disorders->DVT and PE Prophylaxis and Treatment": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Hematology and Oncology",
+      "topic": "Coagulation and Thrombotic Disorders",
+      "subtopic": "DVT and PE Prophylaxis and Treatment"
+    },
+    "Hematology and Oncology->Coagulation and Thrombotic Disorders->Inherited Thrombophilias Basics": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Hematology and Oncology",
+      "topic": "Coagulation and Thrombotic Disorders",
+      "subtopic": "Inherited Thrombophilias Basics"
+    },
+    "Hematology and Oncology->Coagulation and Thrombotic Disorders->Heparin-Induced Thrombocytopenia": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Hematology and Oncology",
+      "topic": "Coagulation and Thrombotic Disorders",
+      "subtopic": "Heparin-Induced Thrombocytopenia"
+    },
+    "Hematology and Oncology->Solid Tumors->Lung, Breast, Colon Cancer Basics": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Hematology and Oncology",
+      "topic": "Solid Tumors",
+      "subtopic": "Lung, Breast, Colon Cancer Basics"
+    },
+    "Hematology and Oncology->Solid Tumors->Oncologic Emergencies (SVC Syndrome, Spinal Cord Compression)": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Hematology and Oncology",
+      "topic": "Solid Tumors",
+      "subtopic": "Oncologic Emergencies (SVC Syndrome, Spinal Cord Compression)"
+    },
+    "Infectious Diseases->Sepsis and Septic Shock->Sepsis Definitions (Sepsis-3, qSOFA)": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Infectious Diseases",
+      "topic": "Sepsis and Septic Shock",
+      "subtopic": "Sepsis Definitions (Sepsis-3, qSOFA)"
+    },
+    "Infectious Diseases->Sepsis and Septic Shock->Initial Resuscitation and Source Control": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Infectious Diseases",
+      "topic": "Sepsis and Septic Shock",
+      "subtopic": "Initial Resuscitation and Source Control"
+    },
+    "Infectious Diseases->Sepsis and Septic Shock->Vasopressor Use in Septic Shock": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Infectious Diseases",
+      "topic": "Sepsis and Septic Shock",
+      "subtopic": "Vasopressor Use in Septic Shock"
+    },
+    "Infectious Diseases->Common Infections->Community-Acquired Pneumonia Empiric Therapy": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Infectious Diseases",
+      "topic": "Common Infections",
+      "subtopic": "Community-Acquired Pneumonia Empiric Therapy"
+    },
+    "Infectious Diseases->Common Infections->UTI: Complicated vs Uncomplicated": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.797747",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Infectious Diseases",
+      "topic": "Common Infections",
+      "subtopic": "UTI: Complicated vs Uncomplicated"
+    },
+    "Infectious Diseases->Common Infections->Skin and Soft Tissue Infections": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Infectious Diseases",
+      "topic": "Common Infections",
+      "subtopic": "Skin and Soft Tissue Infections"
+    },
+    "Infectious Diseases->Special Hosts->HIV Opportunistic Infections and Prophylaxis": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Infectious Diseases",
+      "topic": "Special Hosts",
+      "subtopic": "HIV Opportunistic Infections and Prophylaxis"
+    },
+    "Infectious Diseases->Special Hosts->Febrile Neutropenia": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Infectious Diseases",
+      "topic": "Special Hosts",
+      "subtopic": "Febrile Neutropenia"
+    },
+    "Infectious Diseases->Special Hosts->Post-splenectomy Infection Risks": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Infectious Diseases",
+      "topic": "Special Hosts",
+      "subtopic": "Post-splenectomy Infection Risks"
+    },
+    "Infectious Diseases->Hospital-Associated Infections->Device-Related Infections (Catheters, Lines)": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Infectious Diseases",
+      "topic": "Hospital-Associated Infections",
+      "subtopic": "Device-Related Infections (Catheters, Lines)"
+    },
+    "Infectious Diseases->Hospital-Associated Infections->Clostridioides difficile Infection Basics": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Infectious Diseases",
+      "topic": "Hospital-Associated Infections",
+      "subtopic": "Clostridioides difficile Infection Basics"
+    },
+    "Neurology->Stroke and TIA->Ischemic vs Hemorrhagic Stroke Initial Evaluation": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Neurology",
+      "topic": "Stroke and TIA",
+      "subtopic": "Ischemic vs Hemorrhagic Stroke Initial Evaluation"
+    },
+    "Neurology->Stroke and TIA->tPA Eligibility and Time Windows": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Neurology",
+      "topic": "Stroke and TIA",
+      "subtopic": "tPA Eligibility and Time Windows"
+    },
+    "Neurology->Stroke and TIA->Secondary Prevention After Ischemic Stroke": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Neurology",
+      "topic": "Stroke and TIA",
+      "subtopic": "Secondary Prevention After Ischemic Stroke"
+    },
+    "Neurology->Seizures and Epilepsy->First Seizure Evaluation": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Neurology",
+      "topic": "Seizures and Epilepsy",
+      "subtopic": "First Seizure Evaluation"
+    },
+    "Neurology->Seizures and Epilepsy->Status Epilepticus Management Algorithm": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Neurology",
+      "topic": "Seizures and Epilepsy",
+      "subtopic": "Status Epilepticus Management Algorithm"
+    },
+    "Neurology->Seizures and Epilepsy->Antiseizure Medication Selection Basics": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Neurology",
+      "topic": "Seizures and Epilepsy",
+      "subtopic": "Antiseizure Medication Selection Basics"
+    },
+    "Neurology->Headache->Red Flags for Secondary Headache": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Neurology",
+      "topic": "Headache",
+      "subtopic": "Red Flags for Secondary Headache"
+    },
+    "Neurology->Headache->Migraine vs Tension vs Cluster Headache": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Neurology",
+      "topic": "Headache",
+      "subtopic": "Migraine vs Tension vs Cluster Headache"
+    },
+    "Neurology->Headache->Acute Migraine Treatment Options": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Neurology",
+      "topic": "Headache",
+      "subtopic": "Acute Migraine Treatment Options"
+    },
+    "Neurology->Neuromuscular and Demyelinating Disease->Guillain-Barré Syndrome": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Neurology",
+      "topic": "Neuromuscular and Demyelinating Disease",
+      "subtopic": "Guillain-Barré Syndrome"
+    },
+    "Neurology->Neuromuscular and Demyelinating Disease->Multiple Sclerosis Clinical Features": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.798748",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Neurology",
+      "topic": "Neuromuscular and Demyelinating Disease",
+      "subtopic": "Multiple Sclerosis Clinical Features"
+    },
+    "Psychiatry and Behavioral Health->Mood Disorders->Major Depressive Disorder Diagnostic Criteria": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Psychiatry and Behavioral Health",
+      "topic": "Mood Disorders",
+      "subtopic": "Major Depressive Disorder Diagnostic Criteria"
+    },
+    "Psychiatry and Behavioral Health->Mood Disorders->Bipolar I vs Bipolar II Differences": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Psychiatry and Behavioral Health",
+      "topic": "Mood Disorders",
+      "subtopic": "Bipolar I vs Bipolar II Differences"
+    },
+    "Psychiatry and Behavioral Health->Mood Disorders->Antidepressant Classes and Side Effects": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Psychiatry and Behavioral Health",
+      "topic": "Mood Disorders",
+      "subtopic": "Antidepressant Classes and Side Effects"
+    },
+    "Psychiatry and Behavioral Health->Anxiety and Trauma-Related Disorders->GAD vs Panic Disorder": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Psychiatry and Behavioral Health",
+      "topic": "Anxiety and Trauma-Related Disorders",
+      "subtopic": "GAD vs Panic Disorder"
+    },
+    "Psychiatry and Behavioral Health->Anxiety and Trauma-Related Disorders->PTSD Diagnostic Criteria": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Psychiatry and Behavioral Health",
+      "topic": "Anxiety and Trauma-Related Disorders",
+      "subtopic": "PTSD Diagnostic Criteria"
+    },
+    "Psychiatry and Behavioral Health->Anxiety and Trauma-Related Disorders->First-line Pharmacologic and Psychotherapy Options": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Psychiatry and Behavioral Health",
+      "topic": "Anxiety and Trauma-Related Disorders",
+      "subtopic": "First-line Pharmacologic and Psychotherapy Options"
+    },
+    "Psychiatry and Behavioral Health->Psychotic Disorders->Schizophrenia vs Schizoaffective Disorder": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Psychiatry and Behavioral Health",
+      "topic": "Psychotic Disorders",
+      "subtopic": "Schizophrenia vs Schizoaffective Disorder"
+    },
+    "Psychiatry and Behavioral Health->Psychotic Disorders->Typical vs Atypical Antipsychotics Side-effect Profiles": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Psychiatry and Behavioral Health",
+      "topic": "Psychotic Disorders",
+      "subtopic": "Typical vs Atypical Antipsychotics Side-effect Profiles"
+    },
+    "Psychiatry and Behavioral Health->Psychotic Disorders->Neuroleptic Malignant Syndrome": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Psychiatry and Behavioral Health",
+      "topic": "Psychotic Disorders",
+      "subtopic": "Neuroleptic Malignant Syndrome"
+    },
+    "Psychiatry and Behavioral Health->Substance Use Disorders->Alcohol Use Disorder and Withdrawal": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Psychiatry and Behavioral Health",
+      "topic": "Substance Use Disorders",
+      "subtopic": "Alcohol Use Disorder and Withdrawal"
+    },
+    "Psychiatry and Behavioral Health->Substance Use Disorders->Opioid Use Disorder and Overdose Naloxone Use": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Psychiatry and Behavioral Health",
+      "topic": "Substance Use Disorders",
+      "subtopic": "Opioid Use Disorder and Overdose Naloxone Use"
+    },
+    "Rheumatology and Immunology->Inflammatory Arthritis->Rheumatoid Arthritis Clinical Features and Serology": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Rheumatology and Immunology",
+      "topic": "Inflammatory Arthritis",
+      "subtopic": "Rheumatoid Arthritis Clinical Features and Serology"
+    },
+    "Rheumatology and Immunology->Inflammatory Arthritis->Spondyloarthropathies (AS, Psoriatic Arthritis) Key Findings": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Rheumatology and Immunology",
+      "topic": "Inflammatory Arthritis",
+      "subtopic": "Spondyloarthropathies (AS, Psoriatic Arthritis) Key Findings"
+    },
+    "Rheumatology and Immunology->Inflammatory Arthritis->Disease-Modifying Antirheumatic Drugs (DMARDs)": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Rheumatology and Immunology",
+      "topic": "Inflammatory Arthritis",
+      "subtopic": "Disease-Modifying Antirheumatic Drugs (DMARDs)"
+    },
+    "Rheumatology and Immunology->Systemic Autoimmune Diseases->Systemic Lupus Erythematosus Criteria and Organ Involvement": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.799786",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Rheumatology and Immunology",
+      "topic": "Systemic Autoimmune Diseases",
+      "subtopic": "Systemic Lupus Erythematosus Criteria and Organ Involvement"
+    },
+    "Rheumatology and Immunology->Systemic Autoimmune Diseases->Vasculitis Syndromes Overview": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.800750",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Rheumatology and Immunology",
+      "topic": "Systemic Autoimmune Diseases",
+      "subtopic": "Vasculitis Syndromes Overview"
+    },
+    "Rheumatology and Immunology->Systemic Autoimmune Diseases->Sjögren Syndrome and Systemic Sclerosis Basics": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.800750",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Rheumatology and Immunology",
+      "topic": "Systemic Autoimmune Diseases",
+      "subtopic": "Sjögren Syndrome and Systemic Sclerosis Basics"
+    },
+    "Rheumatology and Immunology->Basic Clinical Immunology->Primary vs Secondary Immunodeficiency Basics": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.800750",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Rheumatology and Immunology",
+      "topic": "Basic Clinical Immunology",
+      "subtopic": "Primary vs Secondary Immunodeficiency Basics"
+    },
+    "Dermatology and Musculoskeletal->Common Inflammatory Dermatoses->Atopic Dermatitis": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.800750",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Dermatology and Musculoskeletal",
+      "topic": "Common Inflammatory Dermatoses",
+      "subtopic": "Atopic Dermatitis"
+    },
+    "Dermatology and Musculoskeletal->Common Inflammatory Dermatoses->Psoriasis Clinical Features and Treatment": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.800750",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Dermatology and Musculoskeletal",
+      "topic": "Common Inflammatory Dermatoses",
+      "subtopic": "Psoriasis Clinical Features and Treatment"
+    },
+    "Dermatology and Musculoskeletal->Common Inflammatory Dermatoses->Seborrheic Dermatitis vs Tinea": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.800750",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Dermatology and Musculoskeletal",
+      "topic": "Common Inflammatory Dermatoses",
+      "subtopic": "Seborrheic Dermatitis vs Tinea"
+    },
+    "Dermatology and Musculoskeletal->Skin Infections and Infestations->Impetigo and Cellulitis": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.800750",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Dermatology and Musculoskeletal",
+      "topic": "Skin Infections and Infestations",
+      "subtopic": "Impetigo and Cellulitis"
+    },
+    "Dermatology and Musculoskeletal->Skin Infections and Infestations->Herpes Zoster vs Herpes Simplex": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Dermatology and Musculoskeletal",
+      "topic": "Skin Infections and Infestations",
+      "subtopic": "Herpes Zoster vs Herpes Simplex"
+    },
+    "Dermatology and Musculoskeletal->Skin Infections and Infestations->Scabies and Pediculosis": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 0,
+      "domain": "Dermatology and Musculoskeletal",
+      "topic": "Skin Infections and Infestations",
+      "subtopic": "Scabies and Pediculosis"
+    },
+    "Dermatology and Musculoskeletal->Fractures and Orthopedic Emergencies->Fracture Patterns and Compartment Syndrome": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Dermatology and Musculoskeletal",
+      "topic": "Fractures and Orthopedic Emergencies",
+      "subtopic": "Fracture Patterns and Compartment Syndrome"
+    },
+    "Dermatology and Musculoskeletal->Fractures and Orthopedic Emergencies->Back Pain Red Flags and Cauda Equina": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Dermatology and Musculoskeletal",
+      "topic": "Fractures and Orthopedic Emergencies",
+      "subtopic": "Back Pain Red Flags and Cauda Equina"
+    },
+    "Obstetrics and Gynecology->Normal Pregnancy and Prenatal Care->Physiologic Changes in Pregnancy": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Obstetrics and Gynecology",
+      "topic": "Normal Pregnancy and Prenatal Care",
+      "subtopic": "Physiologic Changes in Pregnancy"
+    },
+    "Obstetrics and Gynecology->Normal Pregnancy and Prenatal Care->Prenatal Screening and Diagnostic Tests": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Obstetrics and Gynecology",
+      "topic": "Normal Pregnancy and Prenatal Care",
+      "subtopic": "Prenatal Screening and Diagnostic Tests"
+    },
+    "Obstetrics and Gynecology->Normal Pregnancy and Prenatal Care->Management of Common Pregnancy Complaints": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Obstetrics and Gynecology",
+      "topic": "Normal Pregnancy and Prenatal Care",
+      "subtopic": "Management of Common Pregnancy Complaints"
+    },
+    "Obstetrics and Gynecology->Obstetric Complications->Hypertensive Disorders of Pregnancy": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Obstetrics and Gynecology",
+      "topic": "Obstetric Complications",
+      "subtopic": "Hypertensive Disorders of Pregnancy"
+    },
+    "Obstetrics and Gynecology->Obstetric Complications->Preterm Labor and PPROM": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Obstetrics and Gynecology",
+      "topic": "Obstetric Complications",
+      "subtopic": "Preterm Labor and PPROM"
+    },
+    "Obstetrics and Gynecology->Obstetric Complications->Postpartum Hemorrhage Initial Management": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 0,
+      "domain": "Obstetrics and Gynecology",
+      "topic": "Obstetric Complications",
+      "subtopic": "Postpartum Hemorrhage Initial Management"
+    },
+    "Obstetrics and Gynecology->Gynecologic Oncology and Benign Disease->Cervical Cancer Screening and Abnormal Results Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Obstetrics and Gynecology",
+      "topic": "Gynecologic Oncology and Benign Disease",
+      "subtopic": "Cervical Cancer Screening and Abnormal Results Management"
+    },
+    "Obstetrics and Gynecology->Gynecologic Oncology and Benign Disease->Ovarian Mass Evaluation": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Obstetrics and Gynecology",
+      "topic": "Gynecologic Oncology and Benign Disease",
+      "subtopic": "Ovarian Mass Evaluation"
+    },
+    "Obstetrics and Gynecology->Gynecologic Oncology and Benign Disease->Abnormal Uterine Bleeding Evaluation": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.801754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Obstetrics and Gynecology",
+      "topic": "Gynecologic Oncology and Benign Disease",
+      "subtopic": "Abnormal Uterine Bleeding Evaluation"
+    },
+    "Pediatrics->Well-Child Care and Development->Developmental Milestones by Age": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Pediatrics",
+      "topic": "Well-Child Care and Development",
+      "subtopic": "Developmental Milestones by Age"
+    },
+    "Pediatrics->Well-Child Care and Development->Vaccination Schedule and Contraindications": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pediatrics",
+      "topic": "Well-Child Care and Development",
+      "subtopic": "Vaccination Schedule and Contraindications"
+    },
+    "Pediatrics->Well-Child Care and Development->Failure to Thrive Evaluation": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pediatrics",
+      "topic": "Well-Child Care and Development",
+      "subtopic": "Failure to Thrive Evaluation"
+    },
+    "Pediatrics->Common Pediatric Infections->Otitis Media and Pharyngitis": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Pediatrics",
+      "topic": "Common Pediatric Infections",
+      "subtopic": "Otitis Media and Pharyngitis"
+    },
+    "Pediatrics->Common Pediatric Infections->Bronchiolitis vs Asthma in Children": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pediatrics",
+      "topic": "Common Pediatric Infections",
+      "subtopic": "Bronchiolitis vs Asthma in Children"
+    },
+    "Pediatrics->Common Pediatric Infections->Meningitis in Infants and Children": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pediatrics",
+      "topic": "Common Pediatric Infections",
+      "subtopic": "Meningitis in Infants and Children"
+    },
+    "Pediatrics->Pediatric Emergencies->Pediatric Dehydration Assessment and Rehydration": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Pediatrics",
+      "topic": "Pediatric Emergencies",
+      "subtopic": "Pediatric Dehydration Assessment and Rehydration"
+    },
+    "Pediatrics->Pediatric Emergencies->Febrile Seizures": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pediatrics",
+      "topic": "Pediatric Emergencies",
+      "subtopic": "Febrile Seizures"
+    },
+    "Pediatrics->Pediatric Emergencies->Anaphylaxis Management in Children": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Pediatrics",
+      "topic": "Pediatric Emergencies",
+      "subtopic": "Anaphylaxis Management in Children"
+    },
+    "Emergency Medicine and Trauma->Resuscitation and Shock->Airway, Breathing, Circulation Priorities": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Emergency Medicine and Trauma",
+      "topic": "Resuscitation and Shock",
+      "subtopic": "Airway, Breathing, Circulation Priorities"
+    },
+    "Emergency Medicine and Trauma->Resuscitation and Shock->Types of Shock and Initial Management": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Emergency Medicine and Trauma",
+      "topic": "Resuscitation and Shock",
+      "subtopic": "Types of Shock and Initial Management"
+    },
+    "Emergency Medicine and Trauma->Resuscitation and Shock->Massive Transfusion Protocols": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.802779",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Emergency Medicine and Trauma",
+      "topic": "Resuscitation and Shock",
+      "subtopic": "Massive Transfusion Protocols"
+    },
+    "Emergency Medicine and Trauma->Trauma->ATLS Primary and Secondary Survey": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.803754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Emergency Medicine and Trauma",
+      "topic": "Trauma",
+      "subtopic": "ATLS Primary and Secondary Survey"
+    },
+    "Emergency Medicine and Trauma->Trauma->Head Trauma and Spinal Precautions": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.803754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Emergency Medicine and Trauma",
+      "topic": "Trauma",
+      "subtopic": "Head Trauma and Spinal Precautions"
+    },
+    "Emergency Medicine and Trauma->Trauma->Abdominal Trauma and FAST Examination": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.803754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Emergency Medicine and Trauma",
+      "topic": "Trauma",
+      "subtopic": "Abdominal Trauma and FAST Examination"
+    },
+    "Emergency Medicine and Trauma->Toxicology and Environmental Injuries->Common Poisonings and Antidotes": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.803754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 1,
+      "domain": "Emergency Medicine and Trauma",
+      "topic": "Toxicology and Environmental Injuries",
+      "subtopic": "Common Poisonings and Antidotes"
+    },
+    "Emergency Medicine and Trauma->Toxicology and Environmental Injuries->Heat Stroke and Hypothermia Basics": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.803754",
+      "questionsAttempted": 2,
+      "questionsCorrect": 1,
+      "domain": "Emergency Medicine and Trauma",
+      "topic": "Toxicology and Environmental Injuries",
+      "subtopic": "Heat Stroke and Hypothermia Basics"
+    },
+    "Preventive Medicine, Ethics, and Professionalism->Screening and Preventive Care->Adult Screening Guidelines (Cancer, CV Risk)": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.803754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Preventive Medicine, Ethics, and Professionalism",
+      "topic": "Screening and Preventive Care",
+      "subtopic": "Adult Screening Guidelines (Cancer, CV Risk)"
+    },
+    "Preventive Medicine, Ethics, and Professionalism->Screening and Preventive Care->Vaccination in Adults and Special Populations": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.803754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Preventive Medicine, Ethics, and Professionalism",
+      "topic": "Screening and Preventive Care",
+      "subtopic": "Vaccination in Adults and Special Populations"
+    },
+    "Preventive Medicine, Ethics, and Professionalism->Epidemiology and Biostatistics->Study Design Basics": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.803754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Preventive Medicine, Ethics, and Professionalism",
+      "topic": "Epidemiology and Biostatistics",
+      "subtopic": "Study Design Basics"
+    },
+    "Preventive Medicine, Ethics, and Professionalism->Epidemiology and Biostatistics->Sensitivity, Specificity, Predictive Values": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.803754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 0,
+      "domain": "Preventive Medicine, Ethics, and Professionalism",
+      "topic": "Epidemiology and Biostatistics",
+      "subtopic": "Sensitivity, Specificity, Predictive Values"
+    },
+    "Preventive Medicine, Ethics, and Professionalism->Epidemiology and Biostatistics->Risk, Odds, and Hazard Ratios": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.803754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Preventive Medicine, Ethics, and Professionalism",
+      "topic": "Epidemiology and Biostatistics",
+      "subtopic": "Risk, Odds, and Hazard Ratios"
+    },
+    "Preventive Medicine, Ethics, and Professionalism->Ethics and Communication->Informed Consent and Capacity": {
+      "status": "unknown",
+      "lastUpdated": "2025-12-29T12:41:51.803754",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Preventive Medicine, Ethics, and Professionalism",
+      "topic": "Ethics and Communication",
+      "subtopic": "Informed Consent and Capacity"
+    },
+    "Preventive Medicine, Ethics, and Professionalism->Ethics and Communication->End-of-Life Decision-Making": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.804749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 2,
+      "domain": "Preventive Medicine, Ethics, and Professionalism",
+      "topic": "Ethics and Communication",
+      "subtopic": "End-of-Life Decision-Making"
+    },
+    "Preventive Medicine, Ethics, and Professionalism->Ethics and Communication->Breaking Bad News and Shared Decision-Making": {
+      "status": "known",
+      "lastUpdated": "2025-12-29T12:41:51.804749",
+      "questionsAttempted": 3,
+      "questionsCorrect": 3,
+      "domain": "Preventive Medicine, Ethics, and Professionalism",
+      "topic": "Ethics and Communication",
+      "subtopic": "Breaking Bad News and Shared Decision-Making"
+    }
+  },
+  "createdAt": "2025-12-29T12:41:51.785741",
+  "lastUpdated": "2025-12-29T12:41:51.804749"
+}

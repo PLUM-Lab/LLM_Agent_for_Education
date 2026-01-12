@@ -1,0 +1,56 @@
+{
+  "statistics": {
+    "total_questions": 1,
+    "average_question_clarity": 4.0,
+    "average_option_quality": 4.0,
+    "average_explanation_quality": 4.0,
+    "average_medical_accuracy": 4.0,
+    "average_overall_quality": 4.0,
+    "average_total_score": 4.0,
+    "questions_evaluated": {
+      "question_clarity": 1,
+      "option_quality": 1,
+      "explanation_quality": 1,
+      "medical_accuracy": 1,
+      "overall_quality": 1,
+      "total_score": 1
+    }
+  },
+  "questions": [
+    {
+      "question": "A 29-year-old man who lives in Utah comes to the emergency department 90 minutes after he received a snake bite on his right leg. He was cleaning out a shed in his backyard when he saw a snake between two beams of wood. When he tried to kill the snake with a shovel, it bit him in the lower leg. He says, “I don't really remember what it looked like other than that it was brown; I had a few beers before I started clearing out the shed, so it's all a bit fuzzy.” The bite site is painful. He is nauseous and says that he feels like he is about to vomit. He has no significant past medical history and takes no medications. His temperature is 37.3°C (99.1°F), pulse is 105/min, respirations are 26/min, and blood pressure is 96/52 mm Hg. Cardiopulmonary examination shows no other abnormalities. Physical examination shows two erythematous puncture wounds with serous drainage just above the right ankle. There is ecchymosis and swelling across the dorsum of the right foot and the lower leg up to the mid-shin. Active and passive range of motion of the right knee and ankle is limited by pain. Neurologic examination of the extremities shows no abnormalities. Which of the following is the most appropriate next step in management?\n\nTip: The majority of snake bites in the US are by Crotalinae species, which are typically earth-toned. Treatment of snake envenomation is determined by the severity of clinical manifestations. This patient presents with systemic features, including nausea, tachycardia, tachypnea, and mild hypotension, which are consistent with envenomation of moderate severity.",
+      "options": {
+        "A": "Administration of antivenom",
+        "B": "Application of a tourniquet around the right lower leg",
+        "C": "Compartment pressure measurement in the right lower leg",
+        "D": "Hospitalization and close observation of coagulation studies over 24 hours",
+        "E": "Administration of neostigmine and endotracheal intubation",
+        "F": "Administration of unfractionated heparin"
+      },
+      "correct_answer": "A",
+      "tip": "",
+      "explanations": {
+        "A": "Administration of antivenom is the most appropriate next step in management of a patient with moderate to severe envenomation by a crotaline snake. The clinical manifestations of envenomation are generally classified into three categories: local tissue effects (e.g., swelling and pain), systemic effects (e.g., tachycardia, hypotension, vomiting), and coagulopathic effects (e.g., hemorrhage, abnormal coagulation parameters). Severe cases can result in compartment syndrome, respiratory failure, life-threatening hypotension, and significant bleeding. Antivenom therapy can slow or halt the progression of toxicity and is most effective when administered within 6 hours of the snakebite. Crotalidae polyvalent immune fab and crotalidae immune f(ab')2 are the antivenoms available in the United States. Patients who have received antivenom should be monitored for hypersensitivity (e.g., serum sickness, anaphylaxis). Additional management recommendations include pain control, local wound care, tetanus immunization, and close observation, including regular monitoring of vital signs, tissue swelling, and coagulation studies.",
+        "B": "Tourniquets and constrictive dressings are generally not recommended after a snakebite. Though constriction may theoretically delay venom spread through lymphatic channels, there is no evidence that this intervention provides any clinical benefit. Moreover, tourniquets can worsen local ischemia and tissue damage. Oral suction and cutting of the wound should also be avoided in the management of snakebite wounds, as their efficacy has not been proven.",
+        "C": "Compartment syndrome is a rare complication of snakebites and typically manifests with pulselessness, paresthesia, pallor, and pain on passive stretch. Although this patient presents\nwith limited range of motion of the right knee and ankle due to pain, he has no other symptoms of compartment syndrome. Direct measurement is only indicated in patients with clinical features of increased compartment pressure. Therefore, another step in management is more appropriate at this time.",
+        "D": "Patients with dry bites (in which no envenomation occurs) or mild envenomation from crotaline snakes can experience localized pain and swelling and should be hospitalized for pain control, local wound care, and close observation, including regular monitoring of vital signs, tissue swelling, and coagulation studies. This patient, however, has systemic features, including nausea, tachycardia, tachypnea, and mild hypotension, which are consistent with envenomation of moderate severity. Moderate to severe envenomation requires active treatment rather than observation alone.",
+        "E": "Neurotoxic venom can cause neuromuscular blockade and diaphragmatic paralysis, which require neostigmine administration and intubation. Though some North American snakes have neurotoxic venom (e.g., coral snakes and some rattlesnakes), this patient does not have any neurologic symptoms, which makes acute neurotoxicity less likely. If he were to develop muscle weakness, upper airway obstruction, or significantly altered mental status, neostigmine administration and intubation might be indicated. However, they are not the most appropriate next steps in management at this time.",
+        "F": "Hematologic toxicity is a common effect of crotaline envenomation and typically results in abnormalities in coagulation parameters (e.g., prolonged prothrombin time, hypofibrinogenemia, thrombocytopenia), in part due to the activity of thrombin-like glycoproteins from the venom. These glycoproteins are not inhibited by the action of heparin, which plays no role in the management of crotaline envenomation and may increase the risk of bleeding."
+      },
+      "page_number": 1,
+      "source": "PyMuPDF + OpenAI Chat API",
+      "source_file": "Amboss Questions.pdf",
+      "images": [],
+      "explanation": "Administration of antivenom is the most appropriate next step in management of a patient with moderate to severe envenomation by a crotaline snake. The clinical manifestations of envenomation are generally classified into three categories: local tissue effects (e.g., swelling and pain), systemic effects (e.g., tachycardia, hypotension, vomiting), and coagulopathic effects (e.g., hemorrhage, abnormal coagulation parameters). Severe cases can result in compartment syndrome, respiratory failure, life-threatening hypotension, and significant bleeding. Antivenom therapy can slow or halt the progression of toxicity and is most effective when administered within 6 hours of the snakebite. Crotalidae polyvalent immune fab and crotalidae immune f(ab')2 are the antivenoms available in the United States. Patients who have received antivenom should be monitored for hypersensitivity (e.g., serum sickness, anaphylaxis). Additional management recommendations include pain control, local wound care, tetanus immunization, and close observation, including regular monitoring of vital signs, tissue swelling, and coagulation studies.",
+      "llm_judge_evaluation": {
+        "evaluation_text": "评估：\n\n问题清晰度：4\n该问题描述了一个具体的临床场景，提供了足够的背景信息，使读者能够理解患者的情况和症状。问题的表述清晰、精确，没有歧义。\n\n选项合理性：4\n所有选项都与问题相关，且具有一定的临床合理性。干扰项设计得当，能够有效地考察考生的临床判断能力。\n\n解释充分性：4\n解释详细且全面，涵盖了每个选项的适用性和不适用性的原因，帮助考生理解为什么正确答案是A，并且对其他选项进行了清晰的阐述。\n\n医学准确性：4\n医学内容准确，符合最新的医学知识和临床实践。对蛇咬伤的处理和相关的临床表现进行了正确的描述。\n\n总体质量：4\n该问题质量优秀，能够有效地用于教学，考察考生对蛇咬伤管理的理解和临床判断能力。\n\n总评分：4",
+        "question_clarity": 4.0,
+        "option_quality": 4.0,
+        "explanation_quality": 4.0,
+        "medical_accuracy": 4.0,
+        "overall_quality": 4.0,
+        "total_score": 4.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+================================================================================
+知识追踪系统测试报告
+Knowledge Tracking System Test Report
+================================================================================
+
+生成时间: 2025-12-29 12:41:46
+学生姓名: TestStudent
+测试时间: 2025-12-29T12:41:46.512473 - 2025-12-29T12:41:46.513478
+
+--------------------------------------------------------------------------------
+总体统计 / Overall Statistics
+--------------------------------------------------------------------------------
+已回答问题数: 100
+答对题数: 77
+答错题数: 23
+实际答对率: 77.00%
+
+--------------------------------------------------------------------------------
+知识组件统计 / Knowledge Components Statistics
+--------------------------------------------------------------------------------
+总知识组件数: 34
+已知组件数: 24 (70.6%)
+未知组件数: 10 (29.4%)
+
+--------------------------------------------------------------------------------
+按领域统计 / Statistics by Domain
+--------------------------------------------------------------------------------
+Cardiology: 44/54 (81.5%)
+Gastroenterology and Hepatology: 5/7 (71.4%)
+Pulmonology: 28/39 (71.8%)
+
+--------------------------------------------------------------------------------
+知识组件详情（最近20个）/ Knowledge Components Details (Top 20)
+--------------------------------------------------------------------------------
+
+✗ Chronic Pharmacologic Therapy (ACEi, ARNI, Beta-blockers, MRA)
+   领域: Cardiology → 主题: Heart Failure
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+✗ STEMI Diagnosis and Initial Management
+   领域: Cardiology → 主题: Acute Coronary Syndromes
+   准确率: 66.7% (2/3)
+   状态: 未知
+
+✓ NSTEMI and Unstable Angina Risk Stratification
+   领域: Cardiology → 主题: Acute Coronary Syndromes
+   准确率: 66.7% (2/3)
+   状态: 已知
+
+✓ Indications for Reperfusion Therapy
+   领域: Cardiology → 主题: Acute Coronary Syndromes
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Complications of Myocardial Infarction
+   领域: Cardiology → 主题: Acute Coronary Syndromes
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✗ Atrial Fibrillation Mechanisms and Anticoagulation
+   领域: Cardiology → 主题: Arrhythmias
+   准确率: 66.7% (2/3)
+   状态: 未知
+
+✓ Supraventricular Tachycardia Acute Management
+   领域: Cardiology → 主题: Arrhythmias
+   准确率: 66.7% (2/3)
+   状态: 已知
+
+✓ Ventricular Tachycardia and Sudden Cardiac Death
+   领域: Cardiology → 主题: Arrhythmias
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Bradyarrhythmias and Pacemaker Indications
+   领域: Cardiology → 主题: Arrhythmias
+   准确率: 66.7% (2/3)
+   状态: 已知
+
+✓ Aortic Stenosis Clinical Features and Management
+   领域: Cardiology → 主题: Valvular Heart Disease
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Mitral Regurgitation and Mitral Valve Prolapse
+   领域: Cardiology → 主题: Valvular Heart Disease
+   准确率: 66.7% (2/3)
+   状态: 已知
+
+✓ Endocarditis Prophylaxis Principles
+   领域: Cardiology → 主题: Valvular Heart Disease
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Acute Pericarditis and Pericardial Effusion
+   领域: Cardiology → 主题: Pericardial and Myocardial Disease
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Cardiac Tamponade Recognition and Management
+   领域: Cardiology → 主题: Pericardial and Myocardial Disease
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Myocarditis and Cardiomyopathy Basics
+   领域: Cardiology → 主题: Pericardial and Myocardial Disease
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Pathophysiology and Triggers
+   领域: Pulmonology → 主题: Asthma
+   准确率: 66.7% (2/3)
+   状态: 已知
+
+✓ Stepwise Pharmacologic Therapy
+   领域: Pulmonology → 主题: Asthma
+   准确率: 66.7% (2/3)
+   状态: 已知
+
+✓ Acute Severe Asthma Exacerbation Management
+   领域: Pulmonology → 主题: Asthma
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✗ Differentiating COPD from Asthma
+   领域: Pulmonology → 主题: Chronic Obstructive Pulmonary Disease (COPD)
+   准确率: 0.0% (0/3)
+   状态: 未知
+
+✗ GOLD Classification and Pharmacologic Steps
+   领域: Pulmonology → 主题: Chronic Obstructive Pulmonary Disease (COPD)
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+--------------------------------------------------------------------------------
+所有知识组件列表 / All Knowledge Components List
+--------------------------------------------------------------------------------
+✓ Pulmonology → Chronic Obstructive Pulmonary Disease (COPD) → Acute COPD Exacerbation Management | 准确率: 100.0% (3/3)
+✓ Cardiology → Heart Failure → Acute Decompensated Heart Failure Management | 准确率: 66.7% (2/3)
+✓ Cardiology → Pericardial and Myocardial Disease → Acute Pericarditis and Pericardial Effusion | 准确率: 100.0% (3/3)
+✓ Pulmonology → Asthma → Acute Severe Asthma Exacerbation Management | 准确率: 100.0% (3/3)
+✓ Pulmonology → Pulmonary Embolism → Anticoagulation and Thrombolysis Indications | 准确率: 100.0% (3/3)
+✓ Cardiology → Valvular Heart Disease → Aortic Stenosis Clinical Features and Management | 准确率: 100.0% (3/3)
+✗ Cardiology → Arrhythmias → Atrial Fibrillation Mechanisms and Anticoagulation | 准确率: 66.7% (2/3)
+✗ Pulmonology → Respiratory Failure → Basics of Oxygen Therapy and Noninvasive Ventilation | 准确率: 66.7% (2/3)
+✓ Cardiology → Arrhythmias → Bradyarrhythmias and Pacemaker Indications | 准确率: 66.7% (2/3)
+✓ Cardiology → Pericardial and Myocardial Disease → Cardiac Tamponade Recognition and Management | 准确率: 100.0% (3/3)
+✗ Cardiology → Heart Failure → Chronic Pharmacologic Therapy (ACEi, ARNI, Beta-blockers, MRA) | 准确率: 33.3% (1/3)
+✓ Cardiology → Heart Failure → Clinical Presentation and Physical Findings | 准确率: 66.7% (2/3)
+✓ Pulmonology → Pulmonary Embolism → Clinical Presentation and Wells Score | 准确率: 100.0% (3/3)
+✓ Cardiology → Acute Coronary Syndromes → Complications of Myocardial Infarction | 准确率: 100.0% (3/3)
+✗ Pulmonology → Chronic Obstructive Pulmonary Disease (COPD) → Differentiating COPD from Asthma | 准确率: 0.0% (0/3)
+✓ Cardiology → Valvular Heart Disease → Endocarditis Prophylaxis Principles | 准确率: 100.0% (3/3)
+✗ Pulmonology → Chronic Obstructive Pulmonary Disease (COPD) → GOLD Classification and Pharmacologic Steps | 准确率: 33.3% (1/3)
+✗ Pulmonology → Respiratory Failure → Hypoxemic vs Hypercapnic Respiratory Failure | 准确率: 66.7% (2/3)
+✗ Pulmonology → Interstitial and Occupational Lung Disease → Idiopathic Pulmonary Fibrosis | 准确率: 66.7% (2/3)
+✓ Pulmonology → Pulmonary Embolism → Imaging Choices (CTPA vs V/Q Scan) | 准确率: 100.0% (3/3)
+✓ Cardiology → Acute Coronary Syndromes → Indications for Reperfusion Therapy | 准确率: 100.0% (3/3)
+✓ Cardiology → Valvular Heart Disease → Mitral Regurgitation and Mitral Valve Prolapse | 准确率: 66.7% (2/3)
+✓ Cardiology → Pericardial and Myocardial Disease → Myocarditis and Cardiomyopathy Basics | 准确率: 100.0% (3/3)
+✓ Cardiology → Acute Coronary Syndromes → NSTEMI and Unstable Angina Risk Stratification | 准确率: 66.7% (2/3)
+✓ Pulmonology → Asthma → Pathophysiology and Triggers | 准确率: 66.7% (2/3)
+✗ Gastroenterology and Hepatology → Upper GI Bleeding → Peptic Ulcer Bleeding Management | 准确率: 33.3% (1/3)
+✗ Pulmonology → Interstitial and Occupational Lung Disease → Pneumoconioses and Occupational Exposures | 准确率: 66.7% (2/3)
+✓ Gastroenterology and Hepatology → Upper GI Bleeding → Risk Stratification (Glasgow-Blatchford, Rockall) | 准确率: 100.0% (3/3)
+✗ Cardiology → Acute Coronary Syndromes → STEMI Diagnosis and Initial Management | 准确率: 66.7% (2/3)
+✓ Pulmonology → Asthma → Stepwise Pharmacologic Therapy | 准确率: 66.7% (2/3)
+✓ Cardiology → Arrhythmias → Supraventricular Tachycardia Acute Management | 准确率: 66.7% (2/3)
+✓ Cardiology → Heart Failure → Systolic vs Diastolic Heart Failure | 准确率: 100.0% (3/3)
+✓ Gastroenterology and Hepatology → Upper GI Bleeding → Variceal Bleeding Initial Management | 准确率: 100.0% (1/1)
+✓ Cardiology → Arrhythmias → Ventricular Tachycardia and Sudden Cardiac Death | 准确率: 100.0% (3/3)

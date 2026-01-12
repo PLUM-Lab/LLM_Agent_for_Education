@@ -1,0 +1,612 @@
+{
+  "domains": [
+    {
+      "name": "Wound Healing & Surgical Site Management",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Phases of wound healing",
+          "subtopics": [
+            "Hemostasis",
+            "Inflammation",
+            "Proliferation",
+            "Remodeling"
+          ]
+        },
+        {
+          "name": "Types of wound healing",
+          "subtopics": [
+            "Primary",
+            "Secondary",
+            "Tertiary (delayed primary)"
+          ]
+        },
+        {
+          "name": "Surgical wound classification",
+          "subtopics": [
+            "Clean",
+            "Clean-contaminated",
+            "Contaminated",
+            "Dirty/infected"
+          ]
+        },
+        {
+          "name": "Factors affecting wound healing",
+          "subtopics": [
+            "Local (ischemia, infection, tension, foreign body)",
+            "Systemic (diabetes, nutrition, steroids, smoking, uremia)"
+          ]
+        },
+        {
+          "name": "Surgical site infection (SSI)",
+          "subtopics": [
+            "Pathogenesis",
+            "Risk factors",
+            "Antimicrobial prophylaxis (timing, spectrum, redosing)"
+          ]
+        },
+        {
+          "name": "Wound complications",
+          "subtopics": [
+            "Hematoma",
+            "Seroma",
+            "Infection",
+            "Dehiscence",
+            "Evisceration",
+            "Incisional hernia"
+          ]
+        },
+        {
+          "name": "Burn wound management",
+          "subtopics": [
+            "Burn depth",
+            "Rule of nines",
+            "Fluid resuscitation",
+            "Escharotomy indications",
+            "Infection and metabolic complications"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Perioperative Evaluation & Postoperative Care",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Preoperative evaluation",
+          "subtopics": [
+            "Cardiac risk assessment",
+            "Pulmonary risk assessment",
+            "Functional capacity",
+            "Venous thromboembolism (VTE) prophylaxis",
+            "Mechanical vs pharmacologic",
+            "Antibiotic prophylaxis"
+          ]
+        },
+        {
+          "name": "Postoperative fever (5 W’s)",
+          "subtopics": []
+        },
+        {
+          "name": "Postoperative ileus",
+          "subtopics": []
+        },
+        {
+          "name": "Urinary retention",
+          "subtopics": []
+        },
+        {
+          "name": "Postoperative delirium",
+          "subtopics": []
+        },
+        {
+          "name": "Pain management principles",
+          "subtopics": [
+            "Opioid vs multimodal analgesia"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Acute Abdomen & Surgical Emergencies",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Inflammatory / infectious causes",
+          "subtopics": [
+            "Acute appendicitis",
+            "Acute cholecystitis",
+            "Diverticulitis (cecal, sigmoid)",
+            "Meckel’s diverticulitis",
+            "Hepatic abscess",
+            "Splenic abscess",
+            "Tubo-ovarian abscess"
+          ]
+        },
+        {
+          "name": "Perforation & ischemia",
+          "subtopics": [
+            "Perforated peptic ulcer",
+            "Bowel perforation",
+            "Mesenteric ischemia"
+          ]
+        },
+        {
+          "name": "Obstruction",
+          "subtopics": [
+            "Small bowel obstruction",
+            "Large bowel obstruction",
+            "Volvulus (sigmoid, cecal)",
+            "Intussusception"
+          ]
+        },
+        {
+          "name": "Hemorrhagic / vascular causes",
+          "subtopics": [
+            "Ruptured abdominal aortic aneurysm",
+            "Splenic rupture"
+          ]
+        },
+        {
+          "name": "Gynecologic mimics",
+          "subtopics": [
+            "Ovarian torsion",
+            "Ectopic pregnancy"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Trauma & Burn Management",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Advanced Trauma Life Support (ATLS)",
+          "subtopics": [
+            "Airway with cervical spine protection",
+            "Breathing and ventilation",
+            "Circulation and hemorrhage control",
+            "Disability (neurologic assessment)",
+            "Exposure and environmental control"
+          ]
+        },
+        {
+          "name": "Trauma adjuncts",
+          "subtopics": [
+            "Foley catheter",
+            "Fingerstick glucose",
+            "FAST exam"
+          ]
+        },
+        {
+          "name": "Blunt vs penetrating trauma",
+          "subtopics": []
+        },
+        {
+          "name": "Solid organ injury management",
+          "subtopics": []
+        },
+        {
+          "name": "Burn management",
+          "subtopics": [
+            "Initial assessment",
+            "Burn resuscitation",
+            "Airway injury",
+            "Metabolic and infectious complications"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Critical Care, Shock & Hemodynamics",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Types of shock",
+          "subtopics": [
+            "Hypovolemic",
+            "Distributive (septic)",
+            "Anaphylactic",
+            "Neurogenic",
+            "Cardiogenic",
+            "Obstructive"
+          ]
+        },
+        {
+          "name": "Vasopressors and inotropes",
+          "subtopics": [
+            "Norepinephrine",
+            "Epinephrine",
+            "Dopamine",
+            "Dobutamine",
+            "Phenylephrine",
+            "Milrinone",
+            "Isoproterenol"
+          ]
+        },
+        {
+          "name": "Fluids and electrolytes",
+          "subtopics": [
+            "Dehydration",
+            "Volume overload",
+            "Sodium disorders",
+            "Potassium disorders",
+            "Calcium disorders",
+            "Magnesium and phosphate"
+          ]
+        },
+        {
+          "name": "Acid–base disorders",
+          "subtopics": [
+            "Metabolic acidosis/alkalosis",
+            "Respiratory acidosis/alkalosis"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Nutrition & Metabolism",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Enteral nutrition",
+          "subtopics": []
+        },
+        {
+          "name": "Total parenteral nutrition (TPN)",
+          "subtopics": [
+            "Indications",
+            "Complications",
+            "Refeeding syndrome"
+          ]
+        },
+        {
+          "name": "Surgical stress response",
+          "subtopics": []
+        },
+        {
+          "name": "Nutritional assessment",
+          "subtopics": []
+        }
+      ]
+    },
+    {
+      "name": "Esophageal, Gastric & Intestinal Disorders",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Esophagus",
+          "subtopics": [
+            "Achalasia",
+            "Diverticula",
+            "Varices",
+            "Hiatal hernia",
+            "Esophageal perforation",
+            "GERD",
+            "Barrett’s esophagus",
+            "Esophageal carcinoma"
+          ]
+        },
+        {
+          "name": "Stomach & Duodenum",
+          "subtopics": [
+            "Peptic ulcer disease",
+            "Gastric carcinoma",
+            "Upper GI bleeding"
+          ]
+        },
+        {
+          "name": "Small Intestine",
+          "subtopics": [
+            "Small bowel obstruction",
+            "Crohn’s disease",
+            "Short bowel syndrome",
+            "Enterocutaneous fistula"
+          ]
+        },
+        {
+          "name": "Colon & Rectum",
+          "subtopics": [
+            "Ulcerative colitis",
+            "Lower GI bleeding",
+            "Diverticular disease",
+            "Volvulus",
+            "Colorectal cancer"
+          ]
+        },
+        {
+          "name": "Anorectal",
+          "subtopics": [
+            "Anal fissure",
+            "Hemorrhoids",
+            "Perirectal abscess/fistula"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Abdominal Wall & Hernias",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Abdominal wall anatomy",
+          "subtopics": []
+        },
+        {
+          "name": "Inguinal canal anatomy",
+          "subtopics": []
+        },
+        {
+          "name": "Hernias",
+          "subtopics": [
+            "Inguinal (direct vs indirect)",
+            "Femoral",
+            "Umbilical",
+            "Incisional"
+          ]
+        },
+        {
+          "name": "Hernia complications",
+          "subtopics": [
+            "Incarceration",
+            "Strangulation"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hepatobiliary, Pancreatic & Breast Surgery",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Anatomy & Diagnostics",
+          "subtopics": [
+            "Liver, gallbladder, pancreas anatomy",
+            "Imaging",
+            "Ultrasound",
+            "CT",
+            "HIDA scan",
+            "ERCP",
+            "Percutaneous transhepatic cholangiography"
+          ]
+        },
+        {
+          "name": "Liver",
+          "subtopics": [
+            "Jaundice (prehepatic, hepatic, posthepatic)",
+            "Hepatic abscess",
+            "Primary liver malignancy",
+            "Metastatic disease"
+          ]
+        },
+        {
+          "name": "Gallbladder & Biliary Tree",
+          "subtopics": [
+            "Cholelithiasis",
+            "Acute and chronic cholecystitis",
+            "Choledocholithiasis",
+            "Ascending cholangitis",
+            "Gallbladder carcinoma"
+          ]
+        },
+        {
+          "name": "Pancreas",
+          "subtopics": [
+            "Acute pancreatitis",
+            "Chronic pancreatitis",
+            "Pancreatic adenocarcinoma"
+          ]
+        },
+        {
+          "name": "Breast",
+          "subtopics": [
+            "Benign breast disease",
+            "Breast carcinoma",
+            "Evaluation of breast mass"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Endocrine Surgery",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Endocrine anatomy and physiology",
+          "subtopics": []
+        },
+        {
+          "name": "Adrenal disorders",
+          "subtopics": [
+            "Cushing’s syndrome",
+            "Pheochromocytoma",
+            "Addison’s disease"
+          ]
+        },
+        {
+          "name": "Gastrinomas",
+          "subtopics": [
+            "Zollinger–Ellison syndrome"
+          ]
+        },
+        {
+          "name": "Multiple endocrine neoplasia (MEN 1, MEN 2A/2B)",
+          "subtopics": []
+        },
+        {
+          "name": "Thyroid disorders",
+          "subtopics": [
+            "Thyroid nodules",
+            "Thyroid carcinoma",
+            "Hypothyroidism",
+            "Hyperthyroidism"
+          ]
+        },
+        {
+          "name": "Parathyroid disorders",
+          "subtopics": [
+            "Hyperparathyroidism",
+            "Hypoparathyroidism",
+            "Calcium abnormalities"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pediatric Surgical Conditions",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Pyloric stenosis",
+          "subtopics": []
+        },
+        {
+          "name": "Intussusception",
+          "subtopics": []
+        },
+        {
+          "name": "Meckel’s diverticulum",
+          "subtopics": []
+        },
+        {
+          "name": "Necrotizing enterocolitis",
+          "subtopics": []
+        },
+        {
+          "name": "Congenital diaphragmatic hernia",
+          "subtopics": []
+        }
+      ]
+    },
+    {
+      "name": "Principles of Surgical Oncology",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Staging vs grading",
+          "subtopics": []
+        },
+        {
+          "name": "Lymphatic spread",
+          "subtopics": []
+        },
+        {
+          "name": "Surgical margins (R0 vs R1)",
+          "subtopics": []
+        },
+        {
+          "name": "Neoadjuvant vs adjuvant therapy",
+          "subtopics": []
+        },
+        {
+          "name": "Screening vs diagnostic testing",
+          "subtopics": []
+        }
+      ]
+    },
+    {
+      "name": "Imaging & Diagnostic Decision-Making",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Choosing imaging modality: Ultrasound vs CT vs MRI",
+          "subtopics": []
+        },
+        {
+          "name": "Contrast vs non-contrast CT",
+          "subtopics": []
+        },
+        {
+          "name": "FAST exam indications",
+          "subtopics": []
+        },
+        {
+          "name": "MRCP vs ERCP",
+          "subtopics": []
+        },
+        {
+          "name": "Labs vs imaging first",
+          "subtopics": []
+        }
+      ]
+    },
+    {
+      "name": "General Surgical Complications",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Bleeding",
+          "subtopics": []
+        },
+        {
+          "name": "Infection",
+          "subtopics": []
+        },
+        {
+          "name": "Anastomotic leak",
+          "subtopics": []
+        },
+        {
+          "name": "Deep vein thrombosis / pulmonary embolism",
+          "subtopics": []
+        },
+        {
+          "name": "Atelectasis and pneumonia",
+          "subtopics": []
+        },
+        {
+          "name": "Acute kidney injury",
+          "subtopics": []
+        },
+        {
+          "name": "Electrolyte abnormalities",
+          "subtopics": []
+        }
+      ]
+    },
+    {
+      "name": "Transplant & Immunologic Considerations",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Immunosuppression complications",
+          "subtopics": []
+        },
+        {
+          "name": "Infection risk",
+          "subtopics": []
+        },
+        {
+          "name": "Rejection vs infection patterns",
+          "subtopics": []
+        }
+      ]
+    },
+    {
+      "name": "Ethics & Professionalism in Surgery",
+      "level": "MS3",
+      "topics": [
+        {
+          "name": "Informed consent",
+          "subtopics": []
+        },
+        {
+          "name": "Capacity vs competence",
+          "subtopics": []
+        },
+        {
+          "name": "Emergent surgery without consent",
+          "subtopics": []
+        },
+        {
+          "name": "DNR status in the operating room",
+          "subtopics": []
+        },
+        {
+          "name": "End-of-life decision-making",
+          "subtopics": []
+        }
+      ]
+    }
+  ]
+}

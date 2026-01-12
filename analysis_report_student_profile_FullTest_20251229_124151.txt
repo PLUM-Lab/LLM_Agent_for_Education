@@ -1,0 +1,170 @@
+================================================================================
+完成所有问题后的知识追踪分析报告
+Knowledge Tracking Analysis Report After Completing All Questions
+================================================================================
+
+--------------------------------------------------------------------------------
+📊 总体情况 / Overall Statistics
+--------------------------------------------------------------------------------
+已回答问题总数: 479
+知识组件总数: 160
+已知组件数: 119 (74.4%)
+未知组件数: 41 (25.6%)
+
+--------------------------------------------------------------------------------
+📚 按领域统计 / Statistics by Domain
+--------------------------------------------------------------------------------
+⚠️ Cardiology: 13/18 (72.2%)
+⚠️ Dermatology and Musculoskeletal: 5/8 (62.5%)
+⚠️ Emergency Medicine and Trauma: 6/8 (75.0%)
+✅ Endocrinology: 12/14 (85.7%)
+✅ Gastroenterology and Hepatology: 11/11 (100.0%)
+⚠️ Hematology and Oncology: 7/11 (63.6%)
+❌ Infectious Diseases: 5/11 (45.5%)
+⚠️ Nephrology: 8/11 (72.7%)
+✅ Neurology: 9/11 (81.8%)
+❌ Obstetrics and Gynecology: 5/9 (55.6%)
+✅ Pediatrics: 9/9 (100.0%)
+⚠️ Preventive Medicine, Ethics, and Professionalism: 5/8 (62.5%)
+⚠️ Psychiatry and Behavioral Health: 7/11 (63.6%)
+⚠️ Pulmonology: 10/13 (76.9%)
+✅ Rheumatology and Immunology: 7/7 (100.0%)
+
+--------------------------------------------------------------------------------
+🌟 掌握最好的领域 / Strongest Domains (≥90%)
+--------------------------------------------------------------------------------
+✅ Gastroenterology and Hepatology: 100.0% (11/11)
+✅ Rheumatology and Immunology: 100.0% (7/7)
+✅ Pediatrics: 100.0% (9/9)
+
+--------------------------------------------------------------------------------
+⚠️ 薄弱领域 / Weak Domains (<70%)
+--------------------------------------------------------------------------------
+❌ Infectious Diseases: 45.5% (5/11)
+❌ Obstetrics and Gynecology: 55.6% (5/9)
+❌ Dermatology and Musculoskeletal: 62.5% (5/8)
+❌ Preventive Medicine, Ethics, and Professionalism: 62.5% (5/8)
+❌ Hematology and Oncology: 63.6% (7/11)
+❌ Psychiatry and Behavioral Health: 63.6% (7/11)
+
+--------------------------------------------------------------------------------
+📝 需要重点复习的知识组件 / Knowledge Components Needing Review
+--------------------------------------------------------------------------------
+(按准确率从低到高排序，显示前20个)
+
+1. Staging of CKD and GFR Thresholds
+   领域: Nephrology → 主题: Chronic Kidney Disease
+   准确率: 0.0% (0/3)
+   状态: 未知
+
+2. Scabies and Pediculosis
+   领域: Dermatology and Musculoskeletal → 主题: Skin Infections and Infestations
+   准确率: 0.0% (0/3)
+   状态: 未知
+
+3. Postpartum Hemorrhage Initial Management
+   领域: Obstetrics and Gynecology → 主题: Obstetric Complications
+   准确率: 0.0% (0/3)
+   状态: 未知
+
+4. Sensitivity, Specificity, Predictive Values
+   领域: Preventive Medicine, Ethics, and Professionalism → 主题: Epidemiology and Biostatistics
+   准确率: 0.0% (0/3)
+   状态: 未知
+
+5. Indications for Reperfusion Therapy
+   领域: Cardiology → 主题: Acute Coronary Syndromes
+   准确率: 33.3% (1/3)
+   状态: 已知
+
+6. Acute Pericarditis and Pericardial Effusion
+   领域: Cardiology → 主题: Pericardial and Myocardial Disease
+   准确率: 33.3% (1/3)
+   状态: 已知
+
+7. Anticoagulation and Thrombolysis Indications
+   领域: Pulmonology → 主题: Pulmonary Embolism
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+8. Management of Anemia and Mineral Bone Disease
+   领域: Nephrology → 主题: Chronic Kidney Disease
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+9. Basic Approach to Proteinuria and Hematuria
+   领域: Nephrology → 主题: Glomerular Disease
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+10. Diabetic Ketoacidosis Diagnosis and Treatment
+   领域: Endocrinology → 主题: Diabetes Mellitus
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+11. Hyperosmolar Hyperglycemic State
+   领域: Endocrinology → 主题: Diabetes Mellitus
+   准确率: 33.3% (1/3)
+   状态: 已知
+
+12. Lung, Breast, Colon Cancer Basics
+   领域: Hematology and Oncology → 主题: Solid Tumors
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+13. Sepsis Definitions (Sepsis-3, qSOFA)
+   领域: Infectious Diseases → 主题: Sepsis and Septic Shock
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+14. Vasopressor Use in Septic Shock
+   领域: Infectious Diseases → 主题: Sepsis and Septic Shock
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+15. Skin and Soft Tissue Infections
+   领域: Infectious Diseases → 主题: Common Infections
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+16. HIV Opportunistic Infections and Prophylaxis
+   领域: Infectious Diseases → 主题: Special Hosts
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+17. Secondary Prevention After Ischemic Stroke
+   领域: Neurology → 主题: Stroke and TIA
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+18. Bipolar I vs Bipolar II Differences
+   领域: Psychiatry and Behavioral Health → 主题: Mood Disorders
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+19. Antidepressant Classes and Side Effects
+   领域: Psychiatry and Behavioral Health → 主题: Mood Disorders
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+20. Typical vs Atypical Antipsychotics Side-effect Profiles
+   领域: Psychiatry and Behavioral Health → 主题: Psychotic Disorders
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+--------------------------------------------------------------------------------
+💡 学习建议 / Learning Recommendations
+--------------------------------------------------------------------------------
+👍 你已经掌握了相当一部分知识。
+建议：
+  1. 系统复习薄弱领域
+  2. 针对准确率<50%的知识组件进行专项练习
+  3. 巩固已掌握的知识
+
+--------------------------------------------------------------------------------
+🚀 下一步行动 / Next Steps
+--------------------------------------------------------------------------------
+1. 针对薄弱领域进行专项复习
+2. 重新练习准确率<50%的知识组件相关题目
+3. 定期回顾，防止知识遗忘
+4. 可以开始新的学习内容或更高级的题目

@@ -1,0 +1,310 @@
+================================================================================
+知识追踪系统测试报告
+Knowledge Tracking System Test Report
+================================================================================
+
+生成时间: 2025-12-29 12:41:51
+学生姓名: FullTest
+测试时间: 2025-12-29T12:41:51.785741 - 2025-12-29T12:41:51.804749
+
+--------------------------------------------------------------------------------
+总体统计 / Overall Statistics
+--------------------------------------------------------------------------------
+已回答问题数: 479
+答对题数: 360
+答错题数: 119
+实际答对率: 75.16%
+
+--------------------------------------------------------------------------------
+知识组件统计 / Knowledge Components Statistics
+--------------------------------------------------------------------------------
+总知识组件数: 160
+已知组件数: 119 (74.4%)
+未知组件数: 41 (25.6%)
+
+--------------------------------------------------------------------------------
+按领域统计 / Statistics by Domain
+--------------------------------------------------------------------------------
+Cardiology: 40/54 (74.1%)
+Dermatology and Musculoskeletal: 16/24 (66.7%)
+Emergency Medicine and Trauma: 18/23 (78.3%)
+Endocrinology: 31/42 (73.8%)
+Gastroenterology and Hepatology: 28/33 (84.8%)
+Hematology and Oncology: 25/33 (75.8%)
+Infectious Diseases: 22/33 (66.7%)
+Nephrology: 22/33 (66.7%)
+Neurology: 26/33 (78.8%)
+Obstetrics and Gynecology: 17/27 (63.0%)
+Pediatrics: 24/27 (88.9%)
+Preventive Medicine, Ethics, and Professionalism: 18/24 (75.0%)
+Psychiatry and Behavioral Health: 23/33 (69.7%)
+Pulmonology: 32/39 (82.1%)
+Rheumatology and Immunology: 18/21 (85.7%)
+
+--------------------------------------------------------------------------------
+知识组件详情（最近20个）/ Knowledge Components Details (Top 20)
+--------------------------------------------------------------------------------
+
+✓ End-of-Life Decision-Making
+   领域: Preventive Medicine, Ethics, and Professionalism → 主题: Ethics and Communication
+   准确率: 66.7% (2/3)
+   状态: 已知
+
+✓ Breaking Bad News and Shared Decision-Making
+   领域: Preventive Medicine, Ethics, and Professionalism → 主题: Ethics and Communication
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ ATLS Primary and Secondary Survey
+   领域: Emergency Medicine and Trauma → 主题: Trauma
+   准确率: 66.7% (2/3)
+   状态: 已知
+
+✓ Head Trauma and Spinal Precautions
+   领域: Emergency Medicine and Trauma → 主题: Trauma
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Abdominal Trauma and FAST Examination
+   领域: Emergency Medicine and Trauma → 主题: Trauma
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✗ Common Poisonings and Antidotes
+   领域: Emergency Medicine and Trauma → 主题: Toxicology and Environmental Injuries
+   准确率: 33.3% (1/3)
+   状态: 未知
+
+✓ Heat Stroke and Hypothermia Basics
+   领域: Emergency Medicine and Trauma → 主题: Toxicology and Environmental Injuries
+   准确率: 50.0% (1/2)
+   状态: 已知
+
+✓ Adult Screening Guidelines (Cancer, CV Risk)
+   领域: Preventive Medicine, Ethics, and Professionalism → 主题: Screening and Preventive Care
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Vaccination in Adults and Special Populations
+   领域: Preventive Medicine, Ethics, and Professionalism → 主题: Screening and Preventive Care
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✗ Study Design Basics
+   领域: Preventive Medicine, Ethics, and Professionalism → 主题: Epidemiology and Biostatistics
+   准确率: 66.7% (2/3)
+   状态: 未知
+
+✗ Sensitivity, Specificity, Predictive Values
+   领域: Preventive Medicine, Ethics, and Professionalism → 主题: Epidemiology and Biostatistics
+   准确率: 0.0% (0/3)
+   状态: 未知
+
+✓ Risk, Odds, and Hazard Ratios
+   领域: Preventive Medicine, Ethics, and Professionalism → 主题: Epidemiology and Biostatistics
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✗ Informed Consent and Capacity
+   领域: Preventive Medicine, Ethics, and Professionalism → 主题: Ethics and Communication
+   准确率: 66.7% (2/3)
+   状态: 未知
+
+✓ Developmental Milestones by Age
+   领域: Pediatrics → 主题: Well-Child Care and Development
+   准确率: 66.7% (2/3)
+   状态: 已知
+
+✓ Vaccination Schedule and Contraindications
+   领域: Pediatrics → 主题: Well-Child Care and Development
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Failure to Thrive Evaluation
+   领域: Pediatrics → 主题: Well-Child Care and Development
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Otitis Media and Pharyngitis
+   领域: Pediatrics → 主题: Common Pediatric Infections
+   准确率: 66.7% (2/3)
+   状态: 已知
+
+✓ Bronchiolitis vs Asthma in Children
+   领域: Pediatrics → 主题: Common Pediatric Infections
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Meningitis in Infants and Children
+   领域: Pediatrics → 主题: Common Pediatric Infections
+   准确率: 100.0% (3/3)
+   状态: 已知
+
+✓ Pediatric Dehydration Assessment and Rehydration
+   领域: Pediatrics → 主题: Pediatric Emergencies
+   准确率: 66.7% (2/3)
+   状态: 已知
+
+--------------------------------------------------------------------------------
+所有知识组件列表 / All Knowledge Components List
+--------------------------------------------------------------------------------
+✓ Emergency Medicine and Trauma → Trauma → ATLS Primary and Secondary Survey | 准确率: 66.7% (2/3)
+✓ Emergency Medicine and Trauma → Trauma → Abdominal Trauma and FAST Examination | 准确率: 100.0% (3/3)
+✓ Obstetrics and Gynecology → Gynecologic Oncology and Benign Disease → Abnormal Uterine Bleeding Evaluation | 准确率: 66.7% (2/3)
+✗ Pulmonology → Chronic Obstructive Pulmonary Disease (COPD) → Acute COPD Exacerbation Management | 准确率: 66.7% (2/3)
+✓ Cardiology → Heart Failure → Acute Decompensated Heart Failure Management | 准确率: 100.0% (3/3)
+✓ Neurology → Headache → Acute Migraine Treatment Options | 准确率: 100.0% (3/3)
+✓ Gastroenterology and Hepatology → Pancreatic and Biliary Disease → Acute Pancreatitis Etiology and Management | 准确率: 66.7% (2/3)
+✓ Cardiology → Pericardial and Myocardial Disease → Acute Pericarditis and Pericardial Effusion | 准确率: 33.3% (1/3)
+✓ Pulmonology → Asthma → Acute Severe Asthma Exacerbation Management | 准确率: 66.7% (2/3)
+✓ Hematology and Oncology → Leukemias and Lymphomas → Acute vs Chronic Leukemia Clinical Presentation | 准确率: 100.0% (3/3)
+✓ Endocrinology → Adrenal and Pituitary Disorders → Adrenal Insufficiency Diagnosis and Management | 准确率: 66.7% (2/3)
+✓ Preventive Medicine, Ethics, and Professionalism → Screening and Preventive Care → Adult Screening Guidelines (Cancer, CV Risk) | 准确率: 100.0% (3/3)
+✓ Emergency Medicine and Trauma → Resuscitation and Shock → Airway, Breathing, Circulation Priorities | 准确率: 100.0% (3/3)
+✓ Psychiatry and Behavioral Health → Substance Use Disorders → Alcohol Use Disorder and Withdrawal | 准确率: 100.0% (3/3)
+✓ Gastroenterology and Hepatology → Liver Disease → Alcoholic vs Nonalcoholic Fatty Liver Disease | 准确率: 66.7% (2/3)
+✓ Pediatrics → Pediatric Emergencies → Anaphylaxis Management in Children | 准确率: 100.0% (3/3)
+✓ Hematology and Oncology → Anemias → Anemia of Chronic Disease vs Iron Deficiency | 准确率: 100.0% (3/3)
+✗ Pulmonology → Pulmonary Embolism → Anticoagulation and Thrombolysis Indications | 准确率: 33.3% (1/3)
+✗ Psychiatry and Behavioral Health → Mood Disorders → Antidepressant Classes and Side Effects | 准确率: 33.3% (1/3)
+✓ Neurology → Seizures and Epilepsy → Antiseizure Medication Selection Basics | 准确率: 100.0% (3/3)
+✓ Cardiology → Valvular Heart Disease → Aortic Stenosis Clinical Features and Management | 准确率: 100.0% (3/3)
+✓ Dermatology and Musculoskeletal → Common Inflammatory Dermatoses → Atopic Dermatitis | 准确率: 66.7% (2/3)
+✗ Cardiology → Arrhythmias → Atrial Fibrillation Mechanisms and Anticoagulation | 准确率: 66.7% (2/3)
+✓ Dermatology and Musculoskeletal → Fractures and Orthopedic Emergencies → Back Pain Red Flags and Cauda Equina | 准确率: 33.3% (1/3)
+✗ Nephrology → Glomerular Disease → Basic Approach to Proteinuria and Hematuria | 准确率: 33.3% (1/3)
+✓ Pulmonology → Respiratory Failure → Basics of Oxygen Therapy and Noninvasive Ventilation | 准确率: 66.7% (2/3)
+✗ Psychiatry and Behavioral Health → Mood Disorders → Bipolar I vs Bipolar II Differences | 准确率: 33.3% (1/3)
+✓ Nephrology → Chronic Kidney Disease → Blood Pressure Control in CKD | 准确率: 100.0% (3/3)
+✓ Cardiology → Arrhythmias → Bradyarrhythmias and Pacemaker Indications | 准确率: 66.7% (2/3)
+✓ Preventive Medicine, Ethics, and Professionalism → Ethics and Communication → Breaking Bad News and Shared Decision-Making | 准确率: 100.0% (3/3)
+✓ Pediatrics → Common Pediatric Infections → Bronchiolitis vs Asthma in Children | 准确率: 100.0% (3/3)
+✗ Cardiology → Pericardial and Myocardial Disease → Cardiac Tamponade Recognition and Management | 准确率: 66.7% (2/3)
+✓ Obstetrics and Gynecology → Gynecologic Oncology and Benign Disease → Cervical Cancer Screening and Abnormal Results Management | 准确率: 66.7% (2/3)
+✓ Gastroenterology and Hepatology → Pancreatic and Biliary Disease → Cholelithiasis, Cholecystitis, and Cholangitis | 准确率: 100.0% (3/3)
+✓ Cardiology → Heart Failure → Chronic Pharmacologic Therapy (ACEi, ARNI, Beta-blockers, MRA) | 准确率: 66.7% (2/3)
+✓ Gastroenterology and Hepatology → Liver Disease → Cirrhosis Complications (Ascites, Encephalopathy, Varices) | 准确率: 66.7% (2/3)
+✓ Cardiology → Heart Failure → Clinical Presentation and Physical Findings | 准确率: 66.7% (2/3)
+✓ Pulmonology → Pulmonary Embolism → Clinical Presentation and Wells Score | 准确率: 100.0% (3/3)
+✓ Infectious Diseases → Hospital-Associated Infections → Clostridioides difficile Infection Basics | 准确率: 100.0% (3/3)
+✗ Emergency Medicine and Trauma → Toxicology and Environmental Injuries → Common Poisonings and Antidotes | 准确率: 33.3% (1/3)
+✗ Infectious Diseases → Common Infections → Community-Acquired Pneumonia Empiric Therapy | 准确率: 66.7% (2/3)
+✗ Cardiology → Acute Coronary Syndromes → Complications of Myocardial Infarction | 准确率: 66.7% (2/3)
+✓ Gastroenterology and Hepatology → Inflammatory Bowel Disease → Crohn Disease vs Ulcerative Colitis Features | 准确率: 66.7% (2/3)
+✓ Endocrinology → Adrenal and Pituitary Disorders → Cushing Syndrome Evaluation | 准确率: 66.7% (2/3)
+✗ Hematology and Oncology → Coagulation and Thrombotic Disorders → DVT and PE Prophylaxis and Treatment | 准确率: 66.7% (2/3)
+✓ Pediatrics → Well-Child Care and Development → Developmental Milestones by Age | 准确率: 66.7% (2/3)
+✗ Infectious Diseases → Hospital-Associated Infections → Device-Related Infections (Catheters, Lines) | 准确率: 66.7% (2/3)
+✗ Endocrinology → Diabetes Mellitus → Diabetic Ketoacidosis Diagnosis and Treatment | 准确率: 33.3% (1/3)
+✓ Endocrinology → Diabetes Mellitus → Diagnostic Criteria for Type 1 vs Type 2 DM | 准确率: 100.0% (3/3)
+✓ Pulmonology → Chronic Obstructive Pulmonary Disease (COPD) → Differentiating COPD from Asthma | 准确率: 100.0% (3/3)
+✓ Rheumatology and Immunology → Inflammatory Arthritis → Disease-Modifying Antirheumatic Drugs (DMARDs) | 准确率: 66.7% (2/3)
+✓ Preventive Medicine, Ethics, and Professionalism → Ethics and Communication → End-of-Life Decision-Making | 准确率: 66.7% (2/3)
+✓ Cardiology → Valvular Heart Disease → Endocarditis Prophylaxis Principles | 准确率: 100.0% (3/3)
+✓ Gastroenterology and Hepatology → Inflammatory Bowel Disease → Extraintestinal Manifestations | 准确率: 100.0% (3/3)
+✓ Pediatrics → Well-Child Care and Development → Failure to Thrive Evaluation | 准确率: 100.0% (3/3)
+✓ Infectious Diseases → Special Hosts → Febrile Neutropenia | 准确率: 66.7% (2/3)
+✓ Pediatrics → Pediatric Emergencies → Febrile Seizures | 准确率: 100.0% (3/3)
+✓ Neurology → Seizures and Epilepsy → First Seizure Evaluation | 准确率: 66.7% (2/3)
+✓ Psychiatry and Behavioral Health → Anxiety and Trauma-Related Disorders → First-line Pharmacologic and Psychotherapy Options | 准确率: 100.0% (3/3)
+✗ Dermatology and Musculoskeletal → Fractures and Orthopedic Emergencies → Fracture Patterns and Compartment Syndrome | 准确率: 66.7% (2/3)
+✓ Psychiatry and Behavioral Health → Anxiety and Trauma-Related Disorders → GAD vs Panic Disorder | 准确率: 66.7% (2/3)
+✓ Pulmonology → Chronic Obstructive Pulmonary Disease (COPD) → GOLD Classification and Pharmacologic Steps | 准确率: 100.0% (3/3)
+✓ Neurology → Neuromuscular and Demyelinating Disease → Guillain-Barré Syndrome | 准确率: 66.7% (2/3)
+✗ Infectious Diseases → Special Hosts → HIV Opportunistic Infections and Prophylaxis | 准确率: 33.3% (1/3)
+✓ Emergency Medicine and Trauma → Trauma → Head Trauma and Spinal Precautions | 准确率: 100.0% (3/3)
+✓ Emergency Medicine and Trauma → Toxicology and Environmental Injuries → Heat Stroke and Hypothermia Basics | 准确率: 50.0% (1/2)
+✗ Hematology and Oncology → Anemias → Hemolytic Anemia Laboratory Features | 准确率: 66.7% (2/3)
+✓ Hematology and Oncology → Coagulation and Thrombotic Disorders → Heparin-Induced Thrombocytopenia | 准确率: 66.7% (2/3)
+✗ Dermatology and Musculoskeletal → Skin Infections and Infestations → Herpes Zoster vs Herpes Simplex | 准确率: 66.7% (2/3)
+✓ Hematology and Oncology → Leukemias and Lymphomas → Hodgkin vs Non-Hodgkin Lymphoma Features | 准确率: 100.0% (3/3)
+✓ Endocrinology → Calcium and Bone Disorders → Hypercalcemia and Hypocalcemia | 准确率: 66.7% (2/3)
+✓ Nephrology → Electrolyte Disorders → Hyperkalemia Acute Treatment | 准确率: 66.7% (2/3)
+✓ Endocrinology → Diabetes Mellitus → Hyperosmolar Hyperglycemic State | 准确率: 33.3% (1/3)
+✗ Obstetrics and Gynecology → Obstetric Complications → Hypertensive Disorders of Pregnancy | 准确率: 33.3% (1/3)
+✓ Endocrinology → Thyroid Disorders → Hyperthyroidism Differential Diagnosis | 准确率: 66.7% (2/3)
+✓ Nephrology → Electrolyte Disorders → Hyponatremia Evaluation and Management | 准确率: 66.7% (2/3)
+✓ Endocrinology → Thyroid Disorders → Hypothyroidism Causes and Clinical Features | 准确率: 66.7% (2/3)
+✓ Pulmonology → Respiratory Failure → Hypoxemic vs Hypercapnic Respiratory Failure | 准确率: 66.7% (2/3)
+✓ Pulmonology → Interstitial and Occupational Lung Disease → Idiopathic Pulmonary Fibrosis | 准确率: 100.0% (3/3)
+✗ Pulmonology → Pulmonary Embolism → Imaging Choices (CTPA vs V/Q Scan) | 准确率: 66.7% (2/3)
+✓ Dermatology and Musculoskeletal → Skin Infections and Infestations → Impetigo and Cellulitis | 准确率: 100.0% (3/3)
+✓ Nephrology → Acute Kidney Injury → Indications for Renal Replacement Therapy | 准确率: 66.7% (2/3)
+✓ Cardiology → Acute Coronary Syndromes → Indications for Reperfusion Therapy | 准确率: 33.3% (1/3)
+✗ Preventive Medicine, Ethics, and Professionalism → Ethics and Communication → Informed Consent and Capacity | 准确率: 66.7% (2/3)
+✗ Hematology and Oncology → Coagulation and Thrombotic Disorders → Inherited Thrombophilias Basics | 准确率: 66.7% (2/3)
+✓ Infectious Diseases → Sepsis and Septic Shock → Initial Resuscitation and Source Control | 准确率: 100.0% (3/3)
+✓ Endocrinology → Diabetes Mellitus → Insulin Regimens Basics | 准确率: 100.0% (3/3)
+✓ Nephrology → Acute Kidney Injury → Interpretation of Urine Studies (FeNa, Urine Sediment) | 准确率: 100.0% (3/3)
+✓ Neurology → Stroke and TIA → Ischemic vs Hemorrhagic Stroke Initial Evaluation | 准确率: 66.7% (2/3)
+✗ Hematology and Oncology → Solid Tumors → Lung, Breast, Colon Cancer Basics | 准确率: 33.3% (1/3)
+✓ Psychiatry and Behavioral Health → Mood Disorders → Major Depressive Disorder Diagnostic Criteria | 准确率: 100.0% (3/3)
+✗ Nephrology → Chronic Kidney Disease → Management of Anemia and Mineral Bone Disease | 准确率: 33.3% (1/3)
+✗ Obstetrics and Gynecology → Normal Pregnancy and Prenatal Care → Management of Common Pregnancy Complaints | 准确率: 66.7% (2/3)
+✗ Emergency Medicine and Trauma → Resuscitation and Shock → Massive Transfusion Protocols | 准确率: 66.7% (2/3)
+✓ Pediatrics → Common Pediatric Infections → Meningitis in Infants and Children | 准确率: 100.0% (3/3)
+✓ Nephrology → Electrolyte Disorders → Metabolic Acidosis vs Alkalosis Interpretation | 准确率: 100.0% (3/3)
+✓ Hematology and Oncology → Anemias → Microcytic Anemia Workup (Iron Deficiency vs Thalassemia) | 准确率: 100.0% (3/3)
+✗ Neurology → Headache → Migraine vs Tension vs Cluster Headache | 准确率: 66.7% (2/3)
+✓ Cardiology → Valvular Heart Disease → Mitral Regurgitation and Mitral Valve Prolapse | 准确率: 66.7% (2/3)
+✓ Neurology → Neuromuscular and Demyelinating Disease → Multiple Sclerosis Clinical Features | 准确率: 100.0% (3/3)
+✗ Cardiology → Pericardial and Myocardial Disease → Myocarditis and Cardiomyopathy Basics | 准确率: 66.7% (2/3)
+✓ Cardiology → Acute Coronary Syndromes → NSTEMI and Unstable Angina Risk Stratification | 准确率: 100.0% (3/3)
+✓ Nephrology → Glomerular Disease → Nephritic vs Nephrotic Syndromes | 准确率: 66.7% (2/3)
+✓ Psychiatry and Behavioral Health → Psychotic Disorders → Neuroleptic Malignant Syndrome | 准确率: 66.7% (2/3)
+✓ Hematology and Oncology → Solid Tumors → Oncologic Emergencies (SVC Syndrome, Spinal Cord Compression) | 准确率: 66.7% (2/3)
+✗ Psychiatry and Behavioral Health → Substance Use Disorders → Opioid Use Disorder and Overdose Naloxone Use | 准确率: 66.7% (2/3)
+✓ Endocrinology → Diabetes Mellitus → Oral Hypoglycemic Agents Mechanisms and Indications | 准确率: 100.0% (3/3)
+✓ Endocrinology → Calcium and Bone Disorders → Osteoporosis and Osteopenia Evaluation and Treatment | 准确率: 66.7% (2/3)
+✓ Pediatrics → Common Pediatric Infections → Otitis Media and Pharyngitis | 准确率: 66.7% (2/3)
+✓ Obstetrics and Gynecology → Gynecologic Oncology and Benign Disease → Ovarian Mass Evaluation | 准确率: 100.0% (3/3)
+✓ Psychiatry and Behavioral Health → Anxiety and Trauma-Related Disorders → PTSD Diagnostic Criteria | 准确率: 66.7% (2/3)
+✓ Pulmonology → Asthma → Pathophysiology and Triggers | 准确率: 100.0% (3/3)
+✓ Pediatrics → Pediatric Emergencies → Pediatric Dehydration Assessment and Rehydration | 准确率: 66.7% (2/3)
+✓ Gastroenterology and Hepatology → Upper GI Bleeding → Peptic Ulcer Bleeding Management | 准确率: 100.0% (3/3)
+✗ Endocrinology → Adrenal and Pituitary Disorders → Pheochromocytoma Clinical Features and Workup | 准确率: 66.7% (2/3)
+✓ Obstetrics and Gynecology → Normal Pregnancy and Prenatal Care → Physiologic Changes in Pregnancy | 准确率: 66.7% (2/3)
+✓ Endocrinology → Adrenal and Pituitary Disorders → Pituitary Adenomas (Prolactinoma, Acromegaly) | 准确率: 100.0% (3/3)
+✓ Pulmonology → Interstitial and Occupational Lung Disease → Pneumoconioses and Occupational Exposures | 准确率: 100.0% (3/3)
+✓ Infectious Diseases → Special Hosts → Post-splenectomy Infection Risks | 准确率: 100.0% (3/3)
+✗ Obstetrics and Gynecology → Obstetric Complications → Postpartum Hemorrhage Initial Management | 准确率: 0.0% (0/3)
+✓ Nephrology → Acute Kidney Injury → Pre-renal vs Intrinsic vs Post-renal AKI | 准确率: 100.0% (3/3)
+✗ Obstetrics and Gynecology → Normal Pregnancy and Prenatal Care → Prenatal Screening and Diagnostic Tests | 准确率: 66.7% (2/3)
+✓ Obstetrics and Gynecology → Obstetric Complications → Preterm Labor and PPROM | 准确率: 100.0% (3/3)
+✓ Rheumatology and Immunology → Basic Clinical Immunology → Primary vs Secondary Immunodeficiency Basics | 准确率: 100.0% (3/3)
+✓ Dermatology and Musculoskeletal → Common Inflammatory Dermatoses → Psoriasis Clinical Features and Treatment | 准确率: 100.0% (3/3)
+✓ Neurology → Headache → Red Flags for Secondary Headache | 准确率: 66.7% (2/3)
+✓ Rheumatology and Immunology → Inflammatory Arthritis → Rheumatoid Arthritis Clinical Features and Serology | 准确率: 66.7% (2/3)
+✓ Gastroenterology and Hepatology → Upper GI Bleeding → Risk Stratification (Glasgow-Blatchford, Rockall) | 准确率: 66.7% (2/3)
+✓ Preventive Medicine, Ethics, and Professionalism → Epidemiology and Biostatistics → Risk, Odds, and Hazard Ratios | 准确率: 100.0% (3/3)
+✗ Cardiology → Acute Coronary Syndromes → STEMI Diagnosis and Initial Management | 准确率: 66.7% (2/3)
+✗ Dermatology and Musculoskeletal → Skin Infections and Infestations → Scabies and Pediculosis | 准确率: 0.0% (0/3)
+✓ Psychiatry and Behavioral Health → Psychotic Disorders → Schizophrenia vs Schizoaffective Disorder | 准确率: 100.0% (3/3)
+✓ Dermatology and Musculoskeletal → Common Inflammatory Dermatoses → Seborrheic Dermatitis vs Tinea | 准确率: 100.0% (3/3)
+✗ Neurology → Stroke and TIA → Secondary Prevention After Ischemic Stroke | 准确率: 33.3% (1/3)
+✗ Preventive Medicine, Ethics, and Professionalism → Epidemiology and Biostatistics → Sensitivity, Specificity, Predictive Values | 准确率: 0.0% (0/3)
+✗ Infectious Diseases → Sepsis and Septic Shock → Sepsis Definitions (Sepsis-3, qSOFA) | 准确率: 33.3% (1/3)
+✓ Rheumatology and Immunology → Systemic Autoimmune Diseases → Sjögren Syndrome and Systemic Sclerosis Basics | 准确率: 100.0% (3/3)
+✗ Infectious Diseases → Common Infections → Skin and Soft Tissue Infections | 准确率: 33.3% (1/3)
+✓ Rheumatology and Immunology → Inflammatory Arthritis → Spondyloarthropathies (AS, Psoriatic Arthritis) Key Findings | 准确率: 100.0% (3/3)
+✗ Nephrology → Chronic Kidney Disease → Staging of CKD and GFR Thresholds | 准确率: 0.0% (0/3)
+✓ Neurology → Seizures and Epilepsy → Status Epilepticus Management Algorithm | 准确率: 100.0% (3/3)
+✓ Gastroenterology and Hepatology → Inflammatory Bowel Disease → Step-up Pharmacologic Therapy | 准确率: 100.0% (3/3)
+✓ Pulmonology → Asthma → Stepwise Pharmacologic Therapy | 准确率: 100.0% (3/3)
+✗ Preventive Medicine, Ethics, and Professionalism → Epidemiology and Biostatistics → Study Design Basics | 准确率: 66.7% (2/3)
+✓ Cardiology → Arrhythmias → Supraventricular Tachycardia Acute Management | 准确率: 66.7% (2/3)
+✓ Rheumatology and Immunology → Systemic Autoimmune Diseases → Systemic Lupus Erythematosus Criteria and Organ Involvement | 准确率: 66.7% (2/3)
+✓ Cardiology → Heart Failure → Systolic vs Diastolic Heart Failure | 准确率: 100.0% (3/3)
+✓ Endocrinology → Thyroid Disorders → Thyroid Storm and Myxedema Coma | 准确率: 100.0% (3/3)
+✓ Hematology and Oncology → Leukemias and Lymphomas → Tumor Lysis Syndrome Prevention and Management | 准确率: 66.7% (2/3)
+✓ Emergency Medicine and Trauma → Resuscitation and Shock → Types of Shock and Initial Management | 准确率: 100.0% (3/3)
+✗ Psychiatry and Behavioral Health → Psychotic Disorders → Typical vs Atypical Antipsychotics Side-effect Profiles | 准确率: 33.3% (1/3)
+✓ Infectious Diseases → Common Infections → UTI: Complicated vs Uncomplicated | 准确率: 100.0% (3/3)
+✓ Pediatrics → Well-Child Care and Development → Vaccination Schedule and Contraindications | 准确率: 100.0% (3/3)
+✓ Preventive Medicine, Ethics, and Professionalism → Screening and Preventive Care → Vaccination in Adults and Special Populations | 准确率: 100.0% (3/3)
+✓ Gastroenterology and Hepatology → Upper GI Bleeding → Variceal Bleeding Initial Management | 准确率: 100.0% (3/3)
+✓ Rheumatology and Immunology → Systemic Autoimmune Diseases → Vasculitis Syndromes Overview | 准确率: 100.0% (3/3)
+✗ Infectious Diseases → Sepsis and Septic Shock → Vasopressor Use in Septic Shock | 准确率: 33.3% (1/3)
+✓ Cardiology → Arrhythmias → Ventricular Tachycardia and Sudden Cardiac Death | 准确率: 100.0% (3/3)
+✓ Gastroenterology and Hepatology → Liver Disease → Viral Hepatitis Evaluation and Staging | 准确率: 100.0% (3/3)
+✓ Neurology → Stroke and TIA → tPA Eligibility and Time Windows | 准确率: 100.0% (3/3)

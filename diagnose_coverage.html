@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Knowledge Coverage 诊断工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .error { color: red; }
+        .warning { color: orange; }
+        .success { color: green; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Knowledge Coverage 诊断工具</h1>
+    
+    <div class="section">
+        <h2>1. 输入用户名</h2>
+        <input type="text" id="userName" placeholder="例如: FullTest" style="padding: 8px; width: 200px;">
+        <button onclick="loadProfile()">加载Profile</button>
+    </div>
+    
+    <div class="section">
+        <h2>2. Profile 概览</h2>
+        <div id="profileOverview"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3. 知识组件分析</h2>
+        <div id="componentAnalysis"></div>
+    </div>
+    
+    <div class="section">
+        <h2>4. 问题诊断</h2>
+        <div id="diagnosis"></div>
+    </div>
+    
+    <div class="section">
+        <h2>5. 控制台输出</h2>
+        <pre id="consoleOutput"></pre>
+    </div>
+
+    <script>
+        let profile = null;
+        let allQuestions = [];
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'warning' ? 'orange' : 'black';
+            output.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+        
+        async function loadProfile() {
+            const userName = document.getElementById('userName').value.trim();
+            if (!userName) {
+                alert('请输入用户名');
+                return;
+            }
+            
+            log(`开始诊断用户: ${userName}`);
+            
+            // 加载profile
+            try {
+                const key = 'student_profile_' + userName;
+                const stored = localStorage.getItem(key);
+                if (!stored) {
+                    log(`❌ 未找到profile: ${key}`, 'error');
+                    return;
+                }
+                
+                profile = JSON.parse(stored);
+                log(`✅ 成功加载profile: ${userName}`);
+                
+                // 加载题目
+                await loadQuestions();
+                
+                // 分析
+                analyzeProfile();
+            } catch (e) {
+                log(`❌ 加载profile失败: ${e.message}`, 'error');
+            }
+        }
+        
+        async function loadQuestions() {
+            try {
+                const response = await fetch('generated_domain_questions.json');
+                if (!response.ok) {
+                    log('⚠️ 无法加载题目文件，将使用profile中的数据', 'warning');
+                    return;
+                }
+                
+                const text = await response.text();
+                allQuestions = JSON.parse(text);
+                log(`✅ 成功加载 ${allQuestions.length} 道题目`);
+            } catch (e) {
+                log(`⚠️ 加载题目失败: ${e.message}`, 'warning');
+            }
+        }
+        
+        function analyzeProfile() {
+            if (!profile) return;
+            
+            // 概览
+            const overview = document.getElementById('profileOverview');
+            const components = Object.entries(profile.knowledgeMap || {});
+            const known = components.filter(([k, v]) => v.status === 'known').length;
+            const unknown = components.filter(([k, v]) => v.status === 'unknown').length;
+            const coverage = components.length > 0 ? Math.round((known / components.length) * 100) : 0;
+            
+            overview.innerHTML = `
+                <p><strong>用户名:</strong> ${profile.userName}</p>
+                <p><strong>已回答问题数:</strong> ${profile.questionsAnswered || 0}</p>
+                <p><strong>知识组件总数:</strong> ${components.length}</p>
+                <p><strong>已知组件数:</strong> <span class="${known > 0 ? 'success' : 'error'}">${known}</span></p>
+                <p><strong>未知组件数:</strong> ${unknown}</p>
+                <p><strong>Knowledge Coverage:</strong> <span class="${coverage > 0 ? 'success' : 'error'}">${coverage}%</span></p>
+            `;
+            
+            log(`📊 Profile概览: ${components.length}个组件, ${known}个known, ${unknown}个unknown, Coverage: ${coverage}%`);
+            
+            // 组件分析
+            analyzeComponents(components);
+            
+            // 诊断
+            diagnose(components);
+        }
+        
+        function analyzeComponents(components) {
+            const analysis = document.getElementById('componentAnalysis');
+            
+            // 统计
+            let hasTotalQuestions = 0;
+            let missingTotalQuestions = 0;
+            let correctEqualsTotal = 0;
+            let correctLessThanTotal = 0;
+            let correctGreaterThanTotal = 0;
+            let zeroTotalQuestions = 0;
+            
+            const problematic = [];
+            
+            components.forEach(([key, component]) => {
+                if (component.totalQuestionsForSubtopic === undefined) {
+                    missingTotalQuestions++;
+                } else if (component.totalQuestionsForSubtopic === 0) {
+                    zeroTotalQuestions++;
+                    problematic.push({key, component, issue: 'totalQuestionsForSubtopic为0'});
+                } else {
+                    hasTotalQuestions++;
+                    
+                    if (component.questionsCorrect === component.totalQuestionsForSubtopic) {
+                        correctEqualsTotal++;
+                    } else if (component.questionsCorrect < component.totalQuestionsForSubtopic) {
+                        correctLessThanTotal++;
+                    } else {
+                        correctGreaterThanTotal++;
+                        problematic.push({key, component, issue: 'questionsCorrect > totalQuestionsForSubtopic'});
+                    }
+                }
+            });
+            
+            // 计算实际应该的coverage
+            const shouldBeKnown = correctEqualsTotal;
+            const shouldBeCoverage = components.length > 0 ? Math.round((shouldBeKnown / components.length) * 100) : 0;
+            
+            analysis.innerHTML = `
+                <h3>统计信息</h3>
+                <table>
+                    <tr>
+                        <th>项目</th>
+                        <th>数量</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>有totalQuestionsForSubtopic</td>
+                        <td>${hasTotalQuestions}</td>
+                        <td>已初始化总题目数</td>
+                    </tr>
+                    <tr>
+                        <td>缺少totalQuestionsForSubtopic</td>
+                        <td class="${missingTotalQuestions > 0 ? 'warning' : ''}">${missingTotalQuestions}</td>
+                        <td>需要重新评估</td>
+                    </tr>
+                    <tr>
+                        <td>questionsCorrect === totalQuestionsForSubtopic</td>
+                        <td class="success">${correctEqualsTotal}</td>
+                        <td>应该标记为known</td>
+                    </tr>
+                    <tr>
+                        <td>questionsCorrect < totalQuestionsForSubtopic</td>
+                        <td>${correctLessThanTotal}</td>
+                        <td>应该标记为unknown</td>
+                    </tr>
+                    <tr>
+                        <td>questionsCorrect > totalQuestionsForSubtopic</td>
+                        <td class="error">${correctGreaterThanTotal}</td>
+                        <td>数据异常！</td>
+                    </tr>
+                    <tr>
+                        <td>totalQuestionsForSubtopic === 0</td>
+                        <td class="error">${zeroTotalQuestions}</td>
+                        <td>无法找到对应题目</td>
+                    </tr>
+                </table>
+                
+                <h3>预期结果</h3>
+                <p>如果所有组件都正确评估，应该有 <strong class="success">${shouldBeKnown}</strong> 个known组件</p>
+                <p>预期Coverage: <strong class="success">${shouldBeCoverage}%</strong></p>
+                <p>当前Coverage: <strong class="${coverage === shouldBeCoverage ? 'success' : 'error'}">${coverage}%</strong></p>
+            `;
+            
+            log(`📈 组件分析: ${correctEqualsTotal}个应该known, ${correctLessThanTotal}个应该unknown`);
+            log(`📈 预期Coverage: ${shouldBeCoverage}%, 当前Coverage: ${coverage}%`);
+            
+            // 显示问题组件
+            if (problematic.length > 0) {
+                let html = '<h3>问题组件</h3><table><tr><th>Key</th><th>问题</th><th>questionsCorrect</th><th>totalQuestionsForSubtopic</th><th>status</th></tr>';
+                problematic.forEach(({key, component, issue}) => {
+                    html += `<tr>
+                        <td>${key.substring(0, 50)}...</td>
+                        <td class="error">${issue}</td>
+                        <td>${component.questionsCorrect}</td>
+                        <td>${component.totalQuestionsForSubtopic}</td>
+                        <td>${component.status}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+                analysis.innerHTML += html;
+            }
+        }
+        
+        function diagnose(components) {
+            const diagnosis = document.getElementById('diagnosis');
+            const issues = [];
+            
+            // 检查1: 是否有totalQuestionsForSubtopic
+            const missingTotal = components.filter(([k, v]) => v.totalQuestionsForSubtopic === undefined);
+            if (missingTotal.length > 0) {
+                issues.push({
+                    severity: 'high',
+                    message: `${missingTotal.length}个组件缺少totalQuestionsForSubtopic字段`,
+                    solution: '需要运行reevaluateKnowledgeStatus()函数来补充该字段'
+                });
+            }
+            
+            // 检查2: questionsCorrect > totalQuestionsForSubtopic
+            const incorrectCount = components.filter(([k, v]) => 
+                v.totalQuestionsForSubtopic !== undefined && 
+                v.questionsCorrect > v.totalQuestionsForSubtopic
+            );
+            if (incorrectCount.length > 0) {
+                issues.push({
+                    severity: 'high',
+                    message: `${incorrectCount.length}个组件的questionsCorrect大于totalQuestionsForSubtopic`,
+                    solution: '这可能是因为旧规则下重复答题导致的，需要修正数据'
+                });
+            }
+            
+            // 检查3: totalQuestionsForSubtopic === 0
+            const zeroTotal = components.filter(([k, v]) => v.totalQuestionsForSubtopic === 0);
+            if (zeroTotal.length > 0) {
+                issues.push({
+                    severity: 'medium',
+                    message: `${zeroTotal.length}个组件的totalQuestionsForSubtopic为0`,
+                    solution: '这些组件在allQuestions中找不到对应的题目，可能是题目库不匹配'
+                });
+            }
+            
+            // 检查4: 所有组件都是unknown
+            const allUnknown = components.filter(([k, v]) => v.status === 'unknown').length === components.length;
+            if (allUnknown && components.length > 0) {
+                issues.push({
+                    severity: 'high',
+                    message: '所有组件都是unknown状态，导致Coverage为0%',
+                    solution: '检查questionsCorrect是否都小于totalQuestionsForSubtopic'
+                });
+            }
+            
+            if (issues.length === 0) {
+                diagnosis.innerHTML = '<p class="success">✅ 未发现明显问题</p>';
+            } else {
+                let html = '<h3>发现的问题</h3><table><tr><th>严重程度</th><th>问题</th><th>解决方案</th></tr>';
+                issues.forEach(issue => {
+                    const severityClass = issue.severity === 'high' ? 'error' : 'warning';
+                    html += `<tr>
+                        <td class="${severityClass}">${issue.severity}</td>
+                        <td>${issue.message}</td>
+                        <td>${issue.solution}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+                diagnosis.innerHTML = html;
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -80,11 +80,11 @@ MAIN_CONFIG = {
     # 你已经在项目根目录有：all_domains_with_subtopics.json
     # 使用经过整理的完整领域→主题→子主题文件
     # 输入配置文件路径：包含领域、主题、子主题的层次结构
-    "domains_config_path": "all_domains_with_subtopics.json",
+    "domains_config_path": "surgery_domains_with_subtopics.json",
     
     # 输出文件路径（已改为JSON格式，不再是JSONL）
     # 输出文件路径：生成的题目将保存为JSON数组格式
-    "output_path": "generated_domain_questions.json",  # Changed to .json format
+    "output_path": "generated_surgery_domain_questions.json",  # Changed to .json format
     
     # 每个子主题生成的题目数量
     # 每个子主题生成的题目数量：默认3题，可根据需要调整
@@ -350,7 +350,7 @@ def generate_questions_for_subtopic(
             {"role": "user", "content": user_prompt},
         ],
         temperature=0.7,  # 温度参数：控制输出的随机性（0.7提供适度的创造性）
-        max_tokens=2000,  # 最大token数：限制响应长度
+        max_tokens=4000,  # 最大token数：限制响应长度（增加到4000以确保3道题完整生成）
         response_format={"type": "json_object"},  # 强制返回JSON格式
     )
 
@@ -477,19 +477,19 @@ def main():
             subtopics = topic.get("subtopics", [])
             print(f"  - Topic: {topic_name} ({len(subtopics)} subtopics)")
 
-            for sub in subtopics:
-                sub_name = sub if isinstance(sub, str) else str(sub)
-                print(f"    * Subtopic: {sub_name} ... ", end="", flush=True)
-
+            # 如果该topic没有subtopics，直接基于topic生成题目
+            # If this topic has no subtopics, generate questions directly for the topic
+            if not subtopics:
+                print(f"    * Topic (no subtopics): {topic_name} ... ", end="", flush=True)
                 try:
-                    # 为当前子主题生成题目
-                    # Generate questions for current subtopic
+                    # 为当前主题生成题目（使用topic名称作为subtopic）
+                    # Generate questions for current topic (using topic name as subtopic)
                     gen_qs = generate_questions_for_subtopic(
                         client=client,
                         model=cfg["model"],
                         domain=domain_name,
                         topic=topic_name,
-                        subtopic=sub_name,
+                        subtopic=topic_name,  # 使用topic名称作为subtopic
                         questions_per_subtopic=cfg["questions_per_subtopic"],
                     )
                     # Convert to dict and add to list
@@ -499,9 +499,37 @@ def main():
                     total_generated += len(gen_qs)
                     print(f"OK ({len(gen_qs)} questions)")
                 except Exception as e:
-                    # 如果生成失败，打印错误但继续处理下一个子主题
-                    # If generation fails, print error but continue with next subtopic
+                    # 如果生成失败，打印错误但继续处理下一个主题
+                    # If generation fails, print error but continue with next topic
                     print(f"ERROR: {e}")
+            else:
+                # 如果有subtopics，为每个subtopic生成题目
+                # If subtopics exist, generate questions for each subtopic
+                for sub in subtopics:
+                    sub_name = sub if isinstance(sub, str) else str(sub)
+                    print(f"    * Subtopic: {sub_name} ... ", end="", flush=True)
+
+                    try:
+                        # 为当前子主题生成题目
+                        # Generate questions for current subtopic
+                        gen_qs = generate_questions_for_subtopic(
+                            client=client,
+                            model=cfg["model"],
+                            domain=domain_name,
+                            topic=topic_name,
+                            subtopic=sub_name,
+                            questions_per_subtopic=cfg["questions_per_subtopic"],
+                        )
+                        # Convert to dict and add to list
+                        # 将题目对象转换为字典并添加到列表
+                        for q in gen_qs:
+                            all_questions.append(asdict(q))  # asdict将dataclass转换为字典
+                        total_generated += len(gen_qs)
+                        print(f"OK ({len(gen_qs)} questions)")
+                    except Exception as e:
+                        # 如果生成失败，打印错误但继续处理下一个子主题
+                        # If generation fails, print error but continue with next subtopic
+                        print(f"ERROR: {e}")
 
     # Write all questions as a JSON array
     # 将所有题目写入JSON数组格式的文件

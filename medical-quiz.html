@@ -113,13 +113,57 @@ Author: AI for Education (Wenchao Qin)
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
             background: #f5f5f5;
-            padding: 20px;
+            padding: 0;
+            margin: 0;
             color: #333;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .main-layout {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
         }
 
         .container {
             max-width: 900px;
             margin: 0 auto;
+        }
+
+        .resizer {
+            width: 4px;
+            background: #e0e0e0;
+            cursor: col-resize;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .resizer:hover {
+            background: #4a90e2;
+        }
+
+        .resizer.dragging {
+            background: #4a90e2;
+        }
+
+        .right-panel {
+            width: 400px;
+            min-width: 300px;
+            max-width: 800px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.05);
         }
 
         .section {
@@ -472,51 +516,105 @@ Author: AI for Education (Wenchao Qin)
         }
 
         .message-container {
-            min-height: 200px;
-            padding: 10px 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 0;
         }
 
         .conversation {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 15px;
+            scroll-behavior: smooth;
+        }
+        
+        .conversation::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .conversation::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .conversation::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .conversation::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            max-width: 85%;
+            margin-bottom: 8px;
+        }
+
+        .message-wrapper.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .message-wrapper.assistant {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message-sender {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 4px;
+            padding: 0 4px;
         }
 
         .message {
-            max-width: 70%;
             padding: 12px 16px;
-            border-radius: 18px;
-            line-height: 1.5;
+            border-radius: 12px;
+            line-height: 1.6;
             font-size: 14px;
+            word-wrap: break-word;
         }
 
         .message.user {
-            align-self: flex-end;
-            background: #e3f2fd;
-            color: #1976d2;
+            background: #4a90e2;
+            color: white;
+            border-bottom-right-radius: 4px;
         }
 
         .message.assistant {
-            align-self: flex-start;
-            background: #f5f5f5;
+            background: white;
             color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         .message-input-container {
             display: flex;
-            margin-top: 15px;
             border-top: 1px solid #e0e0e0;
-            padding-top: 15px;
+            padding: 15px 20px;
             align-items: center;
+            background: white;
+            flex-shrink: 0;
         }
 
         .message-input {
             flex: 1;
-            padding: 10px 15px;
+            padding: 12px 16px;
             border: 1px solid #e0e0e0;
             border-radius: 20px;
             font-size: 14px;
             outline: none;
+            background: white;
         }
 
         .message-input:focus {
@@ -544,7 +642,9 @@ Author: AI for Education (Wenchao Qin)
          4. Message Area - Chat with ChatGPT
          
          ==================================================================== -->
-    <div class="container">
+    <div class="main-layout">
+        <div class="left-panel">
+            <div class="container">
         <!-- ============================================================
              Question Bank Selector
              ============================================================
@@ -601,6 +701,7 @@ Author: AI for Education (Wenchao Qin)
                     <option value="questions.json">Clinical Guidelines (200 questions)</option>
                     <option value="qbank_combined.json">Combined Qbank (Surgery + Amboss)</option>
                     <option value="generated_domain_questions.json">Generated Domain Questions (479 questions)</option>
+                    <option value="generated_surgery_domain_questions.json">Surgery Domain Questions</option>
                     <option value="all">All Questions (Merge All)</option>
                 </select>
                 <span id="qbank-status" style="color: #666; font-size: 13px;"></span>
@@ -736,8 +837,14 @@ Author: AI for Education (Wenchao Qin)
              2. Press Enter or click Send button
              3. Wait for ChatGPT response (with source citations)
              ============================================================ -->
-        <div class="section" id="message-section" style="display: block !important;">
-            <div class="section-title">Message</div>
+            </div>
+        </div>
+        
+        <div class="resizer" id="resizer"></div>
+        <div class="right-panel" id="right-panel">
+            <div style="padding: 15px 20px; border-bottom: 1px solid #e0e0e0; background: #f8f9fa;">
+                <div class="section-title" style="margin: 0;">Message</div>
+            </div>
             <div class="message-container">
                 <div class="conversation" id="conversation-list"></div>
                 <div class="message-input-container">
@@ -2197,6 +2304,53 @@ Author: AI for Education (Wenchao Qin)
          * Initialize profile button handler
          * 初始化档案按钮处理器
          */
+        // ============================================================
+        // Setup Resizer for Right Panel
+        // 设置右侧面板的调整大小功能
+        // ============================================================
+        function setupResizer() {
+            const resizer = document.getElementById('resizer');
+            const rightPanel = document.getElementById('right-panel');
+            
+            if (!resizer || !rightPanel) return;
+            
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
+            
+            resizer.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = parseInt(window.getComputedStyle(rightPanel).width, 10);
+                resizer.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                
+                const diff = startX - e.clientX; // Inverted because we're resizing from right
+                const newWidth = startWidth + diff;
+                const minWidth = 300;
+                const maxWidth = 800;
+                
+                if (newWidth >= minWidth && newWidth <= maxWidth) {
+                    rightPanel.style.width = newWidth + 'px';
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('dragging');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+        }
+
         function setupProfileInitialization() {
             const initBtn = document.getElementById('init-profile-btn');
             const nameInput = document.getElementById('student-name-input');
@@ -2245,6 +2399,7 @@ Author: AI for Education (Wenchao Qin)
             setupEventListeners();
             setupQbankSelector();
             setupProfileInitialization();
+            setupResizer();
             // Load questions from default source
             // 从默认源加载问题
             await loadQuestionsFromFile('questions.json');
@@ -3947,6 +4102,25 @@ Author: AI for Education (Wenchao Qin)
             input.value = '';
             
             // ============================================================
+            // CHECK: Are we in Iterative Guidance mode? (Continuous learning loop)
+            // 检查：我们是否在迭代指导模式？（持续学习循环）
+            // ============================================================
+            if (guidanceDialogueActive) {
+                // Route to guidance response handler
+                // 路由到指导响应处理器
+                input.disabled = true;
+                document.getElementById('message-send-btn').disabled = true;
+                
+                try {
+                    await processGuidanceResponse(message);
+                } finally {
+                    input.disabled = false;
+                    document.getElementById('message-send-btn').disabled = false;
+                    input.focus();
+                }
+                return;  // Don't proceed to other flows
+            }
+            
             // CHECK: Are we in Socratic Dialogue mode? (Figure 1 style)
             // Natural conversation - route to Socratic processor
             // ============================================================
@@ -4011,12 +4185,29 @@ Author: AI for Education (Wenchao Qin)
         function addMessageToConversation(role, content, isLoading = false) {
             const conversationList = document.getElementById('conversation-list');
             
-            const messageDiv = document.createElement('div');
+            // Create message wrapper (like chat apps)
+            // 创建消息包装器（类似聊天应用）
+            const messageWrapper = document.createElement('div');
             const messageId = 'msg-' + Date.now() + '-' + Math.random();
-            messageDiv.id = messageId;
+            messageWrapper.id = messageId;
+            messageWrapper.className = 'message-wrapper ' + role;
+            
+            // Add sender name above message bubble (like chat apps)
+            // 在消息气泡上方添加发送者名称（类似聊天应用）
+            if (role === 'assistant') {
+                const senderName = document.createElement('div');
+                senderName.className = 'message-sender';
+                senderName.textContent = 'Tutor';
+                messageWrapper.appendChild(senderName);
+            }
+            
+            // Create message bubble
+            // 创建消息气泡
+            const messageDiv = document.createElement('div');
             messageDiv.className = 'message ' + role;
             
             // Support both plain text and HTML content
+            // 支持纯文本和HTML内容
             if (typeof content === 'string' && content.includes('<')) {
                 messageDiv.innerHTML = content;
             } else {
@@ -4028,7 +4219,8 @@ Author: AI for Education (Wenchao Qin)
                 messageDiv.style.fontStyle = 'italic';
             }
             
-            conversationList.appendChild(messageDiv);
+            messageWrapper.appendChild(messageDiv);
+            conversationList.appendChild(messageWrapper);
             conversationList.scrollTop = conversationList.scrollHeight;
             
             return messageId;
@@ -4215,6 +4407,11 @@ Author: AI for Education (Wenchao Qin)
             socraticDialogueActive = false;
             socraticContext = null;
             
+            // Reset iterative guidance state
+            // 重置迭代指导状态
+            guidanceDialogueActive = false;
+            guidanceContext = null;
+            
             // Reset message input placeholder
             const messageInput = document.getElementById('message-input');
             if (messageInput) {
@@ -4225,21 +4422,60 @@ Author: AI for Education (Wenchao Qin)
         /**
          * Trigger hint system after wrong answer - shows prompt in message area
          */
+        /**
+         * Trigger thinking prompt after student answers incorrectly.
+         * 在学生答错后触发思考提示。
+         * 
+         * This function displays a prompt asking the student to explain their reasoning.
+         * Based on tau-bench educational agent policy, we need to understand the student's
+         * thinking before deciding whether to DECOMPOSE (break into sub-questions) or
+         * CLARIFY (provide direct explanation).
+         * 
+         * 此函数显示一个提示，要求学生解释他们的推理过程。
+         * 基于tau-bench教育助手策略，我们需要在决定是进行DECOMPOSE（分解为子问题）
+         * 还是CLARIFY（提供直接解释）之前了解学生的思考。
+         * 
+         * Workflow:
+         * 1. Student answers incorrectly → This function is called
+         *    学生答错 → 调用此函数
+         * 2. Display prompt with textarea for student to explain their thinking
+         *    显示提示框，包含文本区域供学生解释他们的思考
+         * 3. Student submits thinking → submitStudentThinking() is called
+         *    学生提交思考 → 调用submitStudentThinking()
+         * 4. Backend evaluates thinking and decides action (decompose/clarify)
+         *    后端评估思考并决定行动（分解/澄清）
+         */
         function triggerHintAfterWrongAnswer() {
+            // Validate that we have question data
+            // 验证我们有问题数据
             if (!currentQuestionMeta || !currentData) return;
             
-            // Add a system message offering hints
+            // Get conversation list container
+            // 获取对话列表容器
             const conversationList = document.getElementById('conversation-list');
             if (!conversationList) return;
             
-            const hintOfferDiv = document.createElement('div');
-            hintOfferDiv.className = 'message assistant';
-            hintOfferDiv.id = 'hint-offer-message';
-            hintOfferDiv.innerHTML = `
+            const thinkingPromptDiv = document.createElement('div');
+            thinkingPromptDiv.className = 'message assistant';
+            thinkingPromptDiv.id = 'thinking-prompt-message';
+            thinkingPromptDiv.innerHTML = `
                 <div class="message-content" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 20px;">
-                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 16px;">🧠 Need help with this question?</div>
-                    <div style="margin-bottom: 15px; line-height: 1.5;">Your answer wasn't correct. Would you like some guiding questions to help you discover the right answer?</div>
-                    <button onclick="requestHintsInChat()" class="hint-action-btn" style="
+                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 16px;">🤔 I'd like to understand your thinking</div>
+                    <div style="margin-bottom: 15px; line-height: 1.5;">Your answer wasn't correct, but that's okay! Can you explain your reasoning? What made you choose that answer? This will help me guide you better.</div>
+                    <div style="margin-bottom: 15px;">
+                        <textarea id="student-thinking-input" placeholder="Explain your reasoning here..." style="
+                            width: 100%;
+                            min-height: 80px;
+                            padding: 12px;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            font-family: inherit;
+                            resize: vertical;
+                            box-sizing: border-box;
+                        "></textarea>
+                    </div>
+                    <button onclick="submitStudentThinking()" class="hint-action-btn" style="
                         background: white;
                         color: #667eea;
                         border: none;
@@ -4250,13 +4486,541 @@ Author: AI for Education (Wenchao Qin)
                         cursor: pointer;
                         transition: all 0.2s;
                         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                    ">💡 Get Hints</button>
+                    ">📝 Submit My Thinking</button>
                 </div>
             `;
-            conversationList.appendChild(hintOfferDiv);
+            conversationList.appendChild(thinkingPromptDiv);
             conversationList.scrollTop = conversationList.scrollHeight;
+            
+            // Focus on textarea
+            setTimeout(() => {
+                const textarea = document.getElementById('student-thinking-input');
+                if (textarea) textarea.focus();
+            }, 100);
+        }
+        
+        /**
+         * Submit student's thinking and get guidance (decompose or clarify).
+         * 提交学生的思考并获取指导（分解或澄清）。
+         * 
+         * This function:
+         * 此函数：
+         * 1. Collects student's explanation of their reasoning
+         *    收集学生对推理过程的解释
+         * 2. Sends it to backend /evaluate_student_thinking endpoint
+         *    将其发送到后端 /evaluate_student_thinking 端点
+         * 3. Backend uses LLM to analyze understanding level and decide action:
+         *    后端使用LLM分析理解程度并决定行动：
+         *    - If understanding_level is "none" or "partial" → action_type = "decompose"
+         *      如果理解程度是"none"或"partial" → 行动类型 = "decompose"
+         *    - If understanding_level is "close" → action_type = "clarify"
+         *      如果理解程度是"close" → 行动类型 = "clarify"
+         * 4. Displays appropriate guidance based on action_type:
+         *    根据行动类型显示相应的指导：
+         *    - "decompose": Shows 1-3 simpler sub-questions to guide step-by-step
+         *      "decompose": 显示1-3个更简单的子问题，逐步引导
+         *    - "clarify": Shows direct clarification/explanation
+         *      "clarify": 显示直接的澄清/解释
+         * 
+         * Error Handling:
+         * 错误处理：
+         * - If backend is unavailable → Shows fallback decomposition questions
+         *   如果后端不可用 → 显示回退的分解问题
+         * - If API call fails → Shows helpful default questions
+         *   如果API调用失败 → 显示有用的默认问题
+         */
+        async function submitStudentThinking() {
+            // Get the textarea element containing student's thinking
+            // 获取包含学生思考的文本区域元素
+            const thinkingInput = document.getElementById('student-thinking-input');
+            if (!thinkingInput) return;
+            
+            // Get and validate student's input
+            // 获取并验证学生的输入
+            const studentThinking = thinkingInput.value.trim();
+            if (!studentThinking) {
+                alert('Please explain your reasoning before submitting.');
+                return;
+            }
+            
+            // Validate question data is available
+            // 验证问题数据可用
+            if (!currentQuestionMeta || !currentData) return;
+            
+            // Disable input and button to prevent multiple submissions
+            // 禁用输入和按钮以防止多次提交
+            thinkingInput.disabled = true;
+            const submitBtn = thinkingInput.parentElement.parentElement.querySelector('button');
+            if (submitBtn) submitBtn.disabled = true;
+            
+            // Get conversation list and show loading indicator
+            // 获取对话列表并显示加载指示器
+            const conversationList = document.getElementById('conversation-list');
+            if (!conversationList) return;
+            
+            const thinkingId = addMessageToConversation('assistant', 
+                '<span style="color: #6b7280;">🤔 Analyzing your thinking...</span>', true);
+            
+            try {
+                // Prepare question data for API call
+                // 准备API调用的问题数据
+                const question = currentQuestionMeta.question || currentData.QA.question;
+                
+                // Convert options/choices to choices dictionary (A, B, C, D)
+                // 将选项/选择转换为选择字典（A, B, C, D）
+                let choices = {};
+                
+                // Try multiple data formats to handle different question structures
+                // 尝试多种数据格式以处理不同的题目结构
+                let optionsArray = null;
+                
+                // Format 1: currentData.QA.choices (array format: ['A. ...', 'B. ...', ...])
+                // 格式1：currentData.QA.choices（数组格式：['A. ...', 'B. ...', ...]）
+                if (currentData.QA && currentData.QA.choices && Array.isArray(currentData.QA.choices)) {
+                    optionsArray = currentData.QA.choices;
+                }
+                // Format 2: Get from original question (allQuestions) if available
+                // 格式2：如果可用，从原始问题（allQuestions）获取
+                else if (currentGeneratedIndex >= 0 && currentGeneratedIndex < allQuestions.length) {
+                    const originalQ = allQuestions[currentGeneratedIndex];
+                    if (originalQ.options && typeof originalQ.options === 'object' && !Array.isArray(originalQ.options)) {
+                        // options is an object: {A: "...", B: "...", ...}
+                        // options是对象：{A: "...", B: "...", ...}
+                        choices = { ...originalQ.options };
+                        optionsArray = null; // Already converted to choices dict
+                    } else if (originalQ.choices && Array.isArray(originalQ.choices)) {
+                        // choices is an array: ['A. ...', 'B. ...', ...]
+                        // choices是数组：['A. ...', 'B. ...', ...]
+                        optionsArray = originalQ.choices;
+                    }
+                }
+                
+                // Convert array to choices dictionary if needed
+                // 如果需要，将数组转换为选择字典
+                if (optionsArray && optionsArray.length > 0) {
+                    optionsArray.forEach((opt, idx) => {
+                        const letter = String.fromCharCode(65 + idx);  // 65 = 'A' in ASCII
+                        // Remove prefix "A. " if present
+                        // 如果存在，移除前缀"A. "
+                        const cleanOpt = typeof opt === 'string' ? opt.replace(/^[A-Z]\.\s*/, '') : opt;
+                        choices[letter] = cleanOpt;
+                    });
+                }
+                
+                // Fallback: If still empty, use empty object (will cause error but at least won't crash)
+                // 回退：如果仍然为空，使用空对象（会导致错误但至少不会崩溃）
+                if (Object.keys(choices).length === 0) {
+                    console.error('Cannot find options/choices in question data:', {
+                        currentData: currentData.QA,
+                        currentQuestionMeta: currentQuestionMeta,
+                        currentGeneratedIndex: currentGeneratedIndex
+                    });
+                }
+                
+                // Convert answer indices to letter format (0 → 'A', 1 → 'B', etc.)
+                // 将答案索引转换为字母格式（0 → 'A', 1 → 'B', 等）
+                const studentAnswer = String.fromCharCode(65 + currentData.QA.student_prediction);
+                const correctAnswer = String.fromCharCode(65 + currentQuestionMeta.correctIndex);
+                
+                // Call backend API to evaluate student thinking
+                // This endpoint uses LLM to analyze understanding and decide action
+                // 调用后端API评估学生思考
+                // 此端点使用LLM分析理解程度并决定行动
+                let response;
+                try {
+                    response = await fetch('http://localhost:5000/evaluate_student_thinking', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            question: question,  // Original medical question
+                            choices: choices,  // Answer options dictionary
+                            student_answer: studentAnswer,  // Student's wrong answer (e.g., "B")
+                            correct_answer: correctAnswer,  // Correct answer (e.g., "A")
+                            student_thinking: studentThinking  // Student's explanation of reasoning
+                        })
+                    });
+                } catch (fetchError) {
+                    // Network error - backend might not be running
+                    // 网络错误 - 后端可能未运行
+                    console.error('Fetch error (backend may not be running):', fetchError);
+                    throw new Error('Cannot connect to backend server. Please make sure the Flask server is running on port 5000.');
+                }
+                
+                // Check HTTP response status
+                // 检查HTTP响应状态
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Backend error:', response.status, errorText);
+                    throw new Error(`Backend error (${response.status}): ${errorText.substring(0, 100)}`);
+                }
+                
+                // Parse JSON response
+                // 解析JSON响应
+                const result = await response.json();
+                
+                // Validate response structure
+                // 验证响应结构
+                if (!result || result.success === false) {
+                    throw new Error(result?.error || 'Backend returned unsuccessful response');
+                }
+                
+                // Remove loading indicator
+                // 移除加载指示器
+                removeMessageFromConversation(thinkingId);
+                
+                // Remove the thinking prompt box
+                // 移除思考提示框
+                const thinkingPrompt = document.getElementById('thinking-prompt-message');
+                if (thinkingPrompt) {
+                    thinkingPrompt.remove();
+                }
+                
+                // Add student's thinking to conversation history
+                // 将学生的思考添加到对话历史
+                addMessageToConversation('user', studentThinking);
+                
+                // Initialize iterative guidance system
+                // 初始化迭代指导系统
+                guidanceDialogueActive = true;
+                guidanceContext = {
+                    originalQuestion: question,
+                    choices: choices,
+                    studentAnswer: studentAnswer,
+                    correctAnswer: correctAnswer,
+                    currentAction: result.action_type,
+                    currentSubQuestions: result.sub_questions || [],
+                    currentClarification: result.clarification || '',
+                    conversationHistory: [
+                        { role: 'user', content: studentThinking },
+                        { role: 'assistant', content: result.feedback }
+                    ],
+                    understandingLevel: result.understanding_level || 'partial',
+                    roundNumber: 1
+                };
+                
+                // Handle response based on action_type from backend
+                // 根据后端返回的action_type处理响应
+                if (result.success) {
+                    // FLOW TERMINATION: Check if student understands (from their thinking)
+                    // 流程中止：检查学生是否理解（从他们的思考中）
+                    if (result.understood || result.understanding_level === 'understood' || result.flow_terminated) {
+                        // Student understands - confirm and end guidance immediately
+                        // 学生理解了 - 确认并立即结束指导
+                        const successHtml = `
+                            <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                                <div style="padding: 15px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 4px; margin-bottom: 15px;">
+                                    <div style="font-weight: 600; color: #155724; margin-bottom: 8px;">✅ Great! You understand now!</div>
+                                    <div style="color: #155724;">${result.feedback || 'You\'ve demonstrated clear understanding of the key concepts!'}</div>
+                                </div>
+                                <div style="padding: 12px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+                                    <strong>💡 Summary:</strong> You've worked through the key concepts. Try applying this understanding to answer the original question again!
+                                </div>
+                            </div>
+                        `;
+                        addMessageToConversation('assistant', successHtml, true);
+                        
+                        // End guidance dialogue
+                        // 结束指导对话
+                        guidanceDialogueActive = false;
+                        guidanceContext = null;
+                        
+                        // Reset message input placeholder
+                        const messageInput = document.getElementById('message-input');
+                        if (messageInput) {
+                            messageInput.placeholder = 'Ask a question or share your thoughts...';
+                        }
+                        
+                        return true;  // Flow terminated
+                    }
+                    
+                    if (result.action_type === 'clarify') {
+                        // Action: CLARIFY - Student is close but needs minor correction
+                        // Show direct clarification/explanation
+                        // 行动：澄清 - 学生接近但需要小幅纠正
+                        // 显示直接的澄清/解释
+                        const clarificationHtml = `
+                            <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                                ${result.feedback ? `<div style="margin-bottom: 10px;">${result.feedback}</div>` : ''}
+                                <div style="padding: 12px; background: #f0f7ff; border-left: 4px solid #667eea; border-radius: 4px;">
+                                    ${result.clarification}
+                                </div>
+                            </div>
+                        `;
+                        addMessageToConversation('assistant', clarificationHtml, true);
+                    } else if (result.action_type === 'decompose') {
+                        // Action: DECOMPOSE - Student has fundamental gaps, needs step-by-step guidance
+                        // Show simpler sub-questions to build understanding gradually
+                        // 行动：分解 - 学生有基础缺口，需要逐步引导
+                        // 显示更简单的子问题，逐步建立理解
+                        let questionsHtml = `
+                            <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                                <div style="margin-bottom: 10px;">${result.feedback}</div>
+                        `;
+                        
+                        // Display sub-questions (1-3 questions based on complexity)
+                        // 显示子问题（根据复杂度显示1-3个问题）
+                        if (result.sub_questions && result.sub_questions.length > 0) {
+                            questionsHtml += '<div style="margin-top: 15px;">';
+                            result.sub_questions.forEach((q, i) => {
+                                questionsHtml += `
+                                    <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                                        <strong>${i + 1}.</strong> 🤔 ${q}
+                                    </div>
+                                `;
+                            });
+                            questionsHtml += '</div>';
+                            questionsHtml += '<div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; font-size: 13px;">';
+                            questionsHtml += '💬 <strong>Please answer:</strong> Try to answer these questions one by one. Start with the first question.';
+                            questionsHtml += '</div>';
+                        }
+                        
+                        questionsHtml += '</div>';
+                        addMessageToConversation('assistant', questionsHtml, true);
+                    }
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+                
+            } catch (error) {
+                // Error handling: Log error and provide fallback guidance
+                // 错误处理：记录错误并提供回退指导
+                console.error('Error evaluating student thinking:', error);
+                removeMessageFromConversation(thinkingId);
+                
+                // Remove thinking prompt if still exists
+                // 如果思考提示框仍存在，移除它
+                const thinkingPrompt = document.getElementById('thinking-prompt-message');
+                if (thinkingPrompt) {
+                    thinkingPrompt.remove();
+                }
+                
+                // Add user's thinking to conversation history
+                // 将用户的思考添加到对话历史
+                addMessageToConversation('user', studentThinking);
+                
+                // Fallback: Provide default decomposition when backend fails
+                // This ensures students always get help, even if backend is unavailable
+                // Handles cases like "have no idea" or network errors
+                // 回退：当后端失败时提供默认分解
+                // 这确保学生始终能得到帮助，即使后端不可用
+                // 处理"不知道"或网络错误等情况
+                const fallbackHtml = `
+                    <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                        <div style="margin-bottom: 10px; font-weight: 600; color: #667eea;">🔍 Let me help you work through this step by step:</div>
+                        <div style="margin-bottom: 15px;">I understand you're not sure about this question. Let's break it down into simpler parts to help you understand the key concepts.</div>
+                        <div style="margin-top: 15px;">
+                            <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                                <strong>1.</strong> 🤔 What are the key medical terms or concepts mentioned in this question?
+                            </div>
+                            <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                                <strong>2.</strong> 🤔 What do you think each answer option is trying to describe?
+                            </div>
+                            <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                                <strong>3.</strong> 🤔 What information from the question might help you distinguish between the options?
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; font-size: 13px;">
+                            💡 <strong>Tip:</strong> Start by identifying what the question is asking about, then think about what you know about each option.
+                        </div>
+                    </div>
+                `;
+                addMessageToConversation('assistant', fallbackHtml, true);
+            }
         }
 
+        /**
+         * Process student's response during iterative guidance loop.
+         * 处理学生在迭代指导循环中的回答。
+         * 
+         * This function:
+         * 此函数：
+         * 1. Evaluates student's response to sub-questions or clarifications
+         *    评估学生对子问题或澄清的回答
+         * 2. Determines if student understands
+         *    确定学生是否理解
+         * 3. If not understood: Continue with decompose/clarify
+         *    如果不理解：继续分解/澄清
+         * 4. If understood: Confirm and end guidance
+         *    如果理解：确认并结束指导
+         * 5. Loops until student truly understands
+         *    循环直到学生真正理解
+         */
+        async function processGuidanceResponse(studentResponse) {
+            if (!guidanceDialogueActive || !guidanceContext) return false;
+            
+            // Add student's response to conversation
+            // 将学生的回答添加到对话
+            addMessageToConversation('user', studentResponse);
+            guidanceContext.conversationHistory.push({ role: 'user', content: studentResponse });
+            
+            // Show thinking indicator
+            // 显示思考指示器
+            const thinkingId = addMessageToConversation('assistant', 
+                '<span style="color: #6b7280;">🤔 Evaluating your response...</span>', true);
+            
+            try {
+                // Call backend to evaluate student's response
+                // 调用后端评估学生的回答
+                const response = await fetch('http://localhost:5000/evaluate_guidance_response', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        original_question: guidanceContext.originalQuestion,
+                        choices: guidanceContext.choices,
+                        student_answer: guidanceContext.studentAnswer,
+                        correct_answer: guidanceContext.correctAnswer,
+                        current_action: guidanceContext.currentAction,
+                        current_sub_questions: guidanceContext.currentSubQuestions,
+                        current_clarification: guidanceContext.currentClarification,
+                        student_response: studentResponse,
+                        conversation_history: guidanceContext.conversationHistory,
+                        understanding_level: guidanceContext.understandingLevel,
+                        round_number: guidanceContext.roundNumber
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                removeMessageFromConversation(thinkingId);
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Backend returned unsuccessful response');
+                }
+                
+                // Update guidance context
+                // 更新指导上下文
+                guidanceContext.roundNumber++;
+                guidanceContext.understandingLevel = result.understanding_level;
+                guidanceContext.currentAction = result.next_action_type;
+                guidanceContext.currentSubQuestions = result.next_sub_questions || [];
+                guidanceContext.currentClarification = result.next_clarification || '';
+                guidanceContext.conversationHistory.push({ 
+                    role: 'assistant', 
+                    content: result.feedback 
+                });
+                
+                // CRITICAL: Check if flow should terminate (only one evaluation, then exit)
+                // 关键：检查流程是否应该终止（只执行一次评估，然后退出）
+                if (result.flow_terminated || result.understood || !result.next_action_type) {
+                    // Flow should terminate - show final message and end guidance
+                    // 流程应该终止 - 显示最终消息并结束指导
+                    let finalHtml = '';
+                    
+                    if (result.understood) {
+                        // Student understands - confirm
+                        // 学生理解了 - 确认
+                        finalHtml = `
+                            <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                                <div style="padding: 15px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 4px; margin-bottom: 15px;">
+                                    <div style="font-weight: 600; color: #155724; margin-bottom: 8px;">✅ Great! You understand now!</div>
+                                    <div style="color: #155724;">${result.feedback || 'Excellent! You\'ve demonstrated understanding of the key concepts.'}</div>
+                                </div>
+                                ${result.summary ? `<div style="padding: 12px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+                                    <strong>💡 Summary:</strong> ${result.summary}
+                                </div>` : ''}
+                            </div>
+                        `;
+                    } else {
+                        // Flow terminated for other reasons (cannot decompose further, clarification already exists, etc.)
+                        // 流程因其他原因终止（无法继续分解、clarification已存在等）
+                        finalHtml = `
+                            <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                                <div style="padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                                    <div style="font-weight: 600; color: #856404; margin-bottom: 8px;">📝 Guidance Complete</div>
+                                    <div style="color: #856404;">${result.feedback || 'I\'ve provided clarification on this topic. Please review the concepts we\'ve discussed and try answering the question again.'}</div>
+                                </div>
+                                ${result.summary ? `<div style="padding: 12px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px; margin-top: 10px;">
+                                    <strong>💡 Summary:</strong> ${result.summary}
+                                </div>` : ''}
+                            </div>
+                        `;
+                    }
+                    
+                    addMessageToConversation('assistant', finalHtml, true);
+                    
+                    // End guidance dialogue - no more input expected
+                    // 结束指导对话 - 不再期望输入
+                    guidanceDialogueActive = false;
+                    guidanceContext = null;
+                    
+                    return true;
+                }
+                
+                // Student doesn't understand yet - continue guidance (but this should rarely happen now)
+                // 学生还不理解 - 继续指导（但现在这应该很少发生）
+                if (result.next_action_type === 'clarify') {
+                    // Provide clarification
+                    // 提供澄清
+                    const clarificationHtml = `
+                        <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                            ${result.feedback ? `<div style="margin-bottom: 10px;">${result.feedback}</div>` : ''}
+                            <div style="padding: 12px; background: #f0f7ff; border-left: 4px solid #667eea; border-radius: 4px;">
+                                ${result.next_clarification}
+                            </div>
+                        </div>
+                    `;
+                    addMessageToConversation('assistant', clarificationHtml, true);
+                } else if (result.next_action_type === 'decompose') {
+                    // Decompose further
+                    // 进一步分解
+                    let questionsHtml = `
+                        <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                            <div style="margin-bottom: 10px;">${result.feedback}</div>
+                    `;
+                    
+                    if (result.next_sub_questions && result.next_sub_questions.length > 0) {
+                        questionsHtml += '<div style="margin-top: 15px;">';
+                        result.next_sub_questions.forEach((q, i) => {
+                            questionsHtml += `
+                                <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                                    <strong>${i + 1}.</strong> 🤔 ${q}
+                                </div>
+                            `;
+                        });
+                        questionsHtml += '</div>';
+                        questionsHtml += '<div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; font-size: 13px;">';
+                        questionsHtml += '💬 <strong>Please answer:</strong> Try to answer these questions.';
+                        questionsHtml += '</div>';
+                    }
+                    
+                    questionsHtml += '</div>';
+                    addMessageToConversation('assistant', questionsHtml, true);
+                }
+                
+                return true;
+                
+            } catch (error) {
+                console.error('Error processing guidance response:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    guidanceContext: guidanceContext
+                });
+                removeMessageFromConversation(thinkingId);
+                
+                // Fallback: Continue with encouragement and show error message for debugging
+                // 回退：继续鼓励并显示错误消息用于调试
+                const errorMessage = error.message || 'Unknown error';
+                const fallbackHtml = `
+                    <div style="color: #374151; font-size: 14px; line-height: 1.6;">
+                        <div style="padding: 10px; background: #fee; border-left: 4px solid #f00; border-radius: 4px; margin-bottom: 10px; font-size: 12px;">
+                            ⚠️ Error: ${errorMessage}
+                        </div>
+                        <div>I encountered an error, but let's keep going! Can you try explaining what you understand so far?</div>
+                    </div>
+                `;
+                addMessageToConversation('assistant', fallbackHtml, true);
+                return false;
+            }
+        }
+        
         /**
          * Request hints and display in the chat/message area
          */
@@ -4362,6 +5126,29 @@ Author: AI for Education (Wenchao Qin)
         // ============================================================
         let socraticDialogueActive = false;   // Are we in Socratic dialogue mode?
         let socraticContext = null;           // Current question context for Socratic dialogue
+        
+        // ============================================================
+        // Iterative Guidance System - Continuous Learning Loop
+        // 迭代指导系统 - 持续学习循环
+        // ============================================================
+        // This system guides students through multiple rounds until they understand
+        // 此系统通过多轮指导直到学生理解
+        let guidanceDialogueActive = false;   // Are we in iterative guidance mode?
+        let guidanceContext = null;           // Current guidance state tracking
+        // Structure of guidanceContext:
+        // guidanceContext结构：
+        // {
+        //     originalQuestion: string,           // Original medical question
+        //     choices: object,                    // Answer options
+        //     studentAnswer: string,              // Student's wrong answer
+        //     correctAnswer: string,              // Correct answer
+        //     currentAction: "decompose" | "clarify" | null,  // Current action type
+        //     currentSubQuestions: array,         // Current sub-questions being asked
+        //     currentClarification: string,      // Current clarification text
+        //     conversationHistory: array,        // Full conversation history
+        //     understandingLevel: "none" | "partial" | "close" | "understood",  // Current understanding
+        //     roundNumber: number                 // Current round number
+        // }
         
         /**
          * Start Socratic dialogue - Dynamic decomposition based on complexity

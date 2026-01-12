@@ -229,7 +229,8 @@ app = Flask(__name__)
 
 # 启用 CORS 允许来自前端（medical-quiz.html）的请求
 # 这是必要的，因为前端运行在不同的端口（8000）
-CORS(app)
+# 使用简单配置，允许所有来源、方法和头部
+CORS(app, supports_credentials=True)
 
 # =============================================================================
 # 全局状态
@@ -1241,6 +1242,260 @@ def evaluate_answer():
             "feedback": result.feedback,
             "sub_steps": sub_steps,
             "missing_concept": result.missing_concept
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/evaluate_student_thinking', methods=['POST'])
+def evaluate_student_thinking():
+    """
+    Evaluate student's thinking process after wrong answer and decide action (decompose or clarify).
+    评估学生答错后的思考过程，并决定采取的行动（分解或澄清）。
+    
+    This endpoint implements the tau-bench educational agent policy:
+    此端点实现tau-bench教育助手策略：
+    
+    1. Receives student's explanation of their reasoning after answering incorrectly
+       接收学生答错后对其推理过程的解释
+    
+    2. Uses LLM to analyze understanding level and decide action:
+       使用LLM分析理解程度并决定行动：
+       - If student has fundamental gaps → DECOMPOSE (break into simpler questions)
+         如果学生有基础缺口 → 分解（拆分为更简单的子问题）
+       - If student is close but has minor errors → CLARIFY (provide direct explanation)
+         如果学生接近但有小错误 → 澄清（提供直接解释）
+    
+    3. Returns structured guidance based on decision
+       根据决定返回结构化指导
+    
+    Request Body / 请求体:
+        POST /evaluate_student_thinking
+        Content-Type: application/json
+        {
+            "question": "原始医学问题",
+            "choices": {"A": "选项A文本", "B": "选项B文本", ...},
+            "student_answer": "B",  // 学生选择的错误答案
+            "correct_answer": "A",   // 正确答案（仅用于LLM参考，不会透露给学生）
+            "student_thinking": "学生解释他们的思考过程，例如：'我认为B是正确的，因为...' 或 '我不知道'"
+        }
+    
+    Response / 响应:
+        {
+            "success": true,
+            "action_type": "decompose" | "clarify",  // 决定的行动类型
+            "understanding_level": "none" | "partial" | "close",  // 理解程度
+            "reasoning": "为什么选择这个行动（LLM的推理过程）",
+            "feedback": "鼓励性反馈消息",
+            "missing_concept": "学生需要理解的概念（如果不理解）",
+            "clarification": "澄清文本（如果action_type是'clarify'）",
+            "sub_questions": ["子问题1", "子问题2", ...]  // 如果action_type是'decompose'，提供1-3个子问题
+        }
+    
+    Error Response / 错误响应:
+        {
+            "success": false,
+            "error": "错误信息"
+        }
+    
+    Example Usage / 使用示例:
+        Frontend sends:
+        前端发送:
+        {
+            "question": "What is the treatment for appendicitis?",
+            "choices": {"A": "Surgery", "B": "Antibiotics only", ...},
+            "student_answer": "B",
+            "correct_answer": "A",
+            "student_thinking": "I thought antibiotics would be enough"
+        }
+        
+        Backend returns:
+        后端返回:
+        {
+            "success": true,
+            "action_type": "clarify",
+            "understanding_level": "close",
+            "reasoning": "Student understands treatment concept but confused about urgency",
+            "feedback": "Good thinking about antibiotics, but let's consider the urgency...",
+            "clarification": "Appendicitis requires immediate surgery because...",
+            "sub_questions": []
+        }
+    """
+    global hint_generator
+    
+    try:
+        # Check if hint generator is initialized
+        # 检查提示生成器是否已初始化
+        if hint_generator is None:
+            if not initialize_hint_generator():
+                return jsonify({
+                    "success": False,
+                    "error": "Hint generator not initialized"
+                }), 500
+        
+        # Parse request data
+        # 解析请求数据
+        data = request.json
+        
+        # Validate required fields
+        # 验证必需字段
+        required_fields = ['question', 'choices', 'student_answer', 'correct_answer', 'student_thinking']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    "success": False,
+                    "error": f"Missing required field: {field}"
+                }), 400
+        
+        from proactive_question_generator import HintRequest
+        
+        # Build HintRequest object with question context
+        # 构建包含问题上下文的HintRequest对象
+        hint_request = HintRequest(
+            question=data['question'],  # Original medical question
+            choices=data['choices'],  # Answer options dictionary
+            student_answer=data['student_answer'],  # Student's wrong answer
+            correct_answer=data['correct_answer'],  # Correct answer (for LLM reference only)
+            source_context=data.get('source_context')  # Optional: RAG retrieved context
+        )
+        
+        # Call the evaluation method to analyze student thinking
+        # This uses LLM to decide between DECOMPOSE and CLARIFY actions
+        # 调用评估方法分析学生思考
+        # 这使用LLM在DECOMPOSE和CLARIFY行动之间做决定
+        result = hint_generator.evaluate_student_thinking(
+            request=hint_request,
+            student_thinking=data['student_thinking']  # Student's explanation of their reasoning
+        )
+        
+        # Note: evaluate_student_thinking already generates sub_questions for "decompose" action
+        # using MedTutor-R1 style decomposition (see proactive_question_generator.py line 1079-1086)
+        # 注意：evaluate_student_thinking已经为"decompose"操作生成sub_questions
+        # 使用MedTutor-R1风格的分解（参见proactive_question_generator.py第1079-1086行）
+        
+        # Return structured response with all guidance information
+        # 返回包含所有指导信息的结构化响应
+        return jsonify({
+            "success": True,
+            "action_type": result.get("action_type"),  # "decompose" or "clarify" or None (if understood)
+            "understanding_level": result.get("understanding_level", "partial"),  # "none" | "partial" | "close" | "understood"
+            "understood": result.get("understood", False),  # FLOW TERMINATION: True if student understands
+            "flow_terminated": result.get("flow_terminated", False),  # FLOW TERMINATION: True if guidance should end
+            "reasoning": result.get("reasoning", ""),  # LLM's explanation of why this action was chosen
+            "feedback": result.get("feedback", ""),  # Encouraging feedback message
+            "missing_concept": result.get("missing_concept", ""),  # What concept student needs to understand
+            "clarification": result.get("clarification", ""),  # Clarification text (if action_type is "clarify")
+            "sub_questions": result.get("sub_questions", []),  # List of simpler questions (if action_type is "decompose")
+            "summary": result.get("summary", "")  # Summary if student understands
+        })
+        
+    except Exception as e:
+        # Log error for debugging
+        # 记录错误以便调试
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/evaluate_guidance_response', methods=['POST'])
+def evaluate_guidance_response():
+    """
+    Evaluate student's response during iterative guidance loop.
+    评估学生在迭代指导循环中的回答。
+    
+    This endpoint continues the guidance process:
+    此端点继续指导过程：
+    1. Evaluates student's response to sub-questions or clarifications
+       评估学生对子问题或澄清的回答
+    2. Determines if student understands
+       确定学生是否理解
+    3. If not understood: Decides next action (decompose/clarify)
+       如果不理解：决定下一步行动（分解/澄清）
+    4. If understood: Confirms understanding and provides summary
+       如果理解：确认理解并提供总结
+    
+    Request Body / 请求体:
+        {
+            "original_question": "原始问题",
+            "choices": {"A": "...", "B": "...", ...},
+            "student_answer": "B",
+            "correct_answer": "A",
+            "current_action": "decompose" | "clarify",
+            "current_sub_questions": ["question1", ...],
+            "current_clarification": "clarification text",
+            "student_response": "学生的回答",
+            "conversation_history": [...],
+            "understanding_level": "none" | "partial" | "close",
+            "round_number": 1
+        }
+    
+    Response / 响应:
+        {
+            "success": true,
+            "understood": true/false,
+            "understanding_level": "none" | "partial" | "close" | "understood",
+            "feedback": "反馈消息",
+            "next_action_type": "decompose" | "clarify" | null,
+            "next_sub_questions": [...],  // If next_action_type is "decompose"
+            "next_clarification": "...",  // If next_action_type is "clarify"
+            "summary": "总结（如果理解了）"
+        }
+    """
+    global hint_generator
+    
+    try:
+        if hint_generator is None:
+            if not initialize_hint_generator():
+                return jsonify({
+                    "success": False,
+                    "error": "Hint generator not initialized"
+                }), 500
+        
+        data = request.json
+        
+        from proactive_question_generator import HintRequest
+        
+        # Build request context
+        # 构建请求上下文
+        hint_request = HintRequest(
+            question=data['original_question'],
+            choices=data['choices'],
+            student_answer=data['student_answer'],
+            correct_answer=data['correct_answer']
+        )
+        
+        # Call evaluation method
+        # 调用评估方法
+        result = hint_generator.evaluate_guidance_response(
+            request=hint_request,
+            current_action=data.get('current_action'),
+            current_sub_questions=data.get('current_sub_questions', []),
+            current_clarification=data.get('current_clarification', ''),
+            student_response=data['student_response'],
+            conversation_history=data.get('conversation_history', []),
+            current_understanding_level=data.get('understanding_level', 'partial'),
+            round_number=data.get('round_number', 1),
+            cannot_decompose_further=data.get('cannot_decompose_further', False)
+        )
+        
+        return jsonify({
+            "success": True,
+            "understood": result.get("understood", False),
+            "understanding_level": result.get("understanding_level", "partial"),
+            "feedback": result.get("feedback", ""),
+            "next_action_type": result.get("next_action_type"),
+            "next_sub_questions": result.get("next_sub_questions", []),
+            "next_clarification": result.get("next_clarification", ""),
+            "summary": result.get("summary", "")
         })
         
     except Exception as e:

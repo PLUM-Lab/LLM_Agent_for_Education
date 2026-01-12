@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试跳转功能</title>
+</head>
+<body>
+    <h1>测试跳转功能</h1>
+    <p>打开浏览器控制台（F12），查看是否有错误信息</p>
+    
+    <div>
+        <label>跳转到:</label>
+        <input type="number" id="jump-to-input" placeholder="题号" min="1" style="width: 80px; padding: 6px 10px;">
+        <button id="jump-to-btn" style="padding: 6px 15px;">跳转</button>
+    </div>
+    
+    <div id="test-output" style="margin-top: 20px; padding: 10px; background: #f0f0f0;"></div>
+    
+    <script>
+        // 模拟allQuestions数组
+        const allQuestions = Array.from({length: 477}, (_, i) => ({id: i, question: `Question ${i+1}`}));
+        let currentGeneratedIndex = 0;
+        
+        function loadQuestionByIndex(index) {
+            if (index < 0 || index >= allQuestions.length) return;
+            currentGeneratedIndex = index;
+            document.getElementById('test-output').innerHTML = 
+                `<strong>已跳转到第 ${index + 1} 题</strong><br>当前索引: ${index}`;
+            console.log('跳转到题目:', index + 1);
+        }
+        
+        function jumpToQuestion(questionNumber) {
+            if (!allQuestions || allQuestions.length === 0) {
+                alert('请先加载题目 / Please load questions first');
+                return;
+            }
+            
+            const index = questionNumber - 1;
+            
+            if (index < 0 || index >= allQuestions.length) {
+                alert(`无效的题目编号 / Invalid question number.\n请输入 1 到 ${allQuestions.length} 之间的数字`);
+                return;
+            }
+            
+            loadQuestionByIndex(index);
+            
+            const jumpInput = document.getElementById('jump-to-input');
+            if (jumpInput) {
+                jumpInput.value = questionNumber;
+            }
+        }
+        
+        // 设置事件监听器
+        const jumpToBtn = document.getElementById('jump-to-btn');
+        const jumpInput = document.getElementById('jump-to-input');
+        
+        if (jumpToBtn && jumpInput) {
+            console.log('✅ 找到跳转按钮和输入框');
+            
+            jumpToBtn.addEventListener('click', () => {
+                console.log('按钮被点击');
+                const questionNumber = parseInt(jumpInput.value);
+                console.log('输入的题目编号:', questionNumber);
+                if (!isNaN(questionNumber) && questionNumber > 0) {
+                    jumpToQuestion(questionNumber);
+                } else {
+                    alert('请输入有效的题目编号');
+                }
+            });
+            
+            jumpInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    console.log('Enter键被按下');
+                    const questionNumber = parseInt(e.target.value);
+                    if (!isNaN(questionNumber) && questionNumber > 0) {
+                        jumpToQuestion(questionNumber);
+                    } else {
+                        alert('请输入有效的题目编号');
+                    }
+                }
+            });
+        } else {
+            console.error('❌ 未找到跳转按钮或输入框');
+            console.log('jumpToBtn:', jumpToBtn);
+            console.log('jumpInput:', jumpInput);
+        }
+        
+        // 初始化显示
+        loadQuestionByIndex(0);
+    </script>
+</body>
+</html>
+
