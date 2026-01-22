@@ -1,24 +1,14 @@
 """
 ================================================================================
-Proactive Question Generator - Socratic Tutoring System
 主动式问题生成器 - 苏格拉底式教学系统
 ================================================================================
 
-Overview:
-    Generates hint sub-questions to guide students towards the correct answer
-    using Socratic questioning methodology. Based on the paper:
-    "The Art of SOCRATIC QUESTIONING: Recursive Thinking with Large Language Models"
-    (arXiv:2305.14999)
-    
-    概述：
+概述:
     使用苏格拉底式提问方法生成提示性子问题，引导学生找到正确答案。
     基于论文："The Art of SOCRATIC QUESTIONING: Recursive Thinking with Large Language Models"
+    (arXiv:2305.14999)
 
-Approach:
-    The Socratic method decomposes complex problems into simpler sub-questions,
-    guiding students to discover the answer themselves rather than being told.
-    
-    方法：
+方法:
     苏格拉底式方法将复杂问题分解为更简单的子问题，引导学生自己发现答案，
     而不是直接告诉他们答案。
     
@@ -50,25 +40,22 @@ Approach:
     │                                                                          │
     └─────────────────────────────────────────────────────────────────────────┘
 
-Input:
-    - question: The original medical question (原始医学问题)
-    - choices: Dictionary of answer options (A, B, C, D, E) (答案选项字典)
-    - student_answer: The wrong answer selected by student (学生选择的错误答案)
-    - correct_answer: The correct answer key (A, B, C, D, E) (正确答案)
-    - conversation_history: Previous hint rounds (for multi-round guidance) (对话历史，用于多轮引导)
+输入:
+    - question: 原始医学问题
+    - choices: 答案选项字典 (A, B, C, D, E)
+    - student_answer: 学生选择的错误答案
+    - correct_answer: 正确答案 (A, B, C, D, E)
+    - conversation_history: 之前的提示轮次（用于多轮引导）
 
-Output:
-    - knowledge_blocks: List of sub-questions WITH their answers (knowledge building blocks)
-      知识块：包含答案的子问题列表（知识构建块）
-    - explanation: Brief context for the hints (without revealing answer)
-      解释：提示的简要上下文（不直接揭示答案）
+输出:
+    - knowledge_blocks: 包含答案的子问题列表（知识构建块）
+    - explanation: 提示的简要上下文（不直接揭示答案）
 
-Trigger Conditions:
-    触发条件：
-    1. Student provides wrong prediction (学生提供错误答案)
-    2. Student explicitly asks "provide some hints" or similar (学生明确要求提示)
+触发条件:
+    1. 学生提供错误预测
+    2. 学生明确要求提示（如"提供提示"等）
 
-Author: AI for Education
+作者: AI for Education
 ================================================================================
 """
 
@@ -92,11 +79,16 @@ except ImportError:
 
 # =============================================================================
 # Data Models
-# 数据模型
 # =============================================================================
 
 class HintLevel(Enum):
-    """提示难度级别 - 逐步更加具体"""
+    """提示难度级别 - 逐步更加具体
+    
+    定义了三个难度级别，用于逐步引导学生的学习：
+    - CONCEPTUAL: 概念性提示（第1轮）- 基础概念问题
+    - ANALYTICAL: 分析性提示（第2轮）- 分析选项
+    - DIRECTIVE: 指向性提示（第3轮）- 直接指向答案
+    """
     CONCEPTUAL = "conceptual"      # 第1轮：基础概念问题
     ANALYTICAL = "analytical"      # 第2轮：分析选项
     DIRECTIVE = "directive"        # 第3轮：直接指向答案
@@ -104,7 +96,10 @@ class HintLevel(Enum):
 
 @dataclass
 class HintRequest:
-    """生成提示的请求对象"""
+    """生成提示的请求对象
+    
+    包含生成苏格拉底式提示所需的所有信息。
+    """
     question: str  # 原始医学问题
     choices: Dict[str, str]  # 答案选项字典，例如 {"A": "option text", "B": "..."}
     student_answer: str      # 学生选择的答案，例如 "B"
@@ -116,7 +111,11 @@ class HintRequest:
 
 @dataclass
 class ReasoningStep:
-    """临床推理链中的单个步骤（MedTutor-R1风格）"""
+    """临床推理链中的单个步骤（MedTutor-R1风格）
+    
+    表示临床推理过程中的一个步骤，包含学生需要思考的关键问题、
+    此步骤的重要性、期望的理解程度等信息。
+    """
     step_id: str                         # 步骤ID，例如 "1", "1.1", "1.2"
     key_question: str                    # 学生需要思考的关键问题
     step_summary: str                    # 此步骤在推理链中的重要性
@@ -129,7 +128,10 @@ class ReasoningStep:
 
 @dataclass
 class ProblemDecomposition:
-    """医学问题的完整分解（MedTutor-R1风格）"""
+    """医学问题的完整分解（MedTutor-R1风格）
+    
+    包含一个医学问题的完整分解结构，包括所有推理步骤和最终综合步骤。
+    """
     original_question: str               # 原始问题
     reasoning_steps: List[ReasoningStep] # 推理步骤链
     synthesis_step: str                  # 最终综合得出答案
@@ -138,16 +140,20 @@ class ProblemDecomposition:
 
 @dataclass
 class SocraticResponse:
-    """包含问题分解的响应对象"""
-    decomposition: ProblemDecomposition  # 问题分解（推理步骤）
-    active_step_id: str                  # 当前正在处理的步骤ID
-    total_steps: int                     # 总步骤数
-    is_complete: bool                    # 是否所有步骤都已完成
+    """Response containing the problem decomposition"""
+    decomposition: ProblemDecomposition  # The reasoning steps
+    active_step_id: str                  # Current step being worked on
+    total_steps: int                     # Total number of steps
+    is_complete: bool                    # Whether all steps are done
 
 
 @dataclass
 class EvaluationResult:
-    """评估学生对推理步骤回答的结果"""
+    """评估学生对推理步骤回答的结果
+    
+    包含对学生回答某个推理步骤的评估结果，包括是否理解、
+    反馈信息、需要的子步骤等。
+    """
     step_id: str                         # 被回答的步骤ID
     understood: bool                     # 学生是否表现出理解
     feedback: str                        # 鼓励性反馈
@@ -157,12 +163,10 @@ class EvaluationResult:
 
 # =============================================================================
 # Configuration
-# 配置
 # =============================================================================
 
 # =============================================================================
 # MedTutor-R1 Style Problem Decomposition Prompt
-# MedTutor-R1风格的问题分解提示词
 # Based on: https://github.com/Zhitao-He/MedTutor-R1
 # =============================================================================
 
@@ -262,7 +266,6 @@ Your final output must be a single, well-formatted JSON array. Each object withi
 """
 
 # Prompt for recursive decomposition when student struggles
-# 当学生遇到困难时进行递归分解的提示词
 RECURSIVE_DECOMPOSITION_PROMPT = """A student is struggling with this reasoning step. You must respond with valid JSON only.
 
 ## ⚠️⚠️⚠️ CRITICAL: READ THIS FIRST - YOUR RESPONSE WILL BE AUTOMATICALLY REJECTED IF YOU VIOLATE THESE RULES ⚠️⚠️⚠️
@@ -408,25 +411,23 @@ The student doesn't seem to understand. Break this step down into SIMPLER sub-st
 
 # =============================================================================
 # Educational Agent Policy
-# 教育助手策略
 # Based on tau-bench conversation style guidance
-# 基于tau-bench对话风格指导
 # =============================================================================
 #
-# 目的：
-#   此策略定义了教育助手在学生答错后应如何与学生互动。
-#   助手可以采取两种行动之一：
+# Purpose:
+#   This policy defines how the educational agent should interact with students
+#   after they answer a question incorrectly. The agent can take one of two actions:
 #
-#   1. 问题分解：
-#      - 将复杂问题分解为更简单的子问题
-#      - 当学生有基础知识缺口时使用
+#   1. Question Decomposition:
+#      - Break down complex problems into simpler sub-questions
+#      - Used when student has fundamental knowledge gaps
 #
-#   2. 澄清：
-#      - 提供直接的解释或纠正
-#      - 当学生接近正确但有小误解时使用
+#   2. Clarification:
+#      - Provide direct explanation or correction
+#      - Used when student is close but has minor misconceptions
 #
-# 参考：
-#   基于tau-bench零售助手策略格式，适用于教育场景
+# Reference:
+#   Based on tau-bench retail agent policy format, adapted for educational context
 # =============================================================================
 
 EDUCATIONAL_AGENT_POLICY = """As an educational agent (Tutor), you help medical students learn through iterative guidance until they truly understand the problem.
@@ -477,7 +478,7 @@ You guide students through a continuous loop:
 
 ## Action Types
 
-### 1. Question Decomposition (问题分解)
+### 1. Question Decomposition
 
 **When to Use:**
 - Understanding level is "none" or "partial"
@@ -503,7 +504,7 @@ You guide students through a continuous loop:
 - Use specific medical terminology from the original question
 - Questions should guide discovery, not lead to a specific answer choice
 
-### 2. Clarification (澄清)
+### 2. Clarification
 
 **When to Use:**
 - Understanding level is "close"
@@ -592,23 +593,20 @@ You must respond with valid JSON only:
 
 # =============================================================================
 # Student Thinking Evaluation Prompt
-# 学生思考评估提示词
 # =============================================================================
 #
-# Purpose / 目的:
+# Purpose:
 #   This prompt guides the LLM to evaluate a student's thinking process after they
 #   answer incorrectly, and decide whether to DECOMPOSE (break into sub-questions)
 #   or CLARIFY (provide direct explanation).
-#   此提示词指导LLM评估学生答错后的思考过程，并决定是进行DECOMPOSE（分解为子问题）
-#   还是CLARIFY（提供直接解释）。
 #
-# 工作流程：
-#   1. 学生答错 → 系统询问他们的思考过程
-#   2. 学生解释他们的推理 → 此提示词评估它
-#   3. LLM决定：根据理解程度选择DECOMPOSE或CLARIFY
-#   4. 系统提供相应的指导
+# Workflow:
+#   1. Student answers incorrectly → System asks for their thinking
+#   2. Student explains their reasoning → This prompt evaluates it
+#   3. LLM decides: DECOMPOSE or CLARIFY based on understanding level
+#   4. System provides appropriate guidance
 #
-# 特殊情况：
+# Special Cases:
 #   - "have no idea" / "I don't know" → understanding_level = "none" → DECOMPOSE
 #   - Minimal response → understanding_level = "partial" → DECOMPOSE
 #   - Some understanding with errors → understanding_level = "close" → CLARIFY
@@ -733,7 +731,6 @@ Evaluate the student's understanding on these dimensions:
 """
 
 # System prompt for evaluating answers (determines if decomposition needed)
-# 评估答案的系统提示词（判断是否需要进一步分解）
 EVALUATION_SYSTEM_PROMPT = """You are evaluating a student's answer to a medical sub-question. You must respond with valid JSON only.
 
 ## Your Task:
@@ -757,22 +754,22 @@ EVALUATION_SYSTEM_PROMPT = """You are evaluating a student's answer to a medical
 
 # =============================================================================
 # Helper Functions
-# 辅助函数
 # =============================================================================
 
 def get_api_key() -> str:
-    """
-    Get OpenAI API key from environment variable or api-key.js file.
-    从环境变量或api-key.js文件中获取OpenAI API密钥
+    """从环境变量或api-key.js文件中获取OpenAI API密钥
     
-    Returns:
-        str: API key or empty string if not found
-        返回：API密钥，如果未找到则返回空字符串
+    尝试按以下顺序获取API密钥：
+    1. 从环境变量 OPENAI_API_KEY
+    2. 从 api-key.js 文件中读取
+    
+    返回:
+        API密钥，如果未找到则返回空字符串
     """
-    # 首先尝试从环境变量获取
+    # Try environment variable first
     api_key = os.environ.get('OPENAI_API_KEY')
     
-    # 如果环境变量中没有，尝试从api-key.js文件读取
+    # If not found in environment variable, try reading from api-key.js file
     if not api_key:
         config_path = Path(__file__).parent / 'api-key.js'
         if config_path.exists():
@@ -788,41 +785,35 @@ def get_api_key() -> str:
 
 
 def determine_hint_round(conversation_history: Optional[List[Dict]]) -> int:
-    """
-    Determine which round of hints based on conversation history.
-    根据对话历史确定当前是第几轮提示
+    """根据对话历史确定当前是第几轮提示
     
-    Args:
-        conversation_history: List of previous messages 之前的消息列表
+    参数:
+        conversation_history: 之前的消息列表
         
-    Returns:
-        int: Round number (no hard limit) 返回轮次编号（无硬性限制）
+    返回:
+        轮次编号（无硬性限制）
     """
     if not conversation_history:
         return 1
     
     # Count how many hint rounds have been provided (check both old and new formats)
-    # 统计已提供的提示轮次数量（检查新旧两种格式）
     hint_rounds = sum(1 for msg in conversation_history 
                       if msg.get("role") == "assistant" and 
                       ("knowledge_blocks" in str(msg.get("content", "")) or 
                        "hint_questions" in str(msg.get("content", ""))))
     
     # Return next round number (no hard limit)
-    # 返回下一轮编号（无硬性限制）
     return hint_rounds + 1
 
 
 def format_question_context(request: HintRequest) -> str:
-    """
-    Format the question and choices for the prompt.
-    格式化问题和选项，用于构建提示词
+    """格式化问题和选项，用于构建提示词
     
-    Args:
-        request: HintRequest object 提示请求对象
+    参数:
+        request: HintRequest对象
         
-    Returns:
-        str: Formatted question context 格式化的问题上下文
+    返回:
+        格式化的问题上下文
     """
     context = f"""## Medical Question:
 {request.question}
@@ -840,7 +831,7 @@ def format_question_context(request: HintRequest) -> str:
     if request.source_context:
         context += f"""
 ## Relevant Medical Context (for your reference only - don't quote directly):
-{request.source_context[:2000]}  # 限制上下文长度
+{request.source_context[:2000]}  # Limit context length
 """
     
     return context
@@ -848,16 +839,18 @@ def format_question_context(request: HintRequest) -> str:
 
 # =============================================================================
 # Main Generator Class
-# 主要生成器类
 # =============================================================================
 
 class ProactiveQuestionGenerator:
-    """
-    Generates Socratic hints to guide students toward correct answers.
-    生成苏格拉底式提示，引导学生找到正确答案
+    """生成苏格拉底式提示，引导学生找到正确答案
     
-    Usage:
-        用法示例：
+    这是系统的核心类，负责：
+    1. 将医学问题分解为推理步骤（MedTutor-R1风格）
+    2. 评估学生的思考过程
+    3. 根据理解程度决定是分解问题还是提供澄清
+    4. 在指导循环中持续评估和调整
+    
+    使用方法:
         generator = ProactiveQuestionGenerator()
         
         request = HintRequest(
@@ -868,45 +861,38 @@ class ProactiveQuestionGenerator:
         )
         
         response = generator.generate_sub_questions(request)
-        for node in response.tree.sub_nodes:
-            print(f"[{node.id}] {node.question}")
-            print(f"Tests: {node.knowledge_target}")
+        for step in response.decomposition.reasoning_steps:
+            print(f"[{step.step_id}] {step.key_question}")
     """
     
     def __init__(self, api_key: Optional[str] = None):
-        """
-        Initialize the generator with OpenAI client.
-        使用OpenAI客户端初始化生成器
+        """使用OpenAI客户端初始化生成器
         
-        Args:
-            api_key: OpenAI API key (optional, will try to load from config)
-            API密钥：OpenAI API密钥（可选，将尝试从配置加载）
+        参数:
+            api_key: OpenAI API密钥（可选，将尝试从配置加载）
         """
         self.api_key = api_key or get_api_key()
         if not self.api_key:
             raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY environment variable or create api-key.js")
         
         self.client = OpenAI(api_key=self.api_key)
-        self.model = "gpt-4o"  # 使用GPT-4o以获得最佳质量的提示
+        self.model = "gpt-4o"  # Use GPT-4o for best quality hints
     
     def generate_sub_questions(self, request: HintRequest) -> SocraticResponse:
-        """
-        Decompose a medical problem into reasoning steps (MedTutor-R1 style).
-        将医学问题分解为推理步骤（MedTutor-R1风格）
+        """将医学问题分解为推理步骤（MedTutor-R1风格）
         
-        Based on clinical reasoning: Observation → Interpretation → Conclusion
         基于临床推理：观察 → 解释 → 结论
         
-        Args:
-            request: HintRequest containing question, choices, and student's answer
-            请求对象：包含问题、选项和学生答案的HintRequest
+        这是第一轮分解的核心方法，使用MedTutor-R1方法将复杂医学问题
+        分解为逻辑清晰的推理步骤链。
+        
+        参数:
+            request: 包含问题、选项和学生答案的HintRequest对象
             
-        Returns:
-            SocraticResponse containing the reasoning steps
-            返回：包含推理步骤的SocraticResponse对象
+        返回:
+            包含推理步骤的SocraticResponse对象
         """
         # Build the prompt with full context
-        # 构建包含完整上下文的提示词
         options_text = "\n".join([f"{k}: {v}" for k, v in request.choices.items()])
         
         user_prompt = f"""Decompose this medical question into reasoning steps:
@@ -946,7 +932,6 @@ Follow the format in my instructions exactly.
             result = json.loads(content)
             
             # Parse reasoning steps
-            # 解析推理步骤
             steps = []
             for step_data in result.get("reasoning_steps", []):
                 steps.append(ReasoningStep(
@@ -972,7 +957,6 @@ Follow the format in my instructions exactly.
             
         except Exception as e:
             # Fallback with basic reasoning steps
-            # 异常时回退到基础推理步骤
             fallback_steps = [
                 ReasoningStep("1", 
                     f"What are the key clinical features mentioned in this question about {request.question.split()[3] if len(request.question.split()) > 3 else 'this topic'}?",
@@ -1005,52 +989,43 @@ Follow the format in my instructions exactly.
         request: HintRequest,
         student_thinking: str
     ) -> Dict:
-        """
-        Evaluate student's thinking process after wrong answer and decide action.
-        Based on tau-bench educational agent policy.
+        """评估学生答错后的思考过程并决定行动
         
-        评估学生答错后的思考过程并决定行动。
-        基于tau-bench教育助手策略。
+        基于tau-bench教育助手策略
         
-        This method implements the core decision-making logic:
         此方法实现核心决策逻辑：
         
-        1. Takes student's explanation of their reasoning (e.g., "I thought X because Y")
-           接收学生对推理的解释（例如："我认为X是因为Y"）
+        1. 接收学生对推理的解释（例如："我认为X是因为Y"）
         
-        2. Uses LLM to analyze understanding level:
-           使用LLM分析理解程度：
-           - "none": Student has no idea / fundamental gaps
-           - "partial": Student has some understanding but missing key concepts
-           - "close": Student is close but has minor misconceptions
+        2. 使用LLM分析理解程度：
+           - "none": 学生没有头绪/基础缺陷
+           - "partial": 学生有部分理解但缺少关键概念
+           - "close": 学生接近但有小误解
         
-        3. Decides action based on understanding:
-           根据理解程度决定行动：
-           - DECOMPOSE: Break into simpler sub-questions (for "none" or "partial")
-           - CLARIFY: Provide direct explanation (for "close")
+        3. 根据理解程度决定行动：
+           - DECOMPOSE: 分解为更简单的子问题（用于"none"或"partial"）
+           - CLARIFY: 提供直接解释（用于"close"）
         
-        4. Returns structured guidance:
-           返回结构化指导：
-           - action_type: "decompose" or "clarify"
-           - understanding_level: "none" | "partial" | "close"
-           - feedback: Encouraging message
-           - sub_questions: List of simpler questions (if decompose)
-           - clarification: Explanation text (if clarify)
+        4. 返回结构化指导：
+           - action_type: 行动类型（"decompose"或"clarify"）
+           - understanding_level: 理解程度（"none" | "partial" | "close"）
+           - feedback: 鼓励性反馈
+           - sub_questions: 子问题列表（如果分解）
+           - clarification: 澄清文本（如果澄清）
         
-        Args:
-            request: HintRequest containing:
-                - question: The original medical question
-                - choices: Dictionary of answer options (A, B, C, D)
-                - student_answer: The wrong answer the student selected
-                - correct_answer: The correct answer (for LLM reference only)
-            student_thinking: Student's explanation of their reasoning process
-                            学生对其推理过程的解释
-                            Examples:
-                            - "I thought option B was correct because..."
-                            - "I have no idea"
-                            - "I was confused about..."
+        参数:
+            request: HintRequest对象，包含：
+                - question: 原始医学问题
+                - choices: 答案选项字典 (A, B, C, D)
+                - student_answer: 学生选择的错误答案
+                - correct_answer: 正确答案（仅供LLM参考）
+            student_thinking: 学生对推理过程的解释
+                            示例:
+                            - "我认为选项B是正确的，因为..."
+                            - "我完全没有头绪"
+                            - "我对...感到困惑"
         
-        Returns:
+        返回:
             Dict containing:
             {
                 "action_type": "decompose" | "clarify",
@@ -1079,7 +1054,6 @@ Follow the format in my instructions exactly.
             'none'
         """
         # Check if student is asking to see the answer
-        # 检查学生是否要求看答案
         answer_request_keywords = ['show me the answer', 'tell me the answer', 'what is the answer', 
                                    'give me the answer', 'reveal the answer', 'want to see the answer',
                                    '想看答案', '告诉我答案', '答案是什么', '给我答案', 'can i see the answer',
@@ -1088,7 +1062,6 @@ Follow the format in my instructions exactly.
         
         if student_wants_answer:
             # Student explicitly requested the answer - provide it
-            # 学生明确要求看答案 - 提供答案
             return {
                 "action_type": "reveal_answer",
                 "understanding_level": "requested",
@@ -1104,7 +1077,6 @@ Follow the format in my instructions exactly.
             }
         
         # Build the evaluation prompt with full context
-        # 构建包含完整上下文的评估提示词
         evaluation_prompt = f"""
 ## Medical Question:
 {request.question}
@@ -1142,7 +1114,6 @@ Respond with valid JSON only.
 """
         
         # Prepare messages for OpenAI API call
-        # 准备OpenAI API调用的消息
         messages = [
             {"role": "system", "content": STUDENT_THINKING_EVALUATION_PROMPT},  # System prompt with policy
             {"role": "user", "content": evaluation_prompt}  # User prompt with question and student thinking
@@ -1150,7 +1121,6 @@ Respond with valid JSON only.
         
         try:
             # Call OpenAI API to evaluate student thinking
-            # 调用OpenAI API评估学生思考
             response = self.client.chat.completions.create(
                 model=self.model,  # Using GPT-4o for best quality
                 messages=messages,
@@ -1160,11 +1130,9 @@ Respond with valid JSON only.
             )
             
             # Parse JSON response from LLM
-            # 解析LLM返回的JSON响应
             result = json.loads(response.choices[0].message.content)
             
             # FLOW TERMINATION: If student understands, set understood flag and terminate
-            # 流程中止：如果学生理解了，设置understood标志并中止
             if result.get("understanding_level") == "understood":
                 result["understood"] = True
                 result["action_type"] = None  # No further action needed
@@ -1175,13 +1143,11 @@ Respond with valid JSON only.
                 result["understood"] = False
                 result["flow_terminated"] = False
                 # For decomposition, use the MedTutor-R1 style decomposition
-                # 对于分解，使用MedTutor-R1风格的分解
                 if result.get("action_type") == "decompose":
                     try:
                         decomposition_response = self.generate_sub_questions(request)
                         raw_sub_questions = [step.key_question for step in decomposition_response.decomposition.reasoning_steps]  # No limit - use all steps
                         # Validate questions - filter out invalid ones (symbols, blanks, etc.)
-                        # 验证问题 - 过滤掉无效的问题（符号、空白等）
                         sub_questions = [q for q in raw_sub_questions if self._validate_question(q)]
                         if not sub_questions:
                             print(f"[DEBUG] No valid sub-questions generated after validation - all {len(raw_sub_questions)} questions were invalid")
@@ -1197,8 +1163,6 @@ Respond with valid JSON only.
         except Exception as e:
             # Fallback: If API call fails, default to decomposition
             # This ensures students always get help, even if backend has issues
-            # 回退：如果API调用失败，默认使用分解
-            # 这确保学生始终能得到帮助，即使后端出现问题
             print(f"Error in evaluate_student_thinking: {e}")
             return {
                 "action_type": "decompose",
@@ -1211,12 +1175,19 @@ Respond with valid JSON only.
             }
     
     def _validate_question(self, question: str) -> bool:
-        """
-        Validate a question - ensure it's not empty, not just symbols, not single characters.
-        Returns True if valid, False if invalid.
+        """验证问题 - 确保不为空、不只是符号、不只是单个字符
         
-        验证问题 - 确保不为空、不只是符号、不只是单个字符。
-        如果有效返回True，如果无效返回False。
+        检查生成的问题是否符合质量标准：
+        1. 不为空且长度至少5个字符
+        2. 不只包含标点符号或空白
+        3. 至少包含一些有意义的字符（去除标点后至少3个字符）
+        4. 不只包含单个字符的单词
+        
+        参数:
+            question: 要验证的问题文本
+            
+        返回:
+            如果有效返回True，如果无效返回False
         """
         if not question or len(question.strip()) < 5:
             return False
@@ -1241,12 +1212,21 @@ Respond with valid JSON only.
         return True
     
     def _is_clarification_valid(self, clarification: str) -> bool:
-        """
-        Check if clarification is valid (not empty, not just templates, has actual content).
-        Returns True if valid, False if invalid.
+        """检查clarification是否有效（不为空、不只是模板、有实际内容）
         
-        检查clarification是否有效（不为空、不只是模板、有实际内容）。
-        如果有效返回True，如果无效返回False。
+        验证生成的澄清内容是否符合质量标准：
+        1. 长度至少20个字符
+        2. 不只包含标点符号或空白
+        3. 至少5个有意义的字符（去除标点后）
+        4. 不只包含单个字符的单词
+        5. 不是主要包含模板短语
+        6. 不是重复的模板短语
+        
+        参数:
+            clarification: 要验证的澄清文本
+            
+        返回:
+            如果有效返回True，如果无效返回False
         """
         if not clarification:
             return False
@@ -1254,12 +1234,10 @@ Respond with valid JSON only.
         clarification_stripped = clarification.strip()
         
         # Check if clarification is too short
-        # 检查clarification是否太短
         if len(clarification_stripped) < 20:
             return False
         
         # Check if clarification is just punctuation or whitespace
-        # 检查clarification是否只是标点符号或空白
         import string
         punctuation_only = all(c in string.punctuation + string.whitespace for c in clarification_stripped)
         if punctuation_only:
@@ -1267,14 +1245,12 @@ Respond with valid JSON only.
             return False
         
         # Check if clarification is just a single character or dot (like ".", "h", "d", etc.)
-        # 检查clarification是否只是单个字符或点（如".", "h", "d"等）
         meaningful_chars = clarification_stripped.replace('.', '').replace(' ', '').replace(',', '').replace('!', '').replace('?', '').replace('。', '').replace('，', '').replace('！', '').replace('？', '').replace('：', '').replace(':', '')
         if len(meaningful_chars) < 5:
             print(f"[DEBUG] Clarification is mostly punctuation or too short - considered invalid: '{clarification_stripped[:50]}'")
             return False
         
         # CRITICAL: Check if clarification is just single characters (like "h", "d", "f", "克", etc.)
-        # 关键：检查clarification是否只是单个字符（如"h"、"d"、"f"、"克"等）
         words = [w for w in clarification_stripped.split() if len(w.strip()) > 0]
         if len(words) == 0:
             return False
@@ -1285,7 +1261,6 @@ Respond with valid JSON only.
             return False
         
         # CRITICAL: Check if clarification ends with just punctuation (like "：。", "：", etc.)
-        # 关键：检查clarification是否只以标点符号结尾（如"：。"、"："等）
         ending_punctuation = clarification_stripped.rstrip()
         if ending_punctuation and ending_punctuation[-1] in '。，：：；；！？':
             # Check if the part before punctuation is meaningful
@@ -1295,23 +1270,17 @@ Respond with valid JSON only.
                 return False
         
         # CRITICAL: Check for meaningless strings (like "dfgds", "fgsgfs", etc.)
-        # 关键：检查无意义的字符串（如"dfgds"、"fgsgfs"等）
         # These are random character sequences that don't form meaningful words
-        # 这些是随机字符序列，不构成有意义的单词
         import re
         # Check if clarification is mostly random characters without spaces or punctuation
-        # 检查clarification是否主要是没有空格或标点的随机字符
         if len(re.findall(r'\s+', clarification_stripped)) < 2:  # Less than 2 spaces
             # Check if it's a long string of random characters
-            # 检查是否是长串随机字符
             if len(clarification_stripped) > 10 and not any(c in '。，：：；；！？' for c in clarification_stripped):
                 # Likely a meaningless string
-                # 可能是无意义的字符串
                 print(f"[DEBUG] Clarification appears to be meaningless random characters - considered invalid: '{clarification_stripped[:50]}'")
                 return False
         
         # Check if clarification is just template phrases
-        # 检查clarification是否只是模板短语
         template_phrases = [
             'let me clarify',
             'let me explain',
@@ -1327,7 +1296,6 @@ Respond with valid JSON only.
         clarification_lower = clarification_stripped.lower()
         
         # If clarification is just template phrases without actual content, it's invalid
-        # 如果clarification只是模板短语而没有实际内容，它是无效的
         # Check if it's mostly template phrases (more than 50% of words are template-related)
         words = [w for w in clarification_lower.split() if len(w) > 1]  # Filter out single characters
         if len(words) < 5:  # Too few meaningful words
@@ -1340,7 +1308,6 @@ Respond with valid JSON only.
             return False
         
         # Check if clarification is just repeating the same template phrase
-        # 检查clarification是否只是重复相同的模板短语
         if clarification_lower.count('clarify') > 2 or clarification_lower.count('key concepts') > 2:
             print(f"[DEBUG] Clarification repeats template phrases - considered invalid")
             return False
@@ -1348,12 +1315,15 @@ Respond with valid JSON only.
         return True
     
     def _validate_text_field(self, text: str, field_name: str = "text", min_length: int = 10) -> bool:
-        """
-        Validate any text field (summary, feedback, etc.) - ensure it's not empty, not just symbols, not single characters.
-        Returns True if valid, False if invalid.
+        """验证任何文本字段（summary、feedback等）- 确保不为空、不只是符号、不只是单个字符
         
-        验证任何文本字段（summary、feedback等）- 确保不为空、不只是符号、不只是单个字符。
-        如果有效返回True，如果无效返回False。
+        参数:
+            text: 要验证的文本
+            field_name: 字段名称（用于调试）
+            min_length: 最小长度
+            
+        返回:
+            如果有效返回True，如果无效返回False
         """
         if not text:
             return False
@@ -1406,10 +1376,13 @@ Respond with valid JSON only.
         return True
     
     def _get_validated_summary(self, missing_concept: str) -> str:
-        """
-        Generate and validate a summary string. Returns empty string if invalid.
+        """生成并验证summary字符串
         
-        生成并验证summary字符串。如果无效则返回空字符串。
+        参数:
+            missing_concept: 学生缺失的概念
+            
+        返回:
+            有效的summary字符串，如果无效则返回空字符串
         """
         summary = f"Great work! You've worked through the key concepts: {missing_concept}. Try applying this understanding to answer the original question."
         if self._validate_text_field(summary, "summary", 20):
@@ -1419,10 +1392,13 @@ Respond with valid JSON only.
             return f"You've worked through the key concepts. Try applying this understanding to answer the original question."
     
     def _get_validated_feedback(self, feedback: str) -> str:
-        """
-        Validate and return feedback string. Returns empty string if invalid.
+        """验证并返回feedback字符串
         
-        验证并返回feedback字符串。如果无效则返回空字符串。
+        参数:
+            feedback: 要验证的反馈文本
+            
+        返回:
+            有效的feedback字符串，如果无效则返回默认消息
         """
         if feedback and self._validate_text_field(feedback, "feedback", 10):
             return feedback
@@ -1434,12 +1410,17 @@ Respond with valid JSON only.
         new_clarification: str,
         existing_clarifications: List[str]
     ) -> bool:
-        """
-        Check if new clarification is similar to existing ones.
-        Returns True if similar (should not use), False if different (can use).
+        """检查新的clarification是否与现有的clarification相似
         
-        检查新的clarification是否与现有的clarification相似。
-        如果相似返回True（不应使用），如果不同返回False（可以使用）。
+        使用Jaccard相似度算法（基于词集合）来检查新澄清与已有澄清的相似性。
+        如果相似度超过阈值（0.5），则认为太相似，不应重复使用。
+        
+        参数:
+            new_clarification: 新的澄清文本
+            existing_clarifications: 已存在的澄清文本列表
+            
+        返回:
+            如果相似返回True（不应使用），如果不同返回False（可以使用）
         """
         if not new_clarification or len(new_clarification.strip()) < 20:
             return True  # Empty or too short is considered invalid
@@ -1448,7 +1429,6 @@ Respond with valid JSON only.
             return False  # No existing clarifications, so new one is fine
         
         # Check for template phrases that indicate repetition
-        # 检查表示重复的模板短语
         template_phrases = [
             'let me clarify',
             'let me explain',
@@ -1462,15 +1442,12 @@ Respond with valid JSON only.
         
         new_lower = new_clarification.lower()
         # If new clarification starts with template phrases, it's likely repetitive
-        # 如果新的clarification以模板短语开头，可能是重复的
         if any(new_lower.strip().startswith(phrase) for phrase in template_phrases):
             # Check if any existing clarification also starts with similar template
-            # 检查是否有现有的clarification也以类似的模板开头
             for existing in existing_clarifications:
                 if existing and len(existing.strip()) > 20:
                     existing_lower = existing.lower()
                     # If both start with templates, they're likely similar
-                    # 如果两者都以模板开头，它们可能是相似的
                     if any(existing_lower.strip().startswith(phrase) for phrase in template_phrases):
                         print(f"[DEBUG] Both clarifications start with template phrases - considered duplicate")
                         return True
@@ -1513,7 +1490,6 @@ Respond with valid JSON only.
             similarity = intersection / union
             
             # Lower threshold to catch more similarities (0.5 instead of 0.6)
-            # 降低阈值以捕获更多相似性（0.5而不是0.6）
             if similarity > 0.5:
                 print(f"[DEBUG] New clarification is {similarity:.2%} similar to existing clarification - considered duplicate")
                 return True
@@ -1525,12 +1501,10 @@ Respond with valid JSON only.
         conversation_history: List[Dict],
         current_clarification: str = None
     ) -> Tuple[bool, List[str]]:
-        """
-        Extract all clarifications from conversation history.
-        Returns (has_clarification, list_of_clarification_texts)
+        """从对话历史中提取所有clarification
         
-        从对话历史中提取所有clarification。
-        返回 (has_clarification, clarification文本列表)
+        返回:
+            (has_clarification, clarification文本列表)
         """
         clarifications = []
         has_clarification = False
@@ -1576,29 +1550,37 @@ Respond with valid JSON only.
         current_sub_questions: List[str],
         existing_clarifications: List[str] = None
     ) -> str:
-        """
-        Ensure clarification is valid and meaningful. Generate if needed.
-        Checks for similarity with existing clarifications.
+        """确保clarification有效且有意义，如果需要则生成
         
-        确保clarification有效且有意义。如果需要则生成。
-        检查与现有clarification的相似性。
+        这个方法确保返回的澄清文本：
+        1. 有效（通过_is_clarification_valid检查）
+        2. 与已有澄清不相似（通过_check_clarification_similarity检查）
+        3. 如果缺失概念足够，直接使用；否则使用LLM生成
+        
+        参数:
+            missing_concept: 学生缺失的概念
+            feedback: 反馈信息
+            request: HintRequest对象
+            conversation_history: 对话历史
+            current_sub_questions: 当前的子问题列表
+            existing_clarifications: 已存在的澄清列表
+            
+        返回:
+            有效的澄清文本，如果无法生成则返回空字符串
         """
         if existing_clarifications is None:
             existing_clarifications = []
         
         # If we have valid missing_concept and feedback, use them
-        # 如果我们有有效的missing_concept和feedback，使用它们
         if missing_concept and len(missing_concept.strip()) > 10:
             clarification = f"{missing_concept}. {feedback if feedback and len(feedback.strip()) > 5 else 'Apply this understanding to answer the original question.'}"
             # Check if clarification is valid (not empty, not just templates) and not similar
-            # 检查clarification是否有效（不为空、不只是模板）且不相似
             if self._is_clarification_valid(clarification):
                 if not self._check_clarification_similarity(clarification, existing_clarifications):
                     return clarification
                 # If similar, fall through to generate new one
         
         # Otherwise, generate using LLM
-        # 否则，使用LLM生成
         try:
             clarification_prompt = f"""You are a medical education tutor and expert clinical reasoning analyst. The student has been working through this problem but needs clarification.
 
@@ -1696,7 +1678,6 @@ Respond with JSON:
             generated_clarification = clarification_result.get("clarification", "")
             
             # Check if clarification is valid (not empty, not just templates)
-            # 检查clarification是否有效（不为空、不只是模板）
             if self._is_clarification_valid(generated_clarification):
                 # Check similarity before returning
                 if not self._check_clarification_similarity(generated_clarification, existing_clarifications):
@@ -1711,68 +1692,6 @@ Respond with JSON:
             print(f"Error generating clarification: {e}")
         
         # Final fallback - return empty string so system will reveal answer
-        # 最终回退 - 返回空字符串，系统将给出答案
-        return ""
-        # If we have valid missing_concept and feedback, use them
-        # 如果我们有有效的missing_concept和feedback，使用它们
-        if missing_concept and len(missing_concept.strip()) > 10:
-            clarification = f"{missing_concept}. {feedback if feedback and len(feedback.strip()) > 5 else 'Apply this understanding to answer the original question.'}"
-            if len(clarification.strip()) > 20:
-                return clarification
-        
-        # Otherwise, generate using LLM
-        # 否则，使用LLM生成
-        try:
-            clarification_prompt = f"""You are a medical education tutor. The student has been working through this problem but needs clarification.
-
-## Original Question:
-{request.question[:500]}
-
-## Answer Choices:
-{chr(10).join([f"{k}: {v}" for k, v in list(request.choices.items())[:4]])}
-
-## Conversation Summary:
-{chr(10).join([f"- {m.get('role', 'unknown').upper()}: {m.get('content', '')[:200]}" for m in conversation_history[-4:]]) if conversation_history else "None"}
-
-## Previously Asked Questions:
-{chr(10).join([f"- {q}" for q in current_sub_questions[-3:]]) if current_sub_questions else "None"}
-
-Generate a clear, helpful clarification that:
-1. Summarizes the key concepts the student needs to understand
-2. Provides a direct explanation WITHOUT revealing the correct answer
-3. Uses examples or analogies if helpful
-4. Encourages the student to apply this understanding
-
-Respond with JSON:
-{{
-    "clarification": "Your clear, helpful explanation here (2-4 sentences, NEVER reveal the answer)"
-}}"""
-            
-            clarification_response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": "You are a medical education tutor. Provide helpful clarifications WITHOUT revealing the correct answer.\n\nCRITICAL VALIDATION RULES (VIOLATION = AUTOMATIC REJECTION):\n- Clarification MUST be at least 20 characters long\n- MUST contain at least 5 meaningful words (words longer than 1 character)\n- NO symbols only (\".\", \"?\", \"!\", etc.)\n- NO single characters (\"h\", \"d\", etc.)\n- NO blanks or whitespace only\n- Must contain actual medical/educational content\n- Invalid clarifications will be automatically rejected and flow will end"},
-                    {"role": "user", "content": clarification_prompt}
-                ],
-                temperature=0.7,
-                max_tokens=300,
-                response_format={"type": "json_object"}
-            )
-            
-            clarification_result = json.loads(clarification_response.choices[0].message.content)
-            generated_clarification = clarification_result.get("clarification", "")
-            
-            # CRITICAL: Validate clarification before returning
-            # 关键：返回前验证clarification
-            if generated_clarification and self._is_clarification_valid(generated_clarification):
-                return generated_clarification
-            else:
-                print(f"[DEBUG] Generated clarification failed validation: '{generated_clarification[:50]}'")
-        except Exception as e:
-            print(f"Error generating clarification: {e}")
-        
-        # Final fallback - return empty string so system will reveal answer
-        # 最终回退 - 返回空字符串，系统将给出答案
         return ""
     
     def evaluate_guidance_response(
@@ -1787,55 +1706,49 @@ Respond with JSON:
         round_number: int,
         cannot_decompose_further: bool = False
     ) -> Dict:
-        """
-        Evaluate student's response during iterative guidance loop.
-        评估学生在迭代指导循环中的回答。
+        """评估学生在迭代指导循环中的回答
         
-        This method continues the guidance process by:
-        此方法通过以下方式继续指导过程：
-        1. Analyzing student's response to sub-questions or clarifications
-           分析学生对子问题或澄清的回答
-        2. Determining if student shows understanding
-           确定学生是否表现出理解
-        3. Deciding next action if not understood (decompose/clarify)
-           如果不理解，决定下一步行动（分解/澄清）
-        4. Confirming understanding if student demonstrates comprehension
-           如果学生表现出理解，确认理解
+        这是指导循环的核心方法，负责：
+        1. 分析学生对子问题或澄清的回答
+        2. 确定学生是否表现出理解
+        3. 如果不理解，决定下一步行动（分解/澄清）
+        4. 如果学生表现出理解，确认理解
         
-        Args:
-            request: HintRequest with question context
-            current_action: Current action type ("decompose" or "clarify")
-            current_sub_questions: List of sub-questions currently being asked
-            current_clarification: Current clarification text (if action is "clarify")
-            student_response: Student's response to the current question/clarification
-            conversation_history: Full conversation history so far
-            current_understanding_level: Current understanding level ("none" | "partial" | "close")
-            round_number: Current round number in the guidance loop
+        流程终止条件：
+        - 学生理解了（understood = True）
+        - 无法继续分解且无法提供新的澄清
         
-        Returns:
-            Dict containing:
+        参数:
+            request: HintRequest对象，包含问题上下文
+            current_action: 当前行动类型（"decompose"或"clarify"）
+            current_sub_questions: 当前正在问的子问题列表
+            current_clarification: 当前的澄清文本
+            student_response: 学生对当前问题/澄清的回答
+            conversation_history: 完整的对话历史
+            current_understanding_level: 当前理解程度
+            round_number: 当前轮次编号
+            cannot_decompose_further: 是否无法继续分解的标志
+            
+        返回:
+            包含以下字段的字典：
             {
-                "understood": true/false,
-                "understanding_level": "none" | "partial" | "close" | "understood",
-                "feedback": "Feedback message",
-                "next_action_type": "decompose" | "clarify" | null,
-                "next_sub_questions": [...],  # If next_action_type is "decompose"
-                "next_clarification": "...",  # If next_action_type is "clarify"
-                "summary": "Summary if understood"
+                "understood": 是否理解（true/false）
+                "understanding_level": 理解程度（"none" | "partial" | "close" | "understood"）
+                "feedback": 反馈消息
+                "next_action_type": 下一个行动类型（"decompose" | "clarify" | null）
+                "next_sub_questions": 下一个子问题列表（如果next_action_type是"decompose"）
+                "next_clarification": 下一个澄清文本（如果next_action_type是"clarify"）
+                "summary": 总结（如果理解了）
             }
         """
         # CRITICAL: Check if clarification already exists in conversation history
-        # 关键：检查历史记录中是否已经有clarification
         # Extract all clarifications from history
-        # 从历史记录中提取所有clarification
         has_clarification_in_history, existing_clarifications = self._extract_clarifications_from_history(
             conversation_history, current_clarification
         )
         
         # Note: System can dynamically decide decompose or clarify based on student's response quality
-        # 注意：系统可以根据学生回答的质量动态决定decompose或clarify
         # Even if clarification exists in history, system can still decompose if student's answer is too wrong
-        # 即使历史记录中有clarification，如果学生回答错误太多，系统仍然可以decompose
         if has_clarification_in_history:
             print(f"[DEBUG] Clarification exists in history ({len(existing_clarifications)} clarifications) - will check for similarity before generating new one, but can still decompose if needed")
         
@@ -1987,37 +1900,35 @@ Follow the Educational Agent Policy. Respond with valid JSON only.
                 response_format={"type": "json_object"}
             )
             
-            # 解析LLM返回的评估结果
-            # LLM会根据学生当前回答的质量，动态决定下一步行动（DECOMPOSE或CLARIFY）
+            # Parse LLM evaluation result
+            # LLM will dynamically decide next action (DECOMPOSE or CLARIFY) based on student's current response quality
             result = json.loads(response.choices[0].message.content)
             
             # ========================================================================
-            # 特殊处理：检测重复的"不知道"回答
+            # Special handling: Detect repeated "I don't know" responses
             # ========================================================================
-            # 目的：如果学生多次表示"不知道"，说明分解问题可能过于复杂
-            #       此时应该提供更直接的clarification而不是继续分解
-            # 策略：当学生说"不知道"2次或以上时，强制使用CLARIFICATION
+            # Purpose: If student says "I don't know" multiple times, decomposition may be too complex
+            #          Should provide more direct clarification instead of continuing decomposition
+            # Strategy: When student says "I don't know" 2 or more times, force CLARIFICATION
             # ========================================================================
             dont_know_keywords = ['毫无头绪', '不知道', '不明白', "i don't know", "don't know", "no idea", 
                                  "not sure", "have no idea", "不清楚", "不懂", "没头绪", "不清楚"]
             
-            # 统计对话历史中的"不知道"次数
+            # Count "I don't know" responses in conversation history
             previous_dont_know_count = sum([1 for m in conversation_history if m.get('role') == 'user' 
                                            and any(keyword in m.get('content', '').lower() for keyword in dont_know_keywords)]) if conversation_history else 0
-            # 检查当前回答是否是"不知道"
+            # Check if current response is "I don't know"
             current_is_dont_know = any(keyword in student_response.lower() for keyword in dont_know_keywords)
-            # 计算总次数（历史记录 + 当前回答）
+            # Calculate total count (history + current response)
             total_dont_know_count = previous_dont_know_count + (1 if current_is_dont_know else 0)
             
-            # 如果学生说了2次或更多次"不知道"，且LLM建议decompose，则强制改为clarify
-            # 这样可以避免无限分解问题，给学生提供更直接的帮助
+            # If student said "I don't know" 2 or more times, and LLM suggests decompose, force clarify
+            # This avoids infinite decomposition and provides more direct help
             if total_dont_know_count >= 2 and result.get("action_type") == "decompose":
                 print(f"[DEBUG] Detected {total_dont_know_count} 'I don't know' responses - forcing CLARIFICATION instead of DECOMPOSE")
                 # Override action_type to force clarification
-                # 覆盖action_type以强制使用clarification
                 result["action_type"] = "clarify"
                 # Generate valid clarification - ensure it's not empty or just symbols
-                # 生成有效的clarification - 确保不为空或只是符号
                 default_clarification = f"""You've expressed uncertainty multiple times, which is completely normal when learning complex medical concepts. Let me provide a direct explanation with examples:
 
 {result.get('missing_concept', 'The key concept')}
@@ -2025,10 +1936,8 @@ Follow the Educational Agent Policy. Respond with valid JSON only.
 Let me explain this step-by-step with a practical example that relates to the question."""
                 clarification = result.get("clarification", "") or default_clarification
                 # Validate clarification before using
-                # 使用前验证clarification
                 if not self._is_clarification_valid(clarification):
                     # If invalid, use missing_concept if available
-                    # 如果无效，使用missing_concept（如果可用）
                     missing_concept = result.get('missing_concept', '')
                     if missing_concept and len(missing_concept.strip()) > 10:
                         clarification = f"{missing_concept}. Understanding these concepts will help you answer the question correctly."
@@ -2037,39 +1946,35 @@ Let me explain this step-by-step with a practical example that relates to the qu
                 result["clarification"] = clarification
             
             # Note: Allow decompose even if clarification exists in history - system decides based on response quality
-            # 注意：即使历史记录中有clarification，也允许decompose - 系统根据回答质量决定
             
             # Determine if student understands
-            # 确定学生是否理解
             # Continue decomposition until student understands OR cannot decompose further
-            # 持续分解直到学生理解或无法继续分解
             understood = result.get("understanding_level") == "understood" or \
                         result.get("understood", False)
             
             # Check if cannot decompose further
-            # 检查是否无法继续分解
-            # 流程中止条件：
-            # 1. Student understands (学生懂了) -> TERMINATE
-            # 2. Student requests answer (学生要求看答案) -> TERMINATE
+            # Flow termination conditions:
+            # 1. Student understands -> TERMINATE
+            # 2. Student requests answer -> TERMINATE
             # 
-            # 解析结束条件：
-            # 1. Cannot decompose further (题目无法继续拆分) -> Use clarification, but flow continues
-            # 2. Student understands (学生懂了) -> TERMINATE
+            # Decomposition end conditions:
+            # 1. Cannot decompose further -> Use clarification, but flow continues
+            # 2. Student understands -> TERMINATE
             
             cannot_decompose = (result.get("action_type") == "decompose" and not result.get("sub_questions")) or \
                               result.get("cannot_decompose_further", False) or \
                               (result.get("action_type") == "decompose" and result.get("reasoning", "").lower().find("cannot") >= 0 and result.get("reasoning", "").lower().find("decompose") >= 0)
             
             # ========================================================================
-            # 流程终止条件判断：两个主要终止条件
+            # Flow termination condition check: Two main termination conditions
             # ========================================================================
-            # 条件1：学生已经理解（understood = True）
-            #        - 表示学生已经掌握了关键概念，可以结束指导流程
-            #        - 返回summary总结学习内容
-            #        - 设置flow_terminated = True和next_action_type = None表示流程结束
+            # Condition 1: Student understands (understood = True)
+            #        - Indicates student has grasped key concepts, can end guidance flow
+            #        - Return summary of learning content
+            #        - Set flow_terminated = True and next_action_type = None to indicate flow end
             # ========================================================================
             if understood:
-                # 流程终止条件1：学生理解了 - 终止流程
+                # Flow termination condition 1: Student understands - terminate flow
                 return {
                     "understood": True,
                     "understanding_level": "understood",
@@ -2082,17 +1987,17 @@ Let me explain this step-by-step with a practical example that relates to the qu
                 }
             else:
                 # ========================================================================
-                # 学生还未理解 - 继续指导流程
+                # Student not yet understood - continue guidance flow
                 # ========================================================================
-                # 重要：如果已经无法继续分解（cannot_decompose_further = True），
-                #       说明系统已经分解到最基础的程度，应该尝试提供clarification
-                #       如果clarification也无法提供（内容无效或与历史记录相似），则终止流程
+                # Important: If cannot decompose further (cannot_decompose_further = True),
+                #            it means system has decomposed to most basic level, should try providing clarification
+                #            If clarification cannot be provided (invalid content or similar to history), terminate flow
                 # ========================================================================
                 if cannot_decompose_further or cannot_decompose:
-                    # 流程终止条件2的前半部分：无法继续分解 - 尝试提供clarification
-                    # 生成clarification，但需要满足以下条件：
-                    # 1. 内容有效（不为空、不只是符号、不只有单个字符）
-                    # 2. 与历史记录中的clarification不相似（避免重复）
+                    # Flow termination condition 2, first part: Cannot decompose further - try providing clarification
+                    # Generate clarification, but must meet these conditions:
+                    # 1. Content is valid (not empty, not just symbols, not just single characters)
+                    # 2. Not similar to clarifications in history (avoid repetition)
                     clarification = self._ensure_valid_clarification(
                         result.get('missing_concept', ''),
                         result.get('feedback', ''),
@@ -2103,14 +2008,13 @@ Let me explain this step-by-step with a practical example that relates to the qu
                     )
                     
                     # Check if clarification is similar to existing ones
-                    # 检查clarification是否与现有的相似
                     if clarification and self._check_clarification_similarity(clarification, existing_clarifications):
                         print(f"[DEBUG] Generated clarification is too similar to existing ones - cannot provide new clarification")
                         clarification = ""  # Mark as invalid
                     
-                    # 流程终止条件2判断：无法继续分解 AND 无法提供clarification
-                    # 如果clarification无效（为空或验证失败），则终止流程
-                    # 不揭示答案，只是结束流程，让学生回顾已讨论的内容
+                    # Flow termination condition 2 check: Cannot decompose further AND cannot provide clarification
+                    # If clarification is invalid (empty or validation failed), terminate flow
+                    # Don't reveal answer, just end flow, let student review discussed content
                     if not clarification or not self._is_clarification_valid(clarification):
                         print(f"[DEBUG] Cannot decompose further AND cannot provide clarification - terminating flow")
                         return {
@@ -2126,56 +2030,56 @@ Let me explain this step-by-step with a practical example that relates to the qu
                             "cannot_decompose_further": True
                         }
                     
-                    # 可以提供clarification - 继续流程，等待学生回答
-                    # 设置cannot_decompose_further = True表示分解已经结束，后续不会再分解
-                    # flow_terminated = False表示流程继续，等待学生回答clarification后的响应
+                    # Can provide clarification - continue flow, wait for student response
+                    # Set cannot_decompose_further = True to indicate decomposition has ended, won't decompose further
+                    # flow_terminated = False means flow continues, wait for student response after clarification
                     return {
                         "understood": False,
                         "understanding_level": result.get("understanding_level", "partial"),
                         "feedback": self._get_validated_feedback(result.get("feedback", "")),
-                        "next_action_type": "clarify",  # 继续流程，等待学生回答
-                        "next_sub_questions": [],  # 不再分解，清空子问题列表
+                        "next_action_type": "clarify",  # Continue flow, wait for student response
+                        "next_sub_questions": [],  # No more decomposition, clear sub-questions list
                         "next_clarification": clarification,
                         "summary": "",
-                        "flow_terminated": False,  # 不终止，继续指导循环
-                        "cannot_decompose_further": True  # 标志表示分解已结束，后续不再分解
+                        "flow_terminated": False,  # Don't terminate, continue guidance loop
+                        "cannot_decompose_further": True  # Flag indicates decomposition has ended, won't decompose further
                     }
                 
                 # ========================================================================
-                # 正常流程继续：根据学生当前回答质量动态决定下一步行动
+                # Normal flow continues: Dynamically decide next action based on student's current response quality
                 # ========================================================================
-                # 核心逻辑：系统可以根据学生当前回答的质量选择decompose或clarify
-                #         即使历史记录中有clarification，如果学生当前回答错误太多，
-                #         系统仍然可以选择decompose来进一步分解概念
-                #         这是动态评估的核心体现：评估基于当前回答，不受历史限制
+                # Core logic: System can choose decompose or clarify based on student's current response quality
+                #            Even if clarification exists in history, if student's current response is too wrong,
+                #            system can still choose decompose to further break down concepts
+                #            This is the core of dynamic evaluation: evaluation based on current response, not limited by history
                 # ========================================================================
                 next_action = result.get("action_type", "decompose")
                 
-                # 分支1：LLM决定进行clarify
+                # Branch 1: LLM decides to clarify
                 if next_action == "clarify":
-                    # 从LLM返回结果中获取clarification
-                    # 注意：需要验证clarification的有效性，确保：
-                    # 1. 不为空
-                    # 2. 不只是模板短语（如"Let me clarify"等）
-                    # 3. 不只包含符号或单个字符
-                    # 4. 与历史记录中的clarification不相似
+                    # Get clarification from LLM result
+                    # Note: Need to validate clarification validity, ensure:
+                    # 1. Not empty
+                    # 2. Not just template phrases (like "Let me clarify", etc.)
+                    # 3. Not just symbols or single characters
+                    # 4. Not similar to clarifications in history
                     clarification = result.get("clarification", "")
                     
-                    # 验证clarification内容是否有效
-                    # _is_clarification_valid会检查：
-                    # - 长度至少20个字符
-                    # - 至少5个有意义单词
-                    # - 不能只是符号或单个字符
-                    # - 不能只是模板短语
+                    # Validate clarification content validity
+                    # _is_clarification_valid checks:
+                    # - At least 20 characters long
+                    # - At least 5 meaningful words
+                    # - Cannot be just symbols or single characters
+                    # - Cannot be just template phrases
                     if not self._is_clarification_valid(clarification):
-                        # 如果clarification无效，尝试从missing_concept生成
-                        # 如果missing_concept有足够内容（>10字符），用它来构造clarification
+                        # If clarification is invalid, try generating from missing_concept
+                        # If missing_concept has enough content (>10 chars), use it to construct clarification
                         missing_concept = result.get("missing_concept", "")
                         if missing_concept and len(missing_concept.strip()) > 10:
                             clarification = f"{missing_concept}. {result.get('feedback', 'Apply this understanding to answer the original question.')}"
                         else:
-                            # 流程终止条件2：无法提供clarification
-                            # 如果既没有有效的clarification，也没有足够的missing_concept来生成，则终止流程
+                            # Flow termination condition 2: Cannot provide clarification
+                            # If neither valid clarification nor enough missing_concept to generate, terminate flow
                             print(f"[DEBUG] Cannot generate valid clarification - terminating flow")
                             return {
                                 "understood": False,
@@ -2207,11 +2111,11 @@ Let me explain this step-by-step with a practical example that relates to the qu
                             "flow_terminated": True  # TERMINATE: Cannot provide new clarification
                         }
                     
-                    # 关键步骤：返回clarification前进行最终验证
-                    # 即使通过了前面的检查，这里也要再次验证，确保返回的clarification是有效的
-                    # 这是防御性编程：确保不会返回无效的clarification内容
+                    # Critical step: Final validation before returning clarification
+                    # Even if passed previous checks, validate again here to ensure returned clarification is valid
+                    # This is defensive programming: ensure invalid clarification content is not returned
                     if not clarification or not self._is_clarification_valid(clarification):
-                        # 流程终止条件2：无法提供clarification（最终验证失败）
+                        # Flow termination condition 2: Cannot provide clarification (final validation failed)
                         print(f"[DEBUG] Clarification failed final validation - terminating flow: '{clarification[:50] if clarification else 'empty'}'")
                         return {
                             "understood": False,
@@ -2226,7 +2130,6 @@ Let me explain this step-by-step with a practical example that relates to the qu
                         }
                     
                     # Can provide clarification - continue flow, wait for student response
-                    # 可以提供clarification - 继续流程，等待学生回答
                     return {
                         "understood": False,
                         "understanding_level": result.get("understanding_level", "close"),
@@ -2239,9 +2142,9 @@ Let me explain this step-by-step with a practical example that relates to the qu
                     }
                 else:
                     # ========================================================================
-                    # 分支2：LLM决定进行decompose
+                    # Branch 2: LLM decides to decompose
                     # ========================================================================
-                    # 首先检查学生是否明确要求看答案（这是流程终止的特殊情况）
+                    # First check if student explicitly requests to see answer (special termination case)
                     # ========================================================================
                     answer_request_keywords = ['show me the answer', 'tell me the answer', 'what is the answer', 
                                                'give me the answer', 'reveal the answer', 'want to see the answer',
@@ -2249,8 +2152,8 @@ Let me explain this step-by-step with a practical example that relates to the qu
                                                'i want the answer', 'please give me the answer']
                     student_wants_answer = any(keyword in student_response.lower() for keyword in answer_request_keywords)
                     
-                    # 如果学生明确要求看答案，则终止流程并揭示答案
-                    # 这是一个特殊的终止条件：尊重学生的意愿
+                    # If student explicitly requests answer, terminate flow and reveal answer
+                    # This is a special termination condition: respect student's wish
                     if student_wants_answer:
                         return {
                             "understood": True,  # Mark as understood to terminate flow
@@ -2267,10 +2170,10 @@ Let me explain this step-by-step with a practical example that relates to the qu
                         }
                     
                     # ========================================================================
-                    # 关键检查：如果已经无法继续分解，永远不要再尝试分解
+                    # Critical check: If cannot decompose further, never try to decompose again
                     # ========================================================================
-                    # cannot_decompose_further标志表示之前的分解已经到达最基础程度
-                    # 此时应该尝试提供clarification，而不是继续尝试分解
+                    # cannot_decompose_further flag indicates previous decomposition has reached most basic level
+                    # Should try providing clarification at this point, not continue trying to decompose
                     # ========================================================================
                     if cannot_decompose_further:
                         clarification = self._ensure_valid_clarification(
@@ -2283,13 +2186,11 @@ Let me explain this step-by-step with a practical example that relates to the qu
                         )
                         
                         # Check if clarification is similar to existing ones
-                        # 检查clarification是否与现有的相似
                         if clarification and self._check_clarification_similarity(clarification, existing_clarifications):
                             print(f"[DEBUG] Generated clarification is too similar to existing ones - cannot provide new clarification")
                             clarification = ""  # Mark as invalid
                         
                         # FLOW TERMINATION CONDITION 2: Cannot decompose further AND cannot provide clarification
-                        # 流程中止条件2：无法继续分解且无法提供clarification
                         if not clarification or not self._is_clarification_valid(clarification):
                             print(f"[DEBUG] Cannot decompose further AND cannot provide clarification - terminating flow")
                             return {
@@ -2306,8 +2207,7 @@ Let me explain this step-by-step with a practical example that relates to the qu
                             }
                         
                         # Can provide clarification - continue flow, wait for student response
-                        # 可以提供clarification - 继续流程，等待学生回答
-                        # 关键：提供clarification后，流程应该终止（只执行一次评估）
+                        # Critical: After providing clarification, flow should terminate (only one evaluation)
                         return {
                             "understood": False,
                             "understanding_level": result.get("understanding_level", "partial"),
@@ -2321,28 +2221,26 @@ Let me explain this step-by-step with a practical example that relates to the qu
                         }
                     
                     # ========================================================================
-                    # 正常分解流程：根据轮次选择不同的分解策略
+                    # Normal decomposition flow: Choose different decomposition strategies based on round
                     # ========================================================================
-                    # 问题分解策略：
-                    # - Round 1（第一轮）：使用generate_sub_questions进行MedTutor-R1风格的初始分解
-                    #   这会生成完整的推理步骤链，包括Observation -> Interpretation -> Conclusion的逻辑流程
-                    # - Round 2+（第二轮及以后）：使用动态生成方法（类似callSocraticContinuation）
-                    #   基于学生当前回答的特定错误和误解，生成更针对性的子问题
-                    #   这些问题必须比之前的问题更简单、更基础，避免重复
+                    # Problem decomposition strategy:
+                    # - Round 1: Use generate_sub_questions for MedTutor-R1 style initial decomposition
+                    #   This generates complete reasoning step chain, including Observation -> Interpretation -> Conclusion logical flow
+                    # - Round 2+: Use dynamic generation method (similar to callSocraticContinuation)
+                    #   Based on specific errors and misconceptions in student's current response, generate more targeted sub-questions
+                    #   These questions must be simpler and more foundational than previous ones, avoid repetition
                     # ========================================================================
                     if round_number == 1:
-                        # 第一轮分解：使用MedTutor-R1方法生成完整的推理步骤链
+                        # First round decomposition: Use MedTutor-R1 method to generate complete reasoning step chain
                         try:
                             decomposition_response = self.generate_sub_questions(request)
                             decomposition = decomposition_response.decomposition
                             
                             # Extract key_questions from reasoning steps
-                            # 从推理步骤中提取key_questions
                             sub_questions = [step.key_question for step in decomposition.reasoning_steps]  # No limit - use all steps
                             
                             if sub_questions:
                                 # CRITICAL: Validate all sub_questions before returning
-                                # 关键：返回前验证所有sub_questions
                                 validated_sub_questions = [q for q in sub_questions if self._validate_question(q)]
                                 if not validated_sub_questions:
                                     print(f"[DEBUG] All {len(sub_questions)} sub_questions failed validation - ending flow")
@@ -2360,7 +2258,6 @@ Let me explain this step-by-step with a practical example that relates to the qu
                                     }
                                 
                                 # Provide sub-questions and continue flow - wait for student to answer
-                                # 提供子问题并继续流程 - 等待学生回答
                                 return {
                                     "understood": False,
                                     "understanding_level": result.get("understanding_level", "partial"),
@@ -2375,21 +2272,15 @@ Let me explain this step-by-step with a practical example that relates to the qu
                             print(f"Error in first-round decomposition: {e}")
                     
                     # Subsequent rounds: Use original recursive decomposition method
-                    # 后续轮次：使用原来的递归分解方法
                     # This follows the same principles as initial decomposition (MedTutor-R1 style)
-                    # 这遵循与初始分解相同的原则（MedTutor-R1风格）
                     
                     # Find the most recent question the student struggled with
-                    # 找到学生最最近遇到困难的子问题
                     # Use the last question from current_sub_questions as the parent step
-                    # 使用current_sub_questions中的最后一个问题作为父步骤
                     if current_sub_questions and len(current_sub_questions) > 0:
                         # Use the last question as the step to decompose
-                        # 使用最后一个问题作为要分解的步骤
                         parent_question = current_sub_questions[-1]
                         
                         # Create a ReasoningStep object for recursive decomposition
-                        # 创建ReasoningStep对象用于递归分解
                         parent_step = ReasoningStep(
                             step_id=f"{round_number}",
                             key_question=parent_question,
@@ -2398,7 +2289,6 @@ Let me explain this step-by-step with a practical example that relates to the qu
                         )
                         
                         # Use the original evaluate_response method for recursive decomposition
-                        # 使用原来的evaluate_response方法进行递归分解
                         try:
                             evaluation_result = self.evaluate_response(
                                 request=request,
@@ -2409,13 +2299,10 @@ Let me explain this step-by-step with a practical example that relates to the qu
                             )
                             
                             # Extract simpler steps from the evaluation result
-                            # 从评估结果中提取更简单的步骤
                             if hasattr(evaluation_result, 'sub_steps'):
                                 if not evaluation_result.sub_steps or len(evaluation_result.sub_steps) == 0:
                                     # Cannot decompose further - use clarification but flow continues
-                                    # 无法继续分解 - 使用澄清但流程继续
                                     # FLOW TERMINATION: Only when student understands OR requests answer
-                                    # 流程中止：只有当学生理解或要求答案时
                                     return {
                                         "understood": False,
                                         "understanding_level": result.get("understanding_level", "partial"),
@@ -2432,29 +2319,23 @@ Let me explain this step-by-step with a practical example that relates to the qu
                                 
                                 if simpler_questions:
                                     # CRITICAL: Check if newly generated questions are similar/repetitive
-                                    # 关键：检查新生成的问题是否与之前的问题相似/重复
                                     # Collect ALL previously asked questions from ALL rounds
-                                    # 收集所有轮次中所有之前问过的问题
                                     all_previous_questions = []
                                     
                                     # Add ALL questions from current_sub_questions (all rounds, no limit)
-                                    # 添加current_sub_questions中的所有问题（所有轮次，无限制）
                                     if current_sub_questions:
                                         all_previous_questions.extend(current_sub_questions)
                                     
                                     # Extract ALL assistant questions from ENTIRE conversation history (all rounds)
-                                    # 从整个对话历史中提取所有助手的问题（所有轮次）
                                     for msg in conversation_history:
                                         if msg.get('role') == 'assistant':
                                             content = msg.get('content', '')
                                             import re
                                             # Extract all questions (not just recent ones)
-                                            # 提取所有问题（不仅仅是最近的问题）
                                             question_patterns = re.findall(r'[\d+\.]?\s*[🤔❓]\s*(.+?)(?:\n|$)', content)
                                             all_previous_questions.extend([q.strip() for q in question_patterns if q.strip()])
                                     
                                     # Remove duplicates while preserving order
-                                    # 移除重复项同时保持顺序
                                     seen = set()
                                     all_previous_questions = [q for q in all_previous_questions if q and q not in seen and not seen.add(q)]
                                     
@@ -2545,9 +2426,7 @@ Let me explain this step-by-step with a practical example that relates to the qu
                                         return False
                                     
                                     # STRICT: Check if questions are repetitive
-                                    # 严格：检查问题是否重复
                                     # THIS CHECK IS MANDATORY - AUTOMATIC REJECTION IF ANY SIMILARITY DETECTED
-                                    # 此检查是强制性的 - 如果检测到任何相似性，将自动拒绝
                                     has_repetitive = False
                                     repetitive_count = 0
                                     repetitive_details = []
@@ -2561,7 +2440,6 @@ Let me explain this step-by-step with a practical example that relates to the qu
                                                 break  # Stop checking this question once similarity found
                                     
                                     # STRICT: If ANY question is repetitive, stop decomposition immediately
-                                    # 严格：如果任何问题是重复的，立即停止分解
                                     if has_repetitive:
                                         print(f"[WARNING] Repetitive questions detected: {repetitive_count}/{len(simpler_questions)} questions are similar to previous ones. Stopping decomposition.")
                                         return {
@@ -2612,7 +2490,6 @@ Let me explain this step-by-step with a practical example that relates to the qu
                             # Fall through to alternative method
                     
                     # Alternative: Use RECURSIVE_DECOMPOSITION_PROMPT directly if evaluate_response fails
-                    # 替代方案：如果evaluate_response失败，直接使用RECURSIVE_DECOMPOSITION_PROMPT
                     if current_sub_questions and len(current_sub_questions) > 0:
                         parent_question = current_sub_questions[-1]
                         
@@ -2624,7 +2501,6 @@ Let me explain this step-by-step with a practical example that relates to the qu
                         )
                         
                         # Collect ALL previously asked questions from ALL sources
-                        # 从所有来源收集所有之前问过的问题
                         all_previous_questions_list = []
                         if current_sub_questions:
                             all_previous_questions_list.extend(current_sub_questions)
@@ -3278,19 +3154,20 @@ Respond with JSON:
         correct_answer: str, 
         user_message: Optional[str] = None
     ) -> Tuple[bool, str]:
-        """
-        Determine if hints should be triggered.
-        判断是否应该触发提示
+        """判断是否应该触发提示
         
-        Args:
-            student_answer: The answer selected by student 学生选择的答案
-            correct_answer: The correct answer 正确答案
-            user_message: Optional message from student (e.g., "give me a hint")
-            可选的学生消息（例如："给我提示"）
+        触发条件：
+        1. 学生答案错误
+        2. 学生明确请求提示（通过user_message中的关键词）
+        
+        参数:
+            student_answer: 学生选择的答案
+            correct_answer: 正确答案
+            user_message: 可选的学生消息（例如："给我提示"、"我不懂"等）
             
-        Returns:
-            Tuple of (should_trigger: bool, reason: str)
-            返回：元组（是否触发：布尔值，原因：字符串）
+        返回:
+            元组（是否触发：布尔值，原因：字符串）
+            原因可能是："wrong_answer"（答案错误）、"student_request"（学生请求）、"no_trigger"（不触发）
         """
         # Trigger 1: Wrong answer
         # 触发条件1：答案错误
@@ -3319,14 +3196,24 @@ Respond with JSON:
         previous_questions: List[str] = None,
         conversation_history: List[Dict] = None
     ) -> EvaluationResult:
-        """
-        Evaluate the student's response to a reasoning step.
-        If they don't show understanding, decompose into simpler sub-steps.
-        评估学生对推理步骤的回答。
+        """评估学生对推理步骤的回答
+        
         如果学生没有表现出理解，则分解为更简单的子步骤。
         
-        MedTutor-R1 approach: 观察 → 解释 → 结论
         MedTutor-R1方法：观察 → 解释 → 结论
+        
+        这个方法用于评估学生对单个推理步骤的回答。如果学生理解了，
+        返回成功结果；如果不理解，使用递归分解方法生成更简单的子步骤。
+        
+        参数:
+            request: HintRequest对象
+            step: 要评估的推理步骤
+            student_response: 学生的回答
+            previous_questions: 之前问过的问题列表（用于避免重复）
+            conversation_history: 对话历史
+            
+        返回:
+            EvaluationResult对象，包含评估结果和可能的子步骤
         """
         # Evaluate understanding
         # 评估理解程度
@@ -3470,15 +3357,13 @@ Respond with JSON:
             )
     
     def format_hints_for_display(self, response: SocraticResponse) -> str:
-        """
-        Format the reasoning steps for display in the UI (MedTutor-R1 style).
-        格式化推理步骤以便在UI中显示（MedTutor-R1风格）
+        """格式化推理步骤以便在UI中显示（MedTutor-R1风格）
         
-        Args:
-            response: SocraticResponse object SocraticResponse对象
+        参数:
+            response: SocraticResponse对象
             
-        Returns:
-            str: Formatted text for display 格式化后的显示文本
+        返回:
+            格式化后的显示文本
         """
         decomp = response.decomposition
         
@@ -3527,8 +3412,14 @@ Respond with JSON:
         return output
     
     def step_to_dict(self, step: ReasoningStep) -> Dict:
-        """Convert ReasoningStep to serializable dict.
-        将ReasoningStep转换为可序列化的字典"""
+        """将ReasoningStep转换为可序列化的字典
+        
+        参数:
+            step: ReasoningStep对象
+            
+        返回:
+            可序列化的字典
+        """
         return {
             "step_id": step.step_id,
             "key_question": step.key_question,
@@ -3541,8 +3432,14 @@ Respond with JSON:
         }
     
     def decomposition_to_dict(self, decomp: ProblemDecomposition) -> Dict:
-        """Convert ProblemDecomposition to serializable dict.
-        将ProblemDecomposition转换为可序列化的字典"""
+        """将ProblemDecomposition转换为可序列化的字典
+        
+        参数:
+            decomp: ProblemDecomposition对象
+            
+        返回:
+            可序列化的字典
+        """
         return {
             "original_question": decomp.original_question,
             "reasoning_steps": [self.step_to_dict(s) for s in decomp.reasoning_steps],
@@ -3551,15 +3448,13 @@ Respond with JSON:
         }
     
     def to_dict(self, response: SocraticResponse) -> Dict:
-        """
-        Convert SocraticResponse to dictionary for JSON serialization.
-        将SocraticResponse转换为字典以便JSON序列化
+        """将SocraticResponse转换为字典以便JSON序列化
         
-        Args:
-            response: SocraticResponse object SocraticResponse对象
+        参数:
+            response: SocraticResponse对象
             
-        Returns:
-            dict: Dictionary representation 字典表示
+        返回:
+            字典表示
         """
         return {
             "decomposition": self.decomposition_to_dict(response.decomposition),
@@ -3584,22 +3479,20 @@ def generate_socratic_questions(
     source_context: Optional[str] = None,
     api_key: Optional[str] = None
 ) -> Dict:
-    """
-    Convenience function to generate Socratic reasoning steps without instantiating the class.
-    便捷函数：无需实例化类即可生成苏格拉底式推理步骤
+    """便捷函数：无需实例化类即可生成苏格拉底式推理步骤
     
-    Args:
-        question: The medical question 医学问题
-        choices: Dictionary of answer options 答案选项字典
-        student_answer: Student's selected answer 学生选择的答案
-        correct_answer: The correct answer 正确答案
-        explanations: Optional explanations for each option 每个选项的可选解释
-        conversation_history: Previous hint rounds 之前的提示轮次
-        source_context: RAG retrieved context RAG检索到的上下文
-        api_key: Optional API key 可选的API密钥
+    参数:
+        question: 医学问题
+        choices: 答案选项字典
+        student_answer: 学生选择的答案
+        correct_answer: 正确答案
+        explanations: 每个选项的可选解释
+        conversation_history: 之前的提示轮次
+        source_context: RAG检索到的上下文
+        api_key: 可选的API密钥
         
-    Returns:
-        dict: Problem decomposition as dictionary 问题分解的字典表示
+    返回:
+        问题分解的字典表示
     """
     generator = ProactiveQuestionGenerator(api_key=api_key)
     
@@ -3622,18 +3515,15 @@ def check_hint_trigger(
     correct_answer: str,
     user_message: Optional[str] = None
 ) -> Dict:
-    """
-    Check if hints should be triggered.
-    检查是否应该触发提示
+    """检查是否应该触发提示
     
-    Args:
-        student_answer: Student's selected answer 学生选择的答案
-        correct_answer: The correct answer 正确答案
-        user_message: Optional user message 可选的用户消息
+    参数:
+        student_answer: 学生选择的答案
+        correct_answer: 正确答案
+        user_message: 可选的用户消息
         
-    Returns:
-        dict: {"should_trigger": bool, "reason": str}
-        返回：字典 {"should_trigger": 布尔值, "reason": 字符串}
+    返回:
+        字典 {"should_trigger": 布尔值, "reason": 字符串}
     """
     generator = ProactiveQuestionGenerator()
     should_trigger, reason = generator.should_trigger_hints(

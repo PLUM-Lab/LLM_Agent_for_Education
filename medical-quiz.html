@@ -3358,6 +3358,9 @@ Author: AI for Education (Wenchao Qin)
                                     // 渲染反馈区域
             renderConversation(data); // Render conversation area
                                     // 渲染对话区域
+            // Show thinking prompt when loading new question
+            // 加载新问题时显示思考提示
+            triggerHintAfterWrongAnswer(false); // false表示不是答错后触发
         }
 
         // ============================================================
@@ -3967,7 +3970,7 @@ Author: AI for Education (Wenchao Qin)
                 
                 // Trigger hint offer in message area if answer is wrong
                 if (!isCorrect) {
-                    triggerHintAfterWrongAnswer();
+                    triggerHintAfterWrongAnswer(true); // true表示答错后触发
                 }
                 
                 // Show source
@@ -4391,7 +4394,7 @@ Author: AI for Education (Wenchao Qin)
         // Features:
         // - Generates guiding sub-questions instead of revealing answers
         // - Progressive hints: conceptual → analytical → directive
-        // - Up to 3 rounds of hints per question
+        
         // - Triggers on wrong answer or student request in chat
         // - Fully integrated into the Message conversation area
         // ============================================================
@@ -4420,11 +4423,8 @@ Author: AI for Education (Wenchao Qin)
         }
 
         /**
-         * Trigger hint system after wrong answer - shows prompt in message area
-         */
-        /**
-         * Trigger thinking prompt after student answers incorrectly.
-         * 在学生答错后触发思考提示。
+         * Trigger thinking prompt - shows prompt in message area for student to explain their reasoning.
+         * 触发思考提示 - 在消息区域显示提示，让学生解释他们的推理过程。
          * 
          * This function displays a prompt asking the student to explain their reasoning.
          * Based on tau-bench educational agent policy, we need to understand the student's
@@ -4435,17 +4435,10 @@ Author: AI for Education (Wenchao Qin)
          * 基于tau-bench教育助手策略，我们需要在决定是进行DECOMPOSE（分解为子问题）
          * 还是CLARIFY（提供直接解释）之前了解学生的思考。
          * 
-         * Workflow:
-         * 1. Student answers incorrectly → This function is called
-         *    学生答错 → 调用此函数
-         * 2. Display prompt with textarea for student to explain their thinking
-         *    显示提示框，包含文本区域供学生解释他们的思考
-         * 3. Student submits thinking → submitStudentThinking() is called
-         *    学生提交思考 → 调用submitStudentThinking()
-         * 4. Backend evaluates thinking and decides action (decompose/clarify)
-         *    后端评估思考并决定行动（分解/澄清）
+         * @param {boolean} isAfterWrongAnswer - Whether this is triggered after wrong answer (default: false)
+         *   参数：是否在答错后触发（默认：false）
          */
-        function triggerHintAfterWrongAnswer() {
+        function triggerHintAfterWrongAnswer(isAfterWrongAnswer = false) {
             // Validate that we have question data
             // 验证我们有问题数据
             if (!currentQuestionMeta || !currentData) return;
@@ -4455,13 +4448,27 @@ Author: AI for Education (Wenchao Qin)
             const conversationList = document.getElementById('conversation-list');
             if (!conversationList) return;
             
+            // Check if thinking prompt already exists
+            // 检查思考提示是否已存在
+            const existingPrompt = document.getElementById('thinking-prompt-message');
+            if (existingPrompt) return; // Don't show duplicate prompts
+            
+            // Determine message text based on context
+            // 根据上下文确定消息文本
+            let messageText = '';
+            if (isAfterWrongAnswer) {
+                messageText = 'Your answer wasn\'t correct, but that\'s okay! Can you explain your reasoning? What made you choose that answer? This will help me guide you better.';
+            } else {
+                messageText = 'I\'d like to understand your thinking about this problem. Can you explain your reasoning? What are you considering? This will help me guide you better.';
+            }
+            
             const thinkingPromptDiv = document.createElement('div');
             thinkingPromptDiv.className = 'message assistant';
             thinkingPromptDiv.id = 'thinking-prompt-message';
             thinkingPromptDiv.innerHTML = `
                 <div class="message-content" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 20px;">
                     <div style="font-weight: 600; margin-bottom: 10px; font-size: 16px;">🤔 I'd like to understand your thinking</div>
-                    <div style="margin-bottom: 15px; line-height: 1.5;">Your answer wasn't correct, but that's okay! Can you explain your reasoning? What made you choose that answer? This will help me guide you better.</div>
+                    <div style="margin-bottom: 15px; line-height: 1.5;">${messageText}</div>
                     <div style="margin-bottom: 15px;">
                         <textarea id="student-thinking-input" placeholder="Explain your reasoning here..." style="
                             width: 100%;

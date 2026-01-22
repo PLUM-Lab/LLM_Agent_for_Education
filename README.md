@@ -32,7 +32,8 @@ LLM_Agent_for_Education/
 ├── parse_qbank_openai.py  # Amboss PDF 解析脚本
 ├── merge_qbanks.py        # 合并题库脚本
 ├── rag_server.py          # RAG 后端（FAISS + ColBERTv2）
-├── start_ui.py            # 一键启动脚本
+├── start.py              # 统一启动脚本（推荐）
+├── start.bat              # Windows 快捷启动
 ├── api-key.js             # 你的 OpenAI API 密钥（不在 Git 中）
 ├── api-key.example.js     # API 密钥模板
 ├── README.md              # 本文件
@@ -64,34 +65,50 @@ pip install openai langchain-community pypdf flask flask-cors faiss-cpu ragatoui
 
 ### 步骤 3：启动服务器和 UI
 
-系统需要启动两个服务器：
-1. **HTTP 服务器（端口 8000）**：提供前端 UI 界面
-2. **RAG 服务器（端口 5000）**：提供语义搜索功能（可选，但推荐）
+#### 方式 A：统一启动脚本（推荐）
 
-#### 方式 A：一键启动（推荐，需要 WSL/Linux 环境）
-
-**在 WSL 或 Linux 中运行：**
+**Windows:**
 ```bash
-# 同时启动 HTTP 服务器和 RAG 服务器
-python3 start_ui.py
+python start.py
+```
+或双击 `start.bat`
+
+**Linux/WSL:**
+```bash
+python3 start.py
 ```
 
-**从 Windows PowerShell 运行（使用 WSL）：**
+**启动选项：**
+
 ```bash
-wsl -d Ubuntu-22.04 -e bash -c "cd /mnt/d/LLM_Agent_for_Education && python3 start_ui.py"
+# 启动所有服务（默认：主UI + RAG服务器）
+python start.py
+
+# 只启动主UI和RAG服务器
+python start.py --ui --rag
+
+# 只启动评估界面
+python start.py --evaluator
+
+# 自定义端口
+python start.py --ui --port 8000 --evaluator --evaluator-port 8002
+
+# 重启RAG服务器（停止现有进程后重新启动）
+python start.py --restart-rag
 ```
 
 **启动后：**
-- HTTP 服务器：http://localhost:8000
-- RAG 服务器：http://localhost:5000
-- 在浏览器中打开：http://localhost:8000/medical-quiz.html
+- 主UI：http://localhost:8000/medical-quiz.html
+- RAG服务器：http://localhost:5000/health
+- 评估界面：http://localhost:8001/question_evaluator.html（如果启动）
 
 **注意：**
-- `start_ui.py` 必须在 WSL 或 Linux 环境中运行（ColBERTv2 重排序器需要）
+- Windows 环境可以启动所有服务，但 ColBERTv2 重排序器可能不可用
+- WSL/Linux 环境支持完整功能，包括 ColBERTv2 重排序器
 - 首次运行需要 5-10 分钟构建 RAG 索引（仅一次）
 - 按 `Ctrl+C` 停止所有服务器
 
-#### 方式 B：分别启动（适合调试或 Windows 环境）
+#### 方式 B：分别启动（适合调试）
 
 **Windows 环境（仅 FAISS，无 ColBERTv2 重排序）：**
 
@@ -123,13 +140,13 @@ python3 -m http.server 8000
 # http://localhost:8000/medical-quiz.html
 ```
 
-#### 服务器说明
+#### 服务说明
 
-| 服务器 | 端口 | 功能 | 必需性 |
-|--------|------|------|--------|
-| HTTP 服务器 | 8000 | 提供前端 UI，加载题目文件 | ✅ 必需 |
-| RAG 服务器 | 5000 | 语义搜索，为 ChatGPT 提供上下文 | ⚠️ 可选（推荐） |
-| 评估界面服务器 | 8001 | 问题质量评估界面 | ⚠️ 可选 |
+| 服务 | 端口 | 说明 | 访问地址 | 必需性 |
+|------|------|------|----------|--------|
+| 主UI | 8000 | 医学测验系统主界面 | http://localhost:8000/medical-quiz.html | ✅ 必需 |
+| RAG服务器 | 5000 | 语义搜索API | http://localhost:5000/health | ⚠️ 可选（推荐） |
+| 评估界面 | 8001 | 问题质量评估工具 | http://localhost:8001/question_evaluator.html | ⚠️ 可选 |
 
 **RAG 服务器不可用时：**
 - UI 仍可正常使用
@@ -292,7 +309,7 @@ ColBERTv2 重排序器需要编译 C++ 扩展。有两种方式：
 3. **安装完成后**
    - 关闭所有终端窗口
    - 重新打开终端
-   - 运行：`python start_ui.py`
+   - 运行：`python start.py`
 
 4. **验证安装**
    ```powershell
@@ -366,13 +383,19 @@ pip install faiss-cpu flask flask-cors openai langchain-community pypdf pymupdf 
 
 ```bash
 cd /mnt/d/LLM_Agent_for_Education
-python3 start_ui.py
+python3 start.py
 ```
 
 **注意事项**：
 - Windows 驱动器在 WSL 中位于 `/mnt/d/`、`/mnt/c/` 等
 - WSL 和 Windows 共享 localhost，可以直接访问
 - 文件路径需要使用 `/mnt/d/` 前缀访问 Windows 驱动器
+
+**在 WSL 中使用统一启动脚本：**
+```bash
+cd /mnt/d/LLM_Agent_for_Education
+python3 start.py
+```
 
 #### 方案 3：使用仅 FAISS 模式（当前状态）
 
@@ -403,7 +426,7 @@ curl -X POST http://localhost:5000/rebuild
 #### 方法 2：重启服务器重建（完全重建）
 
 1. **停止当前服务器**
-   在运行 `python start_ui.py` 的终端中按 `Ctrl+C`
+   在运行 `python start.py` 的终端中按 `Ctrl+C`
 
 2. **删除旧索引文件**
    ```bash
@@ -412,7 +435,7 @@ curl -X POST http://localhost:5000/rebuild
 
 3. **重新启动服务器**
    ```bash
-   python start_ui.py
+   python start.py
    ```
 
 服务器会自动检测到索引文件不存在，然后重建索引。
