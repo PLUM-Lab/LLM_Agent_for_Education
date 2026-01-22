@@ -1,361 +1,361 @@
-# 医学教育测验系统
+# Medical Education Quiz System
 
-一个 AI 驱动的医学教育平台，从临床指南自动生成选择题，并提供基于 ChatGPT 的交互式辅导，支持 RAG（检索增强生成）。
+An AI-powered medical education platform that automatically generates multiple-choice questions from clinical guidelines and provides interactive ChatGPT-based tutoring with RAG (Retrieval-Augmented Generation) support.
 
-## 功能特性
+## Features
 
-### 🎯 题目生成
-- 从 40 个医学指南 PDF 自动生成题目
-- 每个选项都有解释（为什么正确/错误）
-- 来源追踪（PDF 名称 + 页码）
-- 使用 OpenAI GPT-4o-mini 生成高质量题目
+### 🎯 Question Generation
+- Automatically generate questions from 40 medical guideline PDFs
+- Each option includes explanations (why correct/incorrect)
+- Source tracking (PDF name + page number)
+- Uses OpenAI GPT-4o-mini to generate high-quality questions
 
-### 💬 ChatGPT 集成
-- 对任何主题提出后续问题
-- 完整的上下文感知（题目、答案、解释）
-- 医学导师角色，采用苏格拉底式教学法
-- 来自指南的来源引用
+### 💬 ChatGPT Integration
+- Ask follow-up questions on any topic
+- Full context awareness (question, answer, explanation)
+- Medical tutor role with Socratic teaching method
+- Source citations from guidelines
 
-### 🔍 RAG（检索增强生成）
-- 两阶段检索：FAISS → ColBERTv2 重排序
-- 对所有医学指南进行语义搜索
-- 自动来源引用，包含页码
-- 服务器不可用时回退到关键词搜索
+### 🔍 RAG (Retrieval-Augmented Generation)
+- Two-stage retrieval: FAISS → ColBERTv2 reranking
+- Semantic search across all medical guidelines
+- Automatic source citations with page numbers
+- Falls back to keyword search when server is unavailable
 
-## 项目结构
+## Project Structure
 
 ```
 LLM_Agent_for_Education/
-├── medical-quiz.html      # 主 UI（单页应用）
-├── questions.json         # 生成的题目（200 道）
-├── generate_questions.py  # 题目生成脚本
-├── parse_qbank_openai.py  # Amboss PDF 解析脚本
-├── merge_qbanks.py        # 合并题库脚本
-├── rag_server.py          # RAG 后端（FAISS + ColBERTv2）
-├── start.py              # 统一启动脚本（推荐）
-├── start.bat              # Windows 快捷启动
-├── api-key.js             # 你的 OpenAI API 密钥（不在 Git 中）
-├── api-key.example.js     # API 密钥模板
-├── README.md              # 本文件
-├── Clinical Guidelines/   # 40 个医学 PDF 文件
-└── Qbanks and Practice Exams/  # 题库 PDF 文件
+├── medical-quiz.html      # Main UI (single-page application)
+├── questions.json         # Generated questions (200 questions)
+├── generate_questions.py  # Question generation script
+├── parse_qbank_openai.py  # Amboss PDF parsing script
+├── merge_qbanks.py        # Question bank merging script
+├── rag_server.py          # RAG backend (FAISS + ColBERTv2)
+├── start.py              # Unified startup script (recommended)
+├── start.bat              # Windows quick launch
+├── api-key.js             # Your OpenAI API key (not in Git)
+├── api-key.example.js     # API key template
+├── README.md              # This file
+├── Clinical Guidelines/   # 40 medical PDF files
+└── Qbanks and Practice Exams/  # Question bank PDF files
 ```
 
-## 快速开始
+## Quick Start
 
-### 步骤 1：配置 API 密钥
+### Step 1: Configure API Key
 
-1. 复制 `api-key.example.js` 为 `api-key.js`：
+1. Copy `api-key.example.js` to `api-key.js`:
    ```bash
    copy api-key.example.js api-key.js
    ```
 
-2. 编辑 `api-key.js`，添加你的 OpenAI API 密钥：
+2. Edit `api-key.js` and add your OpenAI API key:
    ```javascript
-   const OPENAI_API_KEY = 'sk-你的实际密钥';
+   const OPENAI_API_KEY = 'sk-your-actual-key';
    ```
 
-3. 获取 API 密钥：https://platform.openai.com/account/api-keys
+3. Get API key: https://platform.openai.com/account/api-keys
 
-### 步骤 2：安装依赖
+### Step 2: Install Dependencies
 
 ```bash
 pip install openai langchain-community pypdf flask flask-cors faiss-cpu ragatouille transformers pymupdf
 ```
 
-### 步骤 3：启动服务器和 UI
+### Step 3: Start Servers and UI
 
-#### 方式 A：统一启动脚本（推荐）
+#### Method A: Unified Startup Script (Recommended)
 
 **Windows:**
 ```bash
 python start.py
 ```
-或双击 `start.bat`
+Or double-click `start.bat`
 
 **Linux/WSL:**
 ```bash
 python3 start.py
 ```
 
-**启动选项：**
+**Startup Options:**
 
 ```bash
-# 启动所有服务（默认：主UI + RAG服务器）
+# Start all services (default: Main UI + RAG server)
 python start.py
 
-# 只启动主UI和RAG服务器
+# Start only main UI and RAG server
 python start.py --ui --rag
 
-# 只启动评估界面
+# Start only evaluator interface
 python start.py --evaluator
 
-# 自定义端口
+# Custom ports
 python start.py --ui --port 8000 --evaluator --evaluator-port 8002
 
-# 重启RAG服务器（停止现有进程后重新启动）
+# Restart RAG server (stop existing process and restart)
 python start.py --restart-rag
 ```
 
-**启动后：**
-- 主UI：http://localhost:8000/medical-quiz.html
-- RAG服务器：http://localhost:5000/health
-- 评估界面：http://localhost:8001/question_evaluator.html（如果启动）
+**After startup:**
+- Main UI: http://localhost:8000/medical-quiz.html
+- RAG Server: http://localhost:5000/health
+- Evaluator Interface: http://localhost:8001/question_evaluator.html (if started)
 
-**注意：**
-- Windows 环境可以启动所有服务，但 ColBERTv2 重排序器可能不可用
-- WSL/Linux 环境支持完整功能，包括 ColBERTv2 重排序器
-- 首次运行需要 5-10 分钟构建 RAG 索引（仅一次）
-- 按 `Ctrl+C` 停止所有服务器
+**Notes:**
+- Windows environment can start all services, but ColBERTv2 reranker may not be available
+- WSL/Linux environment supports full functionality, including ColBERTv2 reranker
+- First run takes 5-10 minutes to build RAG index (one-time only)
+- Press `Ctrl+C` to stop all servers
 
-#### 方式 B：分别启动（适合调试）
+#### Method B: Start Separately (For Debugging)
 
-**Windows 环境（仅 FAISS，无 ColBERTv2 重排序）：**
+**Windows Environment (FAISS only, no ColBERTv2 reranking):**
 
 ```bash
-# 终端 1：启动 RAG 服务器（仅 FAISS 模式）
+# Terminal 1: Start RAG server (FAISS mode only)
 python rag_server.py
-# 服务器启动在：http://localhost:5000
+# Server starts at: http://localhost:5000
 
-# 终端 2：启动 HTTP 服务器
+# Terminal 2: Start HTTP server
 python -m http.server 8000
-# 服务器启动在：http://localhost:8000
+# Server starts at: http://localhost:8000
 
-# 在浏览器中打开
+# Open in browser
 # http://localhost:8000/medical-quiz.html
 ```
 
-**WSL/Linux 环境（完整功能，包含 ColBERTv2）：**
+**WSL/Linux Environment (Full functionality, including ColBERTv2):**
 
 ```bash
-# 终端 1：启动 RAG 服务器（包含 ColBERTv2 重排序）
+# Terminal 1: Start RAG server (with ColBERTv2 reranking)
 python3 rag_server.py
-# 服务器启动在：http://localhost:5000
+# Server starts at: http://localhost:5000
 
-# 终端 2：启动 HTTP 服务器
+# Terminal 2: Start HTTP server
 python3 -m http.server 8000
-# 服务器启动在：http://localhost:8000
+# Server starts at: http://localhost:8000
 
-# 在浏览器中打开
+# Open in browser
 # http://localhost:8000/medical-quiz.html
 ```
 
-#### 服务说明
+#### Service Overview
 
-| 服务 | 端口 | 说明 | 访问地址 | 必需性 |
-|------|------|------|----------|--------|
-| 主UI | 8000 | 医学测验系统主界面 | http://localhost:8000/medical-quiz.html | ✅ 必需 |
-| RAG服务器 | 5000 | 语义搜索API | http://localhost:5000/health | ⚠️ 可选（推荐） |
-| 评估界面 | 8001 | 问题质量评估工具 | http://localhost:8001/question_evaluator.html | ⚠️ 可选 |
+| Service | Port | Description | Access URL | Required |
+|---------|------|-------------|------------|----------|
+| Main UI | 8000 | Medical quiz system main interface | http://localhost:8000/medical-quiz.html | ✅ Required |
+| RAG Server | 5000 | Semantic search API | http://localhost:5000/health | ⚠️ Optional (Recommended) |
+| Evaluator Interface | 8001 | Question quality evaluation tool | http://localhost:8001/question_evaluator.html | ⚠️ Optional |
 
-**RAG 服务器不可用时：**
-- UI 仍可正常使用
-- ChatGPT 功能仍可用，但会回退到关键词搜索
-- 语义搜索功能不可用
+**When RAG server is unavailable:**
+- UI still works normally
+- ChatGPT functionality still works, but falls back to keyword search
+- Semantic search functionality unavailable
 
-**验证服务器状态：**
+**Verify server status:**
 ```bash
-# 检查 RAG 服务器
+# Check RAG server
 curl http://localhost:5000/health
 
-# 检查 HTTP 服务器
+# Check HTTP server
 curl http://localhost:8000/medical-quiz.html
 ```
 
-## 使用指南
+## Usage Guide
 
-### 做测验
+### Taking Quizzes
 
-1. 阅读题目并选择答案（A、B、C 或 D）
-2. 点击 "Submit" 查看反馈
-3. 查看每个选项的解释
-4. 使用 上一题/下一题 导航
+1. Read the question and select an answer (A, B, C, or D)
+2. Click "Submit" to view feedback
+3. Review explanations for each option
+4. Use Previous/Next buttons to navigate
 
-### 向 ChatGPT 提问
+### Asking ChatGPT
 
-1. 提交答案后，在聊天框中输入问题
-2. 示例：
-   - "为什么 B 是错误的？"
-   - "解释一下病理生理学"
-   - "鉴别诊断有哪些？"
-3. ChatGPT 会返回带引用的回答
+1. After submitting an answer, enter your question in the chat box
+2. Examples:
+   - "Why is B incorrect?"
+   - "Explain the pathophysiology"
+   - "What are the differential diagnoses?"
+3. ChatGPT will return answers with citations
 
-### 解析题库 PDF
+### Parsing Question Bank PDFs
 
-从 Amboss PDF 解析题目：
+Parse questions from Amboss PDF:
 ```bash
 python parse_qbank_openai.py --dir "Qbanks and Practice Exams" --output qbank_amboss_openai.json
 ```
 
-参数说明：
-- `--dir`: PDF 文件目录
-- `--output`: 输出 JSON 文件路径
-- `--model`: OpenAI 模型（默认：gpt-5）
-- `--batch-size`: 每批处理的页数（默认：3）
-- `--overlap`: 批次重叠页数（默认：2）
+Parameters:
+- `--dir`: PDF file directory
+- `--output`: Output JSON file path
+- `--model`: OpenAI model (default: gpt-5)
+- `--batch-size`: Pages per batch (default: 3)
+- `--overlap`: Batch overlap pages (default: 2)
 
-### 合并题库
+### Merging Question Banks
 
-合并多个题库文件：
+Merge multiple question bank files:
 ```bash
 python merge_qbanks.py
 ```
 
-### 重新生成题目
+### Regenerating Questions
 
-从 PDF 生成新题目：
+Generate new questions from PDFs:
 ```bash
 python generate_questions.py
 ```
 
-配置（在 `generate_questions.py` 中）：
-- `questions_per_doc = 5` - 每个 PDF 的题目数
-- `model = "gpt-4o-mini"` - OpenAI 模型
-- `chunk_size = 1024` - 每块的 token 数
+Configuration (in `generate_questions.py`):
+- `questions_per_doc = 5` - Number of questions per PDF
+- `model = "gpt-4o-mini"` - OpenAI model
+- `chunk_size = 1024` - Tokens per chunk
 
-## 技术细节
+## Technical Details
 
-### 题目生成流程
-
-```
-PDF 文件 → PyPDFLoader → 分割成块
-    → 随机选择（每个文档 5 个）
-    → GPT-4o-mini 生成题目
-    → 保存到 questions.json
-```
-
-### RAG 流程
+### Question Generation Pipeline
 
 ```
-学生问题 → OpenAI 向量
-    → FAISS（前 30 个候选）
-    → ColBERTv2 重排序（前 5 个）
-    → 添加到 ChatGPT 上下文
+PDF files → PyPDFLoader → Split into chunks
+    → Random selection (5 per document)
+    → GPT-4o-mini generates questions
+    → Save to questions.json
 ```
 
-### 数据格式（questions.json）
+### RAG Pipeline
+
+```
+Student question → OpenAI vector
+    → FAISS (top 30 candidates)
+    → ColBERTv2 reranking (top 5)
+    → Add to ChatGPT context
+```
+
+### Data Format (questions.json)
 
 ```json
 {
-  "question": "...的一线治疗是什么？",
+  "question": "What is the first-line treatment for...?",
   "options": {
-    "A": "选项文本",
-    "B": "选项文本",
-    "C": "选项文本",
-    "D": "选项文本"
+    "A": "Option text",
+    "B": "Option text",
+    "C": "Option text",
+    "D": "Option text"
   },
   "correct_answer": "B",
   "explanations": {
-    "A": "错误。原因...",
-    "B": "正确。原因...",
-    "C": "错误。原因...",
-    "D": "错误。原因..."
+    "A": "Incorrect. Reason...",
+    "B": "Correct. Reason...",
+    "C": "Incorrect. Reason...",
+    "D": "Incorrect. Reason..."
   },
   "source": "Guidelines for AAA repair.pdf",
   "source_page": 12,
-  "source_chunk": "来自 PDF 的原始文本..."
+  "source_chunk": "Original text from PDF..."
 }
 ```
 
-## 依赖项
+## Dependencies
 
-### Python 依赖
+### Python Dependencies
 
 ```bash
 pip install openai langchain-community pypdf flask flask-cors faiss-cpu ragatouille transformers pymupdf
 ```
 
-### 使用的模型
+### Models Used
 
-| 组件 | 模型 | 用途 |
-|------|------|------|
-| 题目生成 | GPT-4o-mini | 生成选择题 |
-| PDF 解析 | GPT-5 / GPT-4o-2024-11-20 | 解析 Amboss PDF |
-| 向量 | text-embedding-3-small | 语义搜索 |
-| 重排序 | ColBERTv2 | 提高相关性 |
+| Component | Model | Purpose |
+|-----------|-------|---------|
+| Question Generation | GPT-4o-mini | Generate multiple-choice questions |
+| PDF Parsing | GPT-5 / GPT-4o-2024-11-20 | Parse Amboss PDFs |
+| Embeddings | text-embedding-3-small | Semantic search |
+| Reranking | ColBERTv2 | Improve relevance |
 
-### 预估费用
+### Estimated Costs
 
-| 任务 | 大约费用 |
-|------|----------|
-| 生成 200 道题目 | $0.10 - $0.30 |
-| 解析 Amboss PDF | $0.50 - $2.00 |
-| 构建 RAG 索引 | $0.05 - $0.10 |
-| ChatGPT 对话 | 每条消息 $0.001 |
+| Task | Approximate Cost |
+|------|------------------|
+| Generate 200 questions | $0.10 - $0.30 |
+| Parse Amboss PDF | $0.50 - $2.00 |
+| Build RAG index | $0.05 - $0.10 |
+| ChatGPT conversation | $0.001 per message |
 
-## 高级配置
+## Advanced Configuration
 
-### 安装 ColBERTv2 重排序器（可选）
+### Installing ColBERTv2 Reranker (Optional)
 
-ColBERTv2 重排序器需要编译 C++ 扩展。有两种方式：
+ColBERTv2 reranker requires compiling C++ extensions. There are three approaches:
 
-#### 方案 1：安装 Visual Studio Build Tools（Windows）
+#### Option 1: Install Visual Studio Build Tools (Windows)
 
-1. **下载 Visual Studio Build Tools**
-   - 直接下载：https://aka.ms/vs/17/release/vs_buildtools.exe
-   - 或访问：https://visualstudio.microsoft.com/downloads/
-   - 选择 "Build Tools for Visual Studio 2022"
+1. **Download Visual Studio Build Tools**
+   - Direct download: https://aka.ms/vs/17/release/vs_buildtools.exe
+   - Or visit: https://visualstudio.microsoft.com/downloads/
+   - Select "Build Tools for Visual Studio 2022"
 
-2. **安装时选择组件**
-   - 运行安装程序
-   - 在 "工作负载" 标签页中，勾选：
-     - ✅ **C++ build tools** 工作负载
-   - 在右侧 "安装详细信息" 中，确保包含：
+2. **Select Components During Installation**
+   - Run the installer
+   - In the "Workloads" tab, check:
+     - ✅ **C++ build tools** workload
+   - In the right "Installation details", ensure it includes:
      - ✅ MSVC v143 - VS 2022 C++ x64/x86 build tools
-     - ✅ Windows 10/11 SDK（最新版本）
+     - ✅ Windows 10/11 SDK (latest version)
      - ✅ C++ CMake tools for Windows
-   - 点击 "安装"（需要约 3-5 GB 空间）
+   - Click "Install" (requires ~3-5 GB space)
 
-3. **安装完成后**
-   - 关闭所有终端窗口
-   - 重新打开终端
-   - 运行：`python start.py`
+3. **After Installation**
+   - Close all terminal windows
+   - Reopen terminal
+   - Run: `python start.py`
 
-4. **验证安装**
+4. **Verify Installation**
    ```powershell
    where cl
    ```
-   如果显示编译器路径，说明安装成功。
+   If it shows the compiler path, installation is successful.
 
-#### 方案 2：使用 WSL（推荐，更稳定）
+#### Option 2: Use WSL (Recommended, More Stable)
 
-ColBERTv2 的 C++ 扩展使用了 POSIX 线程库（pthread.h），在 Windows 上可能不兼容。使用 WSL 可以避免这个问题。
+ColBERTv2's C++ extension uses POSIX thread library (pthread.h), which may not be compatible on Windows. Using WSL avoids this issue.
 
-**步骤 1：安装 WSL**
+**Step 1: Install WSL**
 
-在 PowerShell（管理员权限）中运行：
+Run in PowerShell (with administrator privileges):
 ```powershell
 wsl --install
 ```
 
-或安装特定版本：
+Or install a specific version:
 ```powershell
 wsl --install -d Ubuntu-22.04
 ```
 
-**重要**：安装完成后需要**重启电脑**。
+**Important**: After installation, you need to **restart your computer**.
 
-**步骤 2：在 WSL 中设置环境**
+**Step 2: Set Up Environment in WSL**
 
-1. 打开 WSL（Ubuntu）
-2. 更新系统并安装依赖：
+1. Open WSL (Ubuntu)
+2. Update system and install dependencies:
    ```bash
    sudo apt update
    sudo apt upgrade -y
    sudo apt install -y python3 python3-pip python3-venv build-essential git
    ```
 
-3. 升级 pip：
+3. Upgrade pip:
    ```bash
    python3 -m pip install --upgrade pip setuptools wheel
    ```
 
-4. 安装 PyTorch：
+4. Install PyTorch:
    ```bash
    pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
    ```
 
-5. 安装项目依赖（分批安装）：
+5. Install project dependencies (install in batches):
    ```bash
    pip3 install faiss-cpu
    pip3 install flask flask-cors
@@ -366,149 +366,149 @@ wsl --install -d Ubuntu-22.04
    pip3 install ragatouille
    ```
 
-**或者使用虚拟环境（推荐）**：
+**Or use virtual environment (recommended):**
 ```bash
-# 创建虚拟环境
+# Create virtual environment
 cd /mnt/d/LLM_Agent_for_Education
 python3 -m venv venv_wsl
 source venv_wsl/bin/activate
 
-# 安装依赖
+# Install dependencies
 pip install --upgrade pip setuptools wheel
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 pip install faiss-cpu flask flask-cors openai langchain-community pypdf pymupdf ragatouille
 ```
 
-**步骤 3：在 WSL 中运行服务器**
+**Step 3: Run Server in WSL**
 
 ```bash
 cd /mnt/d/LLM_Agent_for_Education
 python3 start.py
 ```
 
-**注意事项**：
-- Windows 驱动器在 WSL 中位于 `/mnt/d/`、`/mnt/c/` 等
-- WSL 和 Windows 共享 localhost，可以直接访问
-- 文件路径需要使用 `/mnt/d/` 前缀访问 Windows 驱动器
+**Notes:**
+- Windows drives in WSL are located at `/mnt/d/`, `/mnt/c/`, etc.
+- WSL and Windows share localhost, can access directly
+- File paths need `/mnt/d/` prefix to access Windows drives
 
-**在 WSL 中使用统一启动脚本：**
+**Using unified startup script in WSL:**
 ```bash
 cd /mnt/d/LLM_Agent_for_Education
 python3 start.py
 ```
 
-#### 方案 3：使用仅 FAISS 模式（当前状态）
+#### Option 3: Use FAISS-Only Mode (Current State)
 
-如果不想安装编译器或 WSL，系统已经可以正常工作：
-- ✓ FAISS 检索正常工作
-- ✓ 系统功能完整
-- ✗ 仅缺少 ColBERTv2 重排序优化
+If you don't want to install compiler or WSL, the system already works:
+- ✓ FAISS retrieval works normally
+- ✓ System functionality is complete
+- ✗ Only missing ColBERTv2 reranking optimization
 
-**注意**：FAISS 检索已经足够使用，重排序只是优化项。
+**Note**: FAISS retrieval is sufficient for use, reranking is just an optimization.
 
-### 重建 RAG 索引
+### Rebuilding RAG Index
 
-如果修改了 chunk 大小或其他配置，需要重建索引。
+If you modify chunk size or other configurations, you need to rebuild the index.
 
-#### 方法 1：通过 API 重建（推荐，无需重启服务器）
+#### Method 1: Rebuild via API (Recommended, No Server Restart)
 
-在终端中运行：
+Run in terminal:
 ```bash
 curl -X POST http://localhost:5000/rebuild
 ```
 
-**优点**：
-- 无需停止服务器
-- 后台重建，可以继续使用系统
+**Advantages:**
+- No need to stop server
+- Background rebuild, can continue using system
 
-**等待时间**：约 5-10 分钟
+**Wait time**: ~5-10 minutes
 
-#### 方法 2：重启服务器重建（完全重建）
+#### Method 2: Restart Server to Rebuild (Complete Rebuild)
 
-1. **停止当前服务器**
-   在运行 `python start.py` 的终端中按 `Ctrl+C`
+1. **Stop Current Server**
+   Press `Ctrl+C` in the terminal running `python start.py`
 
-2. **删除旧索引文件**
+2. **Delete Old Index Files**
    ```bash
    rm -f faiss_index.bin all_chunks.json
    ```
 
-3. **重新启动服务器**
+3. **Restart Server**
    ```bash
    python start.py
    ```
 
-服务器会自动检测到索引文件不存在，然后重建索引。
+The server will automatically detect that index files don't exist and rebuild the index.
 
-**重建过程说明**：
-- 重新加载所有 PDF 文件（从 `Clinical Guidelines` 目录）
-- 使用新的 chunk 大小（1024 tokens）分割文档
-- 为每个块生成向量（通过 OpenAI API）
-- 构建 FAISS 索引
-- 保存索引文件
+**Rebuild Process:**
+- Reload all PDF files (from `Clinical Guidelines` directory)
+- Split documents with new chunk size (1024 tokens)
+- Generate vectors for each chunk (via OpenAI API)
+- Build FAISS index
+- Save index files
 
-**费用**：约 $0.05-0.10（OpenAI Embeddings API）
+**Cost**: ~$0.05-0.10 (OpenAI Embeddings API)
 
-**验证重建成功**：
+**Verify Rebuild Success:**
 ```bash
 curl http://localhost:5000/health
 ```
 
-应该看到：
-- `chunks_count`: 新的块数量
-- `reranker`: ColBERTv2（如果已安装）
+Should see:
+- `chunks_count`: New chunk count
+- `reranker`: ColBERTv2 (if installed)
 
-## 故障排除
+## Troubleshooting
 
 ### "Cannot load questions.json"
-- 确保你运行了本地服务器
-- 不要直接打开 HTML 文件（file:// 协议）
-- 运行：`python -m http.server 8000`
+- Make sure you're running a local server
+- Don't open HTML file directly (file:// protocol)
+- Run: `python -m http.server 8000`
 
 ### "API key not configured"
-- 从模板创建 `api-key.js`
-- 或在浏览器控制台中输入 API 密钥：
+- Create `api-key.js` from template
+- Or enter API key in browser console:
   ```javascript
-  localStorage.setItem('openai_api_key', 'sk-你的密钥');
+  localStorage.setItem('openai_api_key', 'sk-your-key');
   ```
 
 ### "RAG Server not available"
-- 如果 `rag_server.py` 没运行，这是正常的
-- 系统会回退到关键词搜索
-- 为获得更好的结果，请运行 RAG 服务器
+- If `rag_server.py` is not running, this is normal
+- System will fall back to keyword search
+- For better results, run RAG server
 
-### "重排序器导入失败"
-- 如果看到 `[!] 重排序器导入失败`，这是正常的
-- 系统会使用仅 FAISS 模式
-- 要启用重排序，请参考"安装 ColBERTv2 重排序器"章节
+### "Reranker import failed"
+- If you see `[!] Reranker import failed`, this is normal
+- System will use FAISS-only mode
+- To enable reranking, refer to "Installing ColBERTv2 Reranker" section
 
-### 终端显示乱码
-- 这是 PowerShell 编码问题
-- 实际输出文件（questions.json）是正确的
-- 使用 Windows Terminal 或 VS Code 终端可以获得更好的显示
+### Terminal Display Garbled
+- This is a PowerShell encoding issue
+- Actual output files (questions.json) are correct
+- Use Windows Terminal or VS Code terminal for better display
 
-### WSL 中 pip 安装失败
+### pip Installation Failed in WSL
 
-如果遇到 `pip` 安装错误：
+If you encounter `pip` installation errors:
 
-1. **升级 pip**：
+1. **Upgrade pip**:
    ```bash
    python3 -m pip install --upgrade pip
    ```
 
-2. **清除缓存**：
+2. **Clear cache**:
    ```bash
    pip cache purge
    ```
 
-3. **使用虚拟环境**（推荐）：
+3. **Use virtual environment** (recommended):
    ```bash
    python3 -m venv venv_wsl
    source venv_wsl/bin/activate
    pip install ...
    ```
 
-4. **分批安装**：
+4. **Install in batches**:
    ```bash
    pip3 install faiss-cpu
    pip3 install flask flask-cors
@@ -518,21 +518,21 @@ curl http://localhost:5000/health
    pip3 install ragatouille
    ```
 
-### 编译 ragatouille 很慢
-- 这是正常的，首次编译可能需要 5-10 分钟
-- 请耐心等待
+### Compiling ragatouille is Slow
+- This is normal, first compilation may take 5-10 minutes
+- Please be patient
 
-## 安全说明
+## Security Notes
 
-- `api-key.js` 在 `.gitignore` 中 - 你的密钥不会被上传
-- 切勿分享你的 API 密钥
-- 在 OpenAI 后台设置使用限额
-- 密钥存储在浏览器的 localStorage 中供 UI 使用
+- `api-key.js` is in `.gitignore` - your key will not be uploaded
+- Never share your API key
+- Set usage limits in OpenAI dashboard
+- Key is stored in browser's localStorage for UI use
 
-## 许可证
+## License
 
-MIT 许可证 - 仅用于教育目的
+MIT License - For educational purposes only
 
-## 作者
+## Author
 
 AI for Education (Wenchao Qin)
