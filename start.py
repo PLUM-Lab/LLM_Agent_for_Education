@@ -188,14 +188,14 @@ def restart_rag_server():
                         try:
                             subprocess.run(['taskkill', '/F', '/PID', pid], 
                                          check=True, capture_output=True)
-                            print(f"✓ Stopped process {pid}")
+                            print(f"[OK] Stopped process {pid}")
                         except:
-                            print(f"⚠ Cannot stop process {pid} (may already be stopped)")
+                            print(f"[WARNING] Cannot stop process {pid} (may already be stopped)")
             
             print("\n[2/3] Waiting for port to be released...")
             time.sleep(2)
         except Exception as e:
-            print(f"⚠ Error stopping process: {e}")
+            print(f"[WARNING] Error stopping process: {e}")
     else:
         # Linux/WSL
         try:
@@ -211,14 +211,14 @@ def restart_rag_server():
                 for pid in pids:
                     try:
                         os.kill(int(pid), signal.SIGTERM)
-                        print(f"✓ Stopped process {pid}")
+                        print(f"[OK] Stopped process {pid}")
                     except:
-                        print(f"⚠ Cannot stop process {pid} (may already be stopped)")
+                        print(f"[WARNING] Cannot stop process {pid} (may already be stopped)")
                 
                 print("\n[2/3] Waiting for port to be released...")
                 time.sleep(2)
         except Exception as e:
-            print(f"⚠ Error stopping process: {e}")
+            print(f"[WARNING] Error stopping process: {e}")
     
     print("\n[3/3] Starting new RAG server...")
     print("Note: Server will run in current window")

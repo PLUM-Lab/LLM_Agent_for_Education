@@ -181,6 +181,10 @@ You will receive a single JSON object. You must analyze information from the fol
 1. question (string): The complete clinical vignette, ending with the main question.
 2. answer: The correct answer.
 
+## ⚠️⚠️⚠️ CRITICAL LIMIT - READ THIS FIRST ⚠️⚠️⚠️
+
+**YOU MUST GENERATE EXACTLY 1-2 REASONING STEPS (MAXIMUM 2). DO NOT GENERATE MORE THAN 2 STEPS. THIS IS A STRICT LIMIT. IF YOU GENERATE MORE THAN 2 STEPS, YOUR RESPONSE WILL BE REJECTED.**
+
 ## Key Generation Principles (CRITICAL - ALL decomposition and clarification must follow these):
 
 1. **Holistic Analysis Principle**: Your first step should always be to synthesize the key information from the entire clinical vignette to form an initial overall assessment. This means starting with a comprehensive view of the case before diving into specific details.
@@ -189,15 +193,15 @@ You will receive a single JSON object. You must analyze information from the fol
 
 3. **Necessary Steps Principle**: Focus only on the most critical reasoning steps required to solve the problem. Avoid trivial, redundant, or irrelevant side-steps. Each key_question should represent a necessary milestone on the path to the final answer.
 
-4. **Complexity-Driven Step Count Principle**: 
+4. **Step Count Limitation Principle**: 
 
-   (1) The number of steps MUST be determined by the complexity of the problem. Do not force every problem into a fixed number of steps.
+   (1) **MAXIMUM 2 STEPS PER ROUND**: You MUST generate at most 2 reasoning steps per round to avoid overwhelming the student. This is a strict limit.
 
-   (2) A simple identification task might only require 2 steps. A complex differential diagnosis with multiple findings might require 5, 10, 20, or however many are needed.
+   (2) Focus on the 2 most critical reasoning steps that are essential to logically solve the problem.
 
-   (3) **NO UPPER LIMIT**: There is NO maximum limit on the number of steps. Generate as many reasoning steps as needed to fully decompose the problem.
+   (3) Choose the 2 steps that will be most helpful for the student's understanding, prioritizing foundational concepts first.
 
-   (4) Your goal is to identify the most comprehensive set of steps that are essential to logically and completely solve the problem.
+   (4) If the problem requires more steps, you can generate them in subsequent rounds, but each round is limited to exactly 2 steps.
 
 **CRITICAL: These principles apply to ALL decomposition and clarification. Every question and clarification must follow the Chain of Reasoning (Observation → Interpretation → Conclusion) and focus on necessary steps only.**
 
@@ -216,10 +220,18 @@ Your final output must be a single, well-formatted JSON array. Each object withi
             "key_question": "A specific, neutral question defining the sub-problem the student must think about",
             "step_summary": "A concise explanation of this step's purpose in the reasoning chain",
             "expected_understanding": "What the student should realize after thinking through this step"
+        },
+        {
+            "step_id": "2",
+            "key_question": "Another specific question (if needed, otherwise omit this step)",
+            "step_summary": "A concise explanation of this step's purpose",
+            "expected_understanding": "What the student should realize after thinking through this step"
         }
     ],
     "synthesis_step": "The final step that ties all reasoning together to reach the answer"
 }
+
+**⚠️⚠️⚠️ CRITICAL LIMIT ⚠️⚠️⚠️: You MUST generate EXACTLY 1-2 reasoning steps (MAXIMUM 2). Do NOT generate more than 2 steps. If you generate more than 2 steps, your response will be rejected.**
 
 ## Example for: "What advantage does endovascular repair have over open repair for ruptured AAA?"
 
@@ -271,11 +283,12 @@ RECURSIVE_DECOMPOSITION_PROMPT = """A student is struggling with this reasoning 
 ## ⚠️⚠️⚠️ CRITICAL: READ THIS FIRST - YOUR RESPONSE WILL BE AUTOMATICALLY REJECTED IF YOU VIOLATE THESE RULES ⚠️⚠️⚠️
 
 **ABSOLUTE PROHIBITIONS (VIOLATION = AUTOMATIC REJECTION):**
-1. **NEVER REPEAT ANY QUESTION** - You will receive a list of ALL previously asked questions. You MUST check EVERY SINGLE ONE. If you generate ANY question that is similar (even slightly) to ANY previous question, your ENTIRE response will be REJECTED and decomposition will STOP.
-2. **NEVER USE TEMPLATE MESSAGES** - Do NOT use phrases like "Let me break this down", "Does this help?", "Can you explain". These will be REJECTED.
-3. **EVERY QUESTION MUST BE UNIQUE** - If you cannot generate genuinely NEW questions, set "cannot_decompose_further": true
-4. **NO SYMBOLS, BLANKS, OR SINGLE CHARACTERS** - Your questions MUST contain meaningful words, NOT just symbols (".", "?", "!"), NOT blanks, NOT single characters ("h", "d", etc.). Violations will be AUTOMATICALLY REJECTED.
-5. **MINIMUM REQUIREMENTS FOR QUESTIONS**:
+1. **MAXIMUM 2 SUB-STEPS PER ROUND** - You MUST generate EXACTLY 1-2 sub-steps (MAXIMUM 2). Do NOT generate more than 2. If you generate more than 2, your ENTIRE response will be REJECTED.
+2. **NEVER REPEAT ANY QUESTION** - You will receive a list of ALL previously asked questions. You MUST check EVERY SINGLE ONE. If you generate ANY question that is similar (even slightly) to ANY previous question, your ENTIRE response will be REJECTED and decomposition will STOP.
+3. **NEVER USE TEMPLATE MESSAGES** - Do NOT use phrases like "Let me break this down", "Does this help?", "Can you explain". These will be REJECTED.
+4. **EVERY QUESTION MUST BE UNIQUE** - If you cannot generate genuinely NEW questions, set "cannot_decompose_further": true
+5. **NO SYMBOLS, BLANKS, OR SINGLE CHARACTERS** - Your questions MUST contain meaningful words, NOT just symbols (".", "?", "!"), NOT blanks, NOT single characters ("h", "d", etc.). Violations will be AUTOMATICALLY REJECTED.
+6. **MINIMUM REQUIREMENTS FOR QUESTIONS**:
    - At least 5 meaningful words (words longer than 1 character)
    - At least 20 characters of actual content (excluding punctuation)
    - Must contain medical/educational content, not just template phrases
@@ -301,10 +314,11 @@ The student doesn't seem to understand. Break this step down into SIMPLER sub-st
 
 3. **Necessary Steps Principle**: Focus only on the most critical reasoning steps required to solve the problem. Avoid trivial, redundant, or irrelevant side-steps. Each key_question should represent a necessary milestone on the path to the final answer.
 
-4. **Complexity-Driven Step Count Principle**: 
-   - The number of steps MUST be determined by the complexity of the problem. Do not force every problem into a fixed number of steps.
-   - A simple identification task might only require 2 steps. A complex differential diagnosis with multiple findings might require 5, 10, 20, or however many are needed.
-   - Your goal is to identify the most comprehensive set of steps that are essential to logically and completely solve the problem.
+4. **Step Count Limitation Principle**: 
+   - **MAXIMUM 2 STEPS PER ROUND**: You MUST generate at most 2 reasoning steps per round. This is a strict limit.
+   - Focus on the 2 most critical reasoning steps that are essential to logically solve the problem.
+   - Choose the 2 steps that will be most helpful for the student's understanding, prioritizing foundational concepts first.
+   - If the problem requires more steps, you can generate them in subsequent rounds, but each round is limited to exactly 2 steps.
 
 **CRITICAL: These principles apply to ALL decomposition. Every question must follow the Chain of Reasoning (Observation → Interpretation → Conclusion) and focus on necessary steps only.**
 
@@ -319,7 +333,7 @@ The student doesn't seem to understand. Break this step down into SIMPLER sub-st
 2. Sub-steps should build up progressively to the original understanding WITHOUT revealing the answer
 3. Use specific medical terminology from the original question
 4. Be encouraging
-5. **NO LIMIT ON NUMBER OF SUB-STEPS**: Generate as many sub-steps as needed based on complexity - there is NO upper limit. Generate 5, 10, 20, or however many are needed to help the student understand. The only requirement is that EACH sub-step must be genuinely different from ALL previous questions asked in ALL rounds.
+5. **MAXIMUM 2 SUB-STEPS PER ROUND**: Generate at most 2 sub-steps per round to avoid overwhelming the student. Each sub-step must be genuinely different from ALL previous questions asked in ALL rounds.
 6. **ABSOLUTE PROHIBITION - NO REPETITION**: You MUST NOT repeat ANY question that has been asked before, even if rephrased. Every single sub-question must be completely new and explore different concepts or angles.
 7. **NEVER reveal the correct answer** - guide through questions only
 
@@ -341,9 +355,11 @@ The student doesn't seem to understand. Break this step down into SIMPLER sub-st
             "step_summary": "How this connects to the parent step (MUST NOT reveal the answer, NOT blank)",
             "expected_understanding": "What they should realize (MUST NOT reveal the answer, NOT blank)"
         }
-        // Add as many sub-steps as needed - NO LIMIT. Generate 5, 10, 20, or however many are needed. The only requirement is that EACH must be genuinely different from ALL previous questions in ALL rounds.
+        // ⚠️⚠️⚠️ CRITICAL LIMIT ⚠️⚠️⚠️: Generate EXACTLY 1-2 sub-steps per round (MAXIMUM 2). Do NOT generate more than 2. If you include more than 2 items in this array, your response will be REJECTED. Each must be genuinely different from ALL previous questions in ALL rounds.
     ]
 }
+
+**⚠️⚠️⚠️ CRITICAL LIMIT ⚠️⚠️⚠️: The 'simpler_steps' array MUST contain EXACTLY 1-2 items (MAXIMUM 2). Do NOT include more than 2 items. If you include more than 2 items, your response will be REJECTED.**
 
 ## ⚠️⚠️⚠️ CRITICAL WARNINGS ⚠️⚠️⚠️
 1. **ABSOLUTE PROHIBITION - NO REPETITION OF ANY SUB-QUESTION**:
@@ -490,12 +506,12 @@ You guide students through a continuous loop:
 - **Round 1**: Use MedTutor-R1 style decomposition
   - Follow Observation → Interpretation → Conclusion
   - Generate reasoning_steps with key_questions
-  - Extract 1-3 key_questions from reasoning_steps
+  - Extract 1-2 key_questions from reasoning_steps (maximum 2 per round)
 - **Round 2+**: Use progressive decomposition
   - Generate SIMPLER, more FOUNDATIONAL questions than previous round
   - Ensure questions are DIFFERENT (not rephrased)
   - Build from basic definitions toward application
-  - No hard limit on number of questions per round (generate as many as needed, but ensure each is genuinely different from ALL previous questions in ALL rounds)
+  - Maximum 2 questions per round (limit to 2 to avoid overwhelming the student, but ensure each is genuinely different from ALL previous questions in ALL rounds)
 
 **Rules:**
 - Questions must be progressively simpler (each round more foundational)
@@ -587,7 +603,7 @@ You must respond with valid JSON only:
     "feedback": "Encouraging, specific feedback (NOT generic templates like 'Let me break this down' or 'Does this help?')",
     "missing_concept": "What concept they need to grasp (if not understood)",
     "clarification": "If action_type is 'clarify', provide the clarification text. Otherwise empty string.",
-    "sub_questions": ["question1", "question2", ...]  // If action_type is 'decompose', provide 1-3 simpler questions
+    "sub_questions": ["question1", "question2"]  // If action_type is 'decompose', provide 1-2 simpler questions (maximum 2 per round)
 }
 """
 
@@ -707,7 +723,7 @@ Evaluate the student's understanding on these dimensions:
     - NO template phrases like 'Let me clarify', 'Does this help?', etc.
     - Must contain actual medical/educational content
     - Clarifications that violate these rules will be AUTOMATICALLY REJECTED",
-    "sub_questions": ["question1", "question2", ...]  // If action_type is 'decompose', provide 1-3 simpler questions (will be generated using MedTutor-R1 method in Round 1). Questions must NOT reveal the answer. Empty array if understood.
+    "sub_questions": ["question1", "question2"]  // If action_type is 'decompose', provide 1-2 simpler questions (maximum 2 per round, will be generated using MedTutor-R1 method in Round 1). Questions must NOT reveal the answer. Empty array if understood.
     
     **CRITICAL: VALIDATION RULES FOR SUB_QUESTIONS:**
     - Each question MUST be at least 5 meaningful words
@@ -897,6 +913,9 @@ class ProactiveQuestionGenerator:
         
         user_prompt = f"""Decompose this medical question into reasoning steps:
 
+## ⚠️⚠️⚠️ CRITICAL LIMIT ⚠️⚠️⚠️
+**YOU MUST GENERATE EXACTLY 1-2 REASONING STEPS (MAXIMUM 2). DO NOT GENERATE MORE THAN 2 STEPS.**
+
 ## Question:
 {request.question}
 
@@ -910,6 +929,8 @@ class ProactiveQuestionGenerator:
 
 Generate a chain of reasoning steps that will guide the student from observation to conclusion.
 Each step should use SPECIFIC medical terms from this question.
+
+**REMEMBER: Generate EXACTLY 1-2 reasoning steps (MAXIMUM 2). Do NOT generate more than 2 steps.**
 
 Follow the format in my instructions exactly.
 """
@@ -1146,7 +1167,7 @@ Respond with valid JSON only.
                 if result.get("action_type") == "decompose":
                     try:
                         decomposition_response = self.generate_sub_questions(request)
-                        raw_sub_questions = [step.key_question for step in decomposition_response.decomposition.reasoning_steps]  # No limit - use all steps
+                        raw_sub_questions = [step.key_question for step in decomposition_response.decomposition.reasoning_steps]
                         # Validate questions - filter out invalid ones (symbols, blanks, etc.)
                         sub_questions = [q for q in raw_sub_questions if self._validate_question(q)]
                         if not sub_questions:
@@ -2237,7 +2258,7 @@ Let me explain this step-by-step with a practical example that relates to the qu
                             decomposition = decomposition_response.decomposition
                             
                             # Extract key_questions from reasoning steps
-                            sub_questions = [step.key_question for step in decomposition.reasoning_steps]  # No limit - use all steps
+                            sub_questions = [step.key_question for step in decomposition.reasoning_steps]
                             
                             if sub_questions:
                                 # CRITICAL: Validate all sub_questions before returning
@@ -2315,7 +2336,7 @@ Let me explain this step-by-step with a practical example that relates to the qu
                                         "cannot_decompose_further": True
                                     }
                                 
-                                simpler_questions = [step.key_question for step in evaluation_result.sub_steps]  # No limit - use all steps
+                                simpler_questions = [step.key_question for step in evaluation_result.sub_steps]
                                 
                                 if simpler_questions:
                                     # CRITICAL: Check if newly generated questions are similar/repetitive
@@ -2425,7 +2446,7 @@ Let me explain this step-by-step with a practical example that relates to the qu
                                                     return True
                                         return False
                                     
-                                    # STRICT: Check if questions are repetitive
+                                    # STRICT: Check if questions are repetitive (only check the 2 limited questions)
                                     # THIS CHECK IS MANDATORY - AUTOMATIC REJECTION IF ANY SIMILARITY DETECTED
                                     has_repetitive = False
                                     repetitive_count = 0
@@ -2570,7 +2591,7 @@ Let me explain this step-by-step with a practical example that relates to the qu
    - Sub-steps must be SIMPLER and more FOUNDATIONAL than "{parent_question}"
    - Must explore DIFFERENT concepts (not rephrased versions) - check ALL previous questions above
    - Follow the same principles as initial decomposition (Holistic Analysis, Chain of Reasoning, etc.)
-   - Generate as many simpler steps as needed based on complexity (no hard limit, but ensure each step is genuinely different from ALL previous questions)
+   - Generate at most 2 simpler steps per round (maximum 2 to avoid overwhelming the student, but ensure each step is genuinely different from ALL previous questions)
    - **Strengthen correction**: Focus on correcting the specific errors the student has made
    - **Each round must be more targeted**: Based on what you learned from previous rounds about the student's gaps
 
@@ -2594,7 +2615,7 @@ Let me explain this step-by-step with a practical example that relates to the qu
                             decomp_response = self.client.chat.completions.create(
                                 model=self.model,
                                 messages=[
-                                    {"role": "system", "content": RECURSIVE_DECOMPOSITION_PROMPT.split("## Response Format")[0] + "\n\nYou must respond with valid JSON only."},
+                                    {"role": "system", "content": RECURSIVE_DECOMPOSITION_PROMPT.split("## Response Format")[0] + "\n\n⚠️⚠️⚠️ CRITICAL LIMIT ⚠️⚠️⚠️: You MUST generate EXACTLY 1-2 simpler sub-steps (MAXIMUM 2). Do NOT generate more than 2. If you generate more than 2, your response will be REJECTED.\n\n## Response Format:\nYou must respond with valid JSON only. The JSON must contain a 'simpler_steps' array with EXACTLY 1-2 items (MAXIMUM 2)."},
                                     {"role": "user", "content": decomp_prompt}
                                 ],
                                 temperature=0.5,
@@ -3032,8 +3053,6 @@ Respond with JSON:
                                 
                                 # Extract and validate questions - filter out empty/invalid ones
                                 # 提取并验证问题 - 过滤掉空/无效的问题
-                                # REMOVED [:3] LIMIT - no hard limit on number of questions
-                                # 移除了[:3]限制 - 对问题数量没有硬性限制
                                 raw_questions = [step.get("key_question", "") for step in simpler_steps if step.get("key_question")]
                                 
                                 # Filter out invalid questions (empty, too short, placeholders)
@@ -3076,8 +3095,8 @@ Respond with JSON:
                                             "reveal_answer": False,
                                             "flow_terminated": True,
                                             "cannot_decompose_further": True
-                                        }
-                                    
+                                    }
+                                
                                     # Provide sub-questions and continue flow - wait for student to answer
                                     # 提供子问题并继续流程 - 等待学生回答
                                     return {
@@ -3304,14 +3323,14 @@ Respond with JSON:
 {chr(10).join([f"  [{i+1}] {q}" for i, q in enumerate(all_previous_questions_list)]) if all_previous_questions_list else "  None - this is the first round"}
 
 ## ⚠️⚠️⚠️ CRITICAL REQUIREMENTS ⚠️⚠️⚠️
-1. **NO LIMIT ON NUMBER OF SUB-STEPS**: Generate as many sub-steps as needed - 5, 10, 20, or however many are needed. There is NO upper limit.
+1. **MAXIMUM 2 SUB-STEPS PER ROUND**: Generate at most 2 sub-steps per round to avoid overwhelming the student. There is a strict limit of 2 questions per round.
 2. **ABSOLUTE PROHIBITION - NO REPETITION**: You MUST NOT repeat ANY question from the list above, even if rephrased. Every single sub-question must be completely new.
 3. **EACH SUB-QUESTION MUST BE UNIQUE**: If you cannot generate a genuinely new question that explores a different concept or angle, set "cannot_decompose_further": true.
-4. Generate simpler sub-steps to help them understand. The number of sub-steps should be determined by the complexity of the concept - use as many as needed (NO HARD LIMIT).
+4. **CRITICAL LIMIT**: Generate EXACTLY 1-2 simpler sub-steps per round (MAXIMUM 2). This is a strict limit. Do NOT generate more than 2 sub-steps.
 """
             
             decomp_messages = [
-                {"role": "system", "content": "You are a Socratic medical tutor helping a struggling student."},
+                {"role": "system", "content": RECURSIVE_DECOMPOSITION_PROMPT.split("## Response Format")[0] + "\n\n⚠️⚠️⚠️ CRITICAL LIMIT ⚠️⚠️⚠️: You MUST generate EXACTLY 1-2 simpler sub-steps (MAXIMUM 2). Do NOT generate more than 2. If you generate more than 2, your response will be REJECTED.\n\n## Response Format:\nYou must respond with valid JSON only. The JSON must contain a 'simpler_steps' array with EXACTLY 1-2 items (MAXIMUM 2)."},
                 {"role": "user", "content": decomp_prompt}
             ]
             
@@ -3319,7 +3338,7 @@ Respond with JSON:
                 model=self.model,
                 messages=decomp_messages,
                 temperature=0.7,
-                max_tokens=2000,  # Increased to support generating many sub-steps without limit
+                max_tokens=2000,  # Sufficient for generating up to 2 sub-steps per round
                 response_format={"type": "json_object"}
             )
             

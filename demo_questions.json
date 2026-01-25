@@ -17,6 +17,9 @@
     "source": "Demo - Appendicitis Case",
     "source_page": 1,
     "source_chunk": "Demo case for testing decompose functionality. Student should answer B to trigger decomposition.",
+    "domain": "Acute Abdomen & Surgical Emergencies",
+    "topic": "Inflammatory / infectious causes",
+    "subtopic": "Acute appendicitis",
     "demo_info": {
       "test_type": "decompose",
       "student_thinking": "I'm not really sure what's going on here. The patient has pain and fever, which sounds like an infection. I think we should give antibiotics first to treat the infection, and maybe do surgery later if needed. I don't understand why surgery would be urgent for this."

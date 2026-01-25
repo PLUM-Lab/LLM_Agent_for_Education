@@ -682,9 +682,9 @@ Author: AI for Education (Wenchao Qin)
                         Initialize Profile
                     </button>
                 </div>
-                <div id="knowledge-stats" style="font-size: 13px; color: #666;">
-                    <span id="questions-answered">Questions Answered: 0</span> | 
-                    <span id="knowledge-coverage">Knowledge Coverage: 0%</span>
+                <div id="knowledge-stats" style="font-size: 13px; color: #666; display: flex; flex-direction: column; gap: 4px;">
+                    <div id="questions-answered">Questions Answered: 0</div>
+                    <div id="knowledge-coverage">Knowledge Coverage: 0% (0/0 subtopics)</div>
                 </div>
             </div>
             <div id="knowledge-visualization" style="max-height: 200px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #e0e0e0;">
@@ -700,8 +700,7 @@ Author: AI for Education (Wenchao Qin)
                 <select id="qbank-selector" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #e0e0e0; font-size: 14px;">
                     <option value="questions.json">Clinical Guidelines (200 questions)</option>
                     <option value="qbank_combined.json">Combined Qbank (Surgery + Amboss)</option>
-                    <option value="generated_domain_questions.json">Generated Domain Questions (479 questions)</option>
-                    <option value="generated_surgery_domain_questions.json">Surgery Domain Questions</option>
+                    <option value="generated_surgery_domain_questions.json">Surgery Domain Questions (579 questions)</option>
                     <option value="demo_questions.json">Demo Questions (Decompose & Clarify)</option>
                     <option value="all">All Questions (Merge All)</option>
                 </select>
@@ -997,6 +996,8 @@ Author: AI for Education (Wenchao Qin)
                                           //     原始文本的页码
         let allQuestions = [];            // All questions loaded from JSON file
                                           // 从JSON文件加载的所有问题
+        let currentQbankSource = '';      // Current question bank source file name
+                                          // 当前题库源文件名
         let openAIApiKey = '';            // OpenAI API key for calling ChatGPT
                                           // 用于调用ChatGPT的OpenAI API密钥
         let messageChatHistory = [];      // ChatGPT conversation history for maintaining context coherence
@@ -1597,10 +1598,6 @@ Author: AI for Education (Wenchao Qin)
                     component.totalQuestionsForSubtopic = actualTotal;
                 }
                 
-                // Force save immediately to ensure persistence
-                // 立即强制保存以确保持久化
-                saveStudentProfile();
-                
                 // Check if ALL questions for this subtopic have been answered correctly at least once
                 // 检查该子主题的所有题目是否都至少答对过一次
                 // 
@@ -1631,11 +1628,21 @@ Author: AI for Education (Wenchao Qin)
                     // → Student knows this subtopic
                     // 该子主题的所有题目都至少答对过一次 → 学生知道该子主题
                     component.status = 'known';
+                    console.log(`✅ Subtopic fully mastered: ${key} (${component.correctQuestionIds.length}/${component.totalQuestionsForSubtopic} questions correct)`);
                 } else {
                     // Not all questions have been answered correctly yet → Still unknown
                     // 还不是所有题目都答对过 → 仍然未知
                     component.status = 'unknown';
+                    console.log(`⏳ Subtopic not fully mastered yet: ${key} (${component.correctQuestionIds.length}/${component.totalQuestionsForSubtopic} questions correct)`);
                 }
+                
+                // Force save immediately to ensure persistence
+                // 立即强制保存以确保持久化
+                saveStudentProfile();
+                
+                // Update knowledge display after status update
+                // 状态更新后更新知识显示
+                updateKnowledgeDisplay();
             } else {
                 // Answer is wrong: Cannot be "known" (not all questions correct)
                 // 答案错误：不能是"known"（不是所有题目都正确）
@@ -2116,15 +2123,24 @@ Author: AI for Education (Wenchao Qin)
          * 更新知识可视化显示
          */
         function updateKnowledgeDisplay() {
-            if (!studentProfile) {
-                document.getElementById('knowledge-visualization').innerHTML = 
-                    '<div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">No profile initialized.</div>';
-                return;
-            }
-            
             const statsEl = document.getElementById('questions-answered');
             const coverageEl = document.getElementById('knowledge-coverage');
             const vizEl = document.getElementById('knowledge-visualization');
+            
+            if (!studentProfile) {
+                // Show default values when no profile
+                // 没有profile时显示默认值
+                if (statsEl) {
+                    statsEl.textContent = `Questions Answered: 0`;
+                }
+                if (coverageEl) {
+                    coverageEl.textContent = `Knowledge Coverage: 0% (0/0 subtopics)`;
+                }
+                if (vizEl) {
+                    vizEl.innerHTML = '<div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">No profile initialized.</div>';
+                }
+                return;
+            }
             
             // Update statistics
             // 更新统计信息
@@ -2238,8 +2254,15 @@ Author: AI for Education (Wenchao Qin)
             // Step 3: Calculate coverage percentage
             // 步骤3：计算覆盖率百分比
             //
-            // Formula: Coverage = (Known Components / Total Components) × 100%
-            // 公式：覆盖率 = (已知组件数 / 总组件数) × 100%
+            // Formula: Coverage = (Fully Mastered Subtopics / Attempted Subtopics) × 100%
+            // 公式：覆盖率 = (完全掌握的子主题数 / 尝试的子主题数) × 100%
+            //
+            // Definition:
+            //   定义：
+            //   - Fully Mastered Subtopics (完全掌握的子主题): Subtopics with status === "known"
+            //     状态为"known"的子主题（该子主题的所有题目都答对了）
+            //   - Attempted Subtopics (尝试的子主题): All subtopics student has answered questions for
+            //     学生回答过题目的所有子主题
             //
             // Round to nearest integer for display
             // 四舍五入到最近的整数以便显示
@@ -2254,14 +2277,16 @@ Author: AI for Education (Wenchao Qin)
             // Step 4: Update UI display
             // 步骤4：更新UI显示
             //
-            // Display format: "Knowledge Coverage: X% (known/total)"
-            // 显示格式："Knowledge Coverage: X% (已知数/总数)"
+            // Display format: "Knowledge Coverage: X% (完全答对的subtopic数/尝试的subtopic数)"
+            // 显示格式："Knowledge Coverage: X% (完全答对的subtopic数/尝试的subtopic数)"
             //
             // Example: "Knowledge Coverage: 74% (119/160)"
             // 示例："Knowledge Coverage: 74% (119/160)"
+            // Meaning: 119 subtopics fully mastered out of 160 attempted subtopics
+            // 含义：160个尝试的子主题中，有119个完全掌握
             //
             if (coverageEl) {
-                coverageEl.textContent = `Knowledge Coverage: ${coverage}% (${knownComponents}/${totalComponents})`;
+                coverageEl.textContent = `Knowledge Coverage: ${coverage}% (${knownComponents}/${totalComponents} subtopics)`;
             }
             
             // Update visualization
@@ -2356,6 +2381,11 @@ Author: AI for Education (Wenchao Qin)
             const initBtn = document.getElementById('init-profile-btn');
             const nameInput = document.getElementById('student-name-input');
             
+            // Don't auto-load profile - let user manually enter name and initialize
+            // 不自动加载profile - 让用户手动输入姓名并初始化
+            // This prevents accidentally loading the wrong profile
+            // 这可以防止意外加载错误的profile
+            
             if (initBtn && nameInput) {
                 initBtn.addEventListener('click', function() {
                     const userName = nameInput.value.trim();
@@ -2401,6 +2431,9 @@ Author: AI for Education (Wenchao Qin)
             setupQbankSelector();
             setupProfileInitialization();
             setupResizer();
+            // Initialize knowledge display (show default values if no profile)
+            // 初始化知识显示（如果没有profile则显示默认值）
+            updateKnowledgeDisplay();
             // Load questions from default source
             // 从默认源加载问题
             await loadQuestionsFromFile('questions.json');
@@ -2463,21 +2496,14 @@ Author: AI for Education (Wenchao Qin)
                     // Add timestamp parameter to force browser reload (avoid cache issues)
                     // 添加时间戳参数以强制浏览器重新加载（避免缓存问题）
                     const timestamp = new Date().getTime();
-                    const [clinical, combined, generated] = await Promise.all([
+                    const [clinical, combined, surgery] = await Promise.all([
                         fetch(`questions.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
                         fetch(`qbank_combined.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
-                        fetch(`generated_domain_questions.json?t=${timestamp}`).then(async r => {
-                            if (!r.ok) return [];
-                            const text = await r.text();
-                            const lines = text.split('\n').filter(line => line.trim());
-                            return lines.map(line => {
-                                try { return JSON.parse(line); } catch { return null; }
-                            }).filter(q => q !== null);
-                        }).catch(() => [])
+                        fetch(`generated_surgery_domain_questions.json?t=${timestamp}`).then(r => r.json()).catch(() => [])
                     ]);
                     // Merge all questions, deduplicate (based on question text)
                     // 合并所有问题，去重（基于问题文本）
-                    const allQuestions = [...clinical, ...combined, ...generated];
+                    const allQuestions = [...clinical, ...combined, ...surgery];
                     const seen = new Set();
                     questions = allQuestions.filter(q => {
                         const key = q.question?.substring(0, 100) || JSON.stringify(q);
@@ -2523,6 +2549,7 @@ Author: AI for Education (Wenchao Qin)
                 
                 allQuestions = questions;
                 currentGeneratedIndex = 0;
+                currentQbankSource = source;  // Track current question bank source
                 console.log(`✓ Loaded ${allQuestions.length} questions from ${source}`);
                 
                 // Re-evaluate knowledge status if profile is already loaded
@@ -2684,6 +2711,17 @@ Author: AI for Education (Wenchao Qin)
             const choices = letters.map(letter => `${letter}. ${q.options[letter]}`);
             const correctIndex = letters.indexOf(q.correct_answer);
             
+            // For generated_surgery_domain_questions.json, append domain/topic/subtopic to question text
+            // 对于generated_surgery_domain_questions.json，在问题文本后追加domain/topic/subtopic
+            // Only show domain/topic/subtopic for questions from Surgery Domain Questions (not old question banks)
+            // 只为来自Surgery Domain Questions的题目显示domain/topic/subtopic（不是老题库）
+            let questionText = q.question;
+            // Check if question has domain/topic/subtopic fields (indicating it's from generated_surgery_domain_questions.json)
+            // 检查题目是否有domain/topic/subtopic字段（表示它来自generated_surgery_domain_questions.json）
+            if (q.domain && q.topic && q.subtopic) {
+                questionText = `${q.question} (Domain: ${q.domain}, Topic: ${q.topic}, Subtopic: ${q.subtopic})`;
+            }
+            
             // Build explanations array
             // 构建解释数组
             const explanations = letters.map(letter => {
@@ -2701,11 +2739,14 @@ Author: AI for Education (Wenchao Qin)
 
             return {
                 QA: {
-                    question: q.question,
+                    question: questionText,  // Use modified question text with domain/topic/subtopic
                     choices: choices,
                     answer: correctIndex,
                     source: q.source || q.source_file || '',
-                    images: q.images || []  // Pass image path array
+                    images: q.images || [],  // Pass image path array
+                    domain: q.domain || '',  // Store domain for knowledge tracking
+                    topic: q.topic || '',    // Store topic for knowledge tracking
+                    subtopic: q.subtopic || ''  // Store subtopic for knowledge tracking
                 },
                 feedback: {},
                 explanations: explanations,
@@ -2796,6 +2837,9 @@ Author: AI for Education (Wenchao Qin)
                 correctIndex: converted.QA.answer,
                 explanations: converted.explanations,
                 source: converted.QA.source,
+                domain: converted.QA.domain || q.domain || '',  // Store domain for knowledge tracking
+                topic: converted.QA.topic || q.topic || '',    // Store topic for knowledge tracking
+                subtopic: converted.QA.subtopic || q.subtopic || '',  // Store subtopic for knowledge tracking
                 // Store the source chunk for RAG context
                 // 存储源文本块用于RAG上下文
                 sourceChunk: q.source_chunk || null,
@@ -3619,7 +3663,32 @@ Author: AI for Education (Wenchao Qin)
                 }
             } else {
                 // No laboratory data, display text directly
-                questionTextEl.textContent = qa.question;
+                // Check if question contains domain/topic/subtopic info (from generated_surgery_domain_questions.json)
+                // 检查问题是否包含domain/topic/subtopic信息（来自generated_surgery_domain_questions.json）
+                const questionText = qa.question;
+                const domainTopicMatch = questionText.match(/^(.*?)\s*\(Domain:\s*(.+?),\s*Topic:\s*(.+?),\s*Subtopic:\s*(.+?)\)$/);
+                
+                if (domainTopicMatch) {
+                    // Has domain/topic/subtopic info - display with different styling
+                    // 有domain/topic/subtopic信息 - 用不同样式显示
+                    const mainQuestion = domainTopicMatch[1];
+                    const domain = domainTopicMatch[2];
+                    const topic = domainTopicMatch[3];
+                    const subtopic = domainTopicMatch[4];
+                    
+                    questionTextEl.innerHTML = `
+                        <div style="margin-bottom: 8px; padding: 4px 8px; border-left: 2px solid #d0d0d0; border-radius: 2px; font-size: 12px; color: #333; line-height: 1.4;">
+                            <span style="color: #666;">Domain:</span> ${domain} | 
+                            <span style="color: #666;">Topic:</span> ${topic} | 
+                            <span style="color: #666;">Subtopic:</span> ${subtopic}
+                        </div>
+                        <span style="font-size: 16px; line-height: 1.6;">${mainQuestion}</span>
+                    `;
+                } else {
+                    // No domain/topic/subtopic info - display normally
+                    // 没有domain/topic/subtopic信息 - 正常显示
+                    questionTextEl.textContent = questionText;
+                }
             }
             
             // If has images, display images
@@ -3956,6 +4025,10 @@ Author: AI for Education (Wenchao Qin)
                     // Pass currentGeneratedIndex directly as questionIndexHint to ensure correct tracking
                     // 直接传递currentGeneratedIndex作为questionIndexHint以确保正确追踪
                     updateKnowledgeStatus(currentQuestion, isCorrect, currentGeneratedIndex);
+                    
+                    // Update knowledge display after status update
+                    // 状态更新后更新知识显示
+                    updateKnowledgeDisplay();
                 } else {
                     console.warn(`⚠️ Cannot track knowledge:`, {
                         hasProfile: !!studentProfile,
@@ -4767,8 +4840,8 @@ Author: AI for Education (Wenchao Qin)
                                 <div style="margin-bottom: 10px;">${result.feedback}</div>
                         `;
                         
-                        // Display sub-questions (1-3 questions based on complexity)
-                        // 显示子问题（根据复杂度显示1-3个问题）
+                        // Display sub-questions
+                        // 显示子问题
                         if (result.sub_questions && result.sub_questions.length > 0) {
                             questionsHtml += '<div style="margin-top: 15px;">';
                             result.sub_questions.forEach((q, i) => {

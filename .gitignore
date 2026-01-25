@@ -41,6 +41,11 @@ __pycache__/
 # Temporary test files
 test_validation.py
 
+# Student profiles (test data, should not be committed)
+student_profile_*.json
+knowledge_tracking_report_*.txt
+analysis_report_*.txt
+
 # Ensure API key is never committed
 api-key.js
 *.key
