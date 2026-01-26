@@ -4259,6 +4259,40 @@ Author: AI for Education (Wenchao Qin)
             }
         }
 
+        /**
+         * Format understanding_level for display in UI
+         * 格式化 understanding_level 以便在UI中显示
+         * Only displays if ChatGPT/LLM provided understanding_level
+         * 只有在 ChatGPT/LLM 提供了 understanding_level 时才显示
+         */
+        function formatUnderstandingLevel(level) {
+            // Only display if level exists and is a valid string
+            // 只有在 level 存在且是有效字符串时才显示
+            if (!level || typeof level !== 'string' || level.trim() === '') {
+                return '';
+            }
+            
+            const levelConfig = {
+                'none': { text: 'No Understanding', color: '#dc3545', bg: '#f8d7da', icon: '❌' },
+                'partial': { text: 'Partial Understanding', color: '#ffc107', bg: '#fff3cd', icon: '⚠️' },
+                'close': { text: 'Close to Understanding', color: '#17a2b8', bg: '#d1ecf1', icon: '💡' },
+                'understood': { text: 'Understood', color: '#28a745', bg: '#d4edda', icon: '✅' }
+            };
+            
+            const config = levelConfig[level.toLowerCase()];
+            // Only display if it's a recognized level
+            // 只有在是已识别的级别时才显示
+            if (!config) {
+                return '';
+            }
+            
+            return `
+                <div style="display: inline-block; margin-bottom: 10px; padding: 6px 12px; background: ${config.bg}; color: ${config.color}; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                    ${config.icon} ${config.text}
+                </div>
+            `;
+        }
+
         function addMessageToConversation(role, content, isLoading = false) {
             const conversationList = document.getElementById('conversation-list');
             
@@ -4791,6 +4825,7 @@ Author: AI for Education (Wenchao Qin)
                         // 学生理解了 - 确认并立即结束指导
                         const successHtml = `
                             <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                                ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
                                 <div style="padding: 15px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 4px; margin-bottom: 15px;">
                                     <div style="font-weight: 600; color: #155724; margin-bottom: 8px;">✅ Great! You understand now!</div>
                                     <div style="color: #155724;">${result.feedback || 'You\'ve demonstrated clear understanding of the key concepts!'}</div>
@@ -4823,6 +4858,7 @@ Author: AI for Education (Wenchao Qin)
                         // 显示直接的澄清/解释
                         const clarificationHtml = `
                             <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                                ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
                                 ${result.feedback ? `<div style="margin-bottom: 10px;">${result.feedback}</div>` : ''}
                                 <div style="padding: 12px; background: #f0f7ff; border-left: 4px solid #667eea; border-radius: 4px;">
                                     ${result.clarification}
@@ -4837,6 +4873,7 @@ Author: AI for Education (Wenchao Qin)
                         // 显示更简单的子问题，逐步建立理解
                         let questionsHtml = `
                             <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                                ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
                                 <div style="margin-bottom: 10px;">${result.feedback}</div>
                         `;
                         
@@ -4999,6 +5036,7 @@ Author: AI for Education (Wenchao Qin)
                         // 学生理解了 - 确认
                         finalHtml = `
                             <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                                ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
                                 <div style="padding: 15px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 4px; margin-bottom: 15px;">
                                     <div style="font-weight: 600; color: #155724; margin-bottom: 8px;">✅ Great! You understand now!</div>
                                     <div style="color: #155724;">${result.feedback || 'Excellent! You\'ve demonstrated understanding of the key concepts.'}</div>
@@ -5013,6 +5051,7 @@ Author: AI for Education (Wenchao Qin)
                         // 流程因其他原因终止（无法继续分解、clarification已存在等）
                         finalHtml = `
                             <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                                ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
                                 <div style="padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
                                     <div style="font-weight: 600; color: #856404; margin-bottom: 8px;">📝 Guidance Complete</div>
                                     <div style="color: #856404;">${result.feedback || 'I\'ve provided clarification on this topic. Please review the concepts we\'ve discussed and try answering the question again.'}</div>
@@ -5041,6 +5080,7 @@ Author: AI for Education (Wenchao Qin)
                     // 提供澄清
                     const clarificationHtml = `
                         <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                            ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
                             ${result.feedback ? `<div style="margin-bottom: 10px;">${result.feedback}</div>` : ''}
                             <div style="padding: 12px; background: #f0f7ff; border-left: 4px solid #667eea; border-radius: 4px;">
                                 ${result.next_clarification}
@@ -5053,6 +5093,7 @@ Author: AI for Education (Wenchao Qin)
                     // 进一步分解
                     let questionsHtml = `
                         <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                            ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
                             <div style="margin-bottom: 10px;">${result.feedback}</div>
                     `;
                     

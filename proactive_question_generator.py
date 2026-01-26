@@ -1153,6 +1153,10 @@ Respond with valid JSON only.
             # Parse JSON response from LLM
             result = json.loads(response.choices[0].message.content)
             
+            # Print understanding_level from message.content for debugging
+            understanding_level = result.get("understanding_level", "unknown")
+            print(f"[DEBUG] understanding_level from message.content: {understanding_level}")
+            
             # FLOW TERMINATION: If student understands, set understood flag and terminate
             if result.get("understanding_level") == "understood":
                 result["understood"] = True
@@ -1924,6 +1928,10 @@ Follow the Educational Agent Policy. Respond with valid JSON only.
             # Parse LLM evaluation result
             # LLM will dynamically decide next action (DECOMPOSE or CLARIFY) based on student's current response quality
             result = json.loads(response.choices[0].message.content)
+            
+            # Print understanding_level from message.content for debugging
+            understanding_level = result.get("understanding_level", "unknown")
+            print(f"[DEBUG] understanding_level from message.content (evaluate_guidance_response): {understanding_level}")
             
             # ========================================================================
             # Special handling: Detect repeated "I don't know" responses
