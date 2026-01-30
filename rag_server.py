@@ -847,6 +847,18 @@ def initialize_rag():
         print(f"  [OK] 已保存到 {INDEX_FILE} 和 {CHUNKS_FILE}")
     
     # -------------------------------------------------------------------------
+    # 强制要求重排序（REQUIRE_RERANKER=1 时，未加载则拒绝启动）
+    # -------------------------------------------------------------------------
+    if os.environ.get('REQUIRE_RERANKER', '').strip().lower() in ('1', 'true', 'yes'):
+        if reranker is None:
+            print("\n" + "=" * 60)
+            print("[错误] 已设置 REQUIRE_RERANKER，但 ColBERTv2 重排序器未加载")
+            print("  - 请在 WSL 或 Linux 环境下运行以启用 ColBERTv2")
+            print("  - 或取消设置 REQUIRE_RERANKER 后仅使用 FAISS 检索")
+            print("=" * 60)
+            return False
+
+    # -------------------------------------------------------------------------
     # 完成
     # -------------------------------------------------------------------------
     print("\n" + "=" * 60)

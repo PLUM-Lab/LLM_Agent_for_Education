@@ -628,9 +628,65 @@ Author: AI for Education (Wenchao Qin)
         .hidden {
             display: none;
         }
+
+        /* 登录页（与测验集成在同一页） */
+        .login-screen-wrap {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #e8f4fc 0%, #f5f5f5 50%, #f0f7ff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 9999;
+        }
+        .login-screen-wrap .login-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(74, 144, 226, 0.15);
+            padding: 40px;
+            width: 100%;
+            max-width: 380px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
+        }
+        .login-screen-wrap .login-title { font-size: 22px; font-weight: 600; color: #1a1a2e; margin-bottom: 8px; text-align: center; }
+        .login-screen-wrap .login-subtitle { font-size: 14px; color: #666; text-align: center; margin-bottom: 28px; }
+        .login-screen-wrap .form-group { margin-bottom: 20px; }
+        .login-screen-wrap .form-group label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 8px; }
+        .login-screen-wrap .form-group input {
+            width: 100%; padding: 12px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .login-screen-wrap .form-group input:focus {
+            outline: none; border-color: #4a90e2; box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+        }
+        .login-screen-wrap .login-submit { width: 100%; padding: 14px; background: #4a90e2; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .login-screen-wrap .login-submit:hover { background: #3a7bc8; }
+        .login-screen-wrap .login-err { font-size: 13px; color: #c62828; margin-top: 12px; text-align: center; min-height: 20px; }
     </style>
 </head>
 <body>
+    <!-- 登录屏：未登录时显示（默认显示，登录后由 JS 隐藏） -->
+    <div id="login-screen" class="login-screen-wrap">
+        <div class="login-card">
+            <h1 class="login-title">Medical Quiz</h1>
+            <p class="login-subtitle">请使用用户名和密码登录</p>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-username">用户名</label>
+                    <input type="text" id="login-username" placeholder="请输入用户名" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">密码</label>
+                    <input type="password" id="login-password" placeholder="请输入密码" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="login-submit">登录</button>
+                <div class="login-err" id="login-error" role="alert"></div>
+            </form>
+        </div>
+    </div>
+    <!-- 测验主内容：登录后显示 -->
+    <div id="quiz-app" class="hidden">
     <!-- ====================================================================
          HTML Main Structure
          ====================================================================
@@ -682,6 +738,7 @@ Author: AI for Education (Wenchao Qin)
                         Initialize Profile
                     </button>
                 </div>
+                <a href="#" id="logout-link" style="font-size: 13px; color: #666; text-decoration: none;">退出登录</a>
                 <div id="knowledge-stats" style="font-size: 13px; color: #666; display: flex; flex-direction: column; gap: 4px;">
                     <div id="questions-answered">Questions Answered: 0</div>
                     <div id="knowledge-coverage">Knowledge Coverage: 0% (0/0 subtopics)</div>
@@ -854,6 +911,7 @@ Author: AI for Education (Wenchao Qin)
             </div>
         </div>
     </div>
+    </div><!-- /#quiz-app -->
 
     <!-- Load API key from api-key.js (ignored by Git) -->
     <script src="api-key.js"></script>
@@ -2424,19 +2482,53 @@ Author: AI for Education (Wenchao Qin)
             }
         }
 
-        // Initialize on page load
-        // 页面加载时初始化
-        document.addEventListener('DOMContentLoaded', async function() {
+        // 测验初始化（登录后调用）
+        async function initQuiz() {
             setupEventListeners();
             setupQbankSelector();
             setupProfileInitialization();
             setupResizer();
-            // Initialize knowledge display (show default values if no profile)
-            // 初始化知识显示（如果没有profile则显示默认值）
             updateKnowledgeDisplay();
-            // Load questions from default source
-            // 从默认源加载问题
             await loadQuestionsFromFile('questions.json');
+        }
+
+        // 允许的登录账号（与登录表单同页）
+        const ALLOWED_USERS = [
+            { username: 'admin', password: 'admin' },
+            { username: 'student', password: 'student' }
+        ];
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            const loginScreen = document.getElementById('login-screen');
+            const quizApp = document.getElementById('quiz-app');
+
+            if (!sessionStorage.getItem('quiz_auth')) {
+                // 未登录：登录屏已默认显示，确保测验隐藏
+                quizApp.classList.add('hidden');
+                document.getElementById('login-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const username = document.getElementById('login-username').value.trim();
+                    const password = document.getElementById('login-password').value;
+                    const errEl = document.getElementById('login-error');
+                    const valid = ALLOWED_USERS.some(u => u.username === username && u.password === password);
+                    if (valid) {
+                        sessionStorage.setItem('quiz_auth', '1');
+                        sessionStorage.setItem('quiz_user', username);
+                        errEl.textContent = '';
+                        loginScreen.classList.add('hidden');
+                        quizApp.classList.remove('hidden');
+                        initQuiz();
+                    } else {
+                        errEl.textContent = '用户名或密码错误，请重试。';
+                    }
+                });
+                return;
+            }
+            // 已登录：隐藏登录屏，显示测验并初始化
+            loginScreen.classList.add('hidden');
+            quizApp.classList.remove('hidden');
+            await initQuiz();
         });
 
         // Setup question bank selector
@@ -3237,6 +3329,16 @@ Author: AI for Education (Wenchao Qin)
         //
         // ============================================================
         function setupEventListeners() {
+            // 退出登录：清除会话并刷新，回到登录屏
+            const logoutLink = document.getElementById('logout-link');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    sessionStorage.removeItem('quiz_auth');
+                    sessionStorage.removeItem('quiz_user');
+                    location.reload();
+                });
+            }
             // Question submit button
             // 问题提交按钮
             document.getElementById('submit-btn').addEventListener('click', handleSubmit);

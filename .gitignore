@@ -13,6 +13,7 @@ OPENAI_API_KEY.txt
 Thumbs.db
 .vscode/
 .idea/
+._*
 
 # Logs
 *.log

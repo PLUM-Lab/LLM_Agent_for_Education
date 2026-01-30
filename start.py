@@ -37,6 +37,43 @@ import subprocess
 import signal
 from pathlib import Path
 
+def windows_path_to_wsl(win_path):
+    """Convert Windows path to WSL path (e.g. C:\\Users\\foo -> /mnt/c/Users/foo)."""
+    path = os.path.normpath(win_path).replace("\\", "/")
+    if len(path) >= 2 and path[1] == ":":
+        drive = path[0].lower()
+        return f"/mnt/{drive}" + (path[2:] if len(path) > 2 else "")
+    return path
+
+def start_rag_server_in_wsl():
+    """
+    Start RAG server inside WSL so ColBERTv2 reranker loads (Windows-only).
+    Returns the subprocess.Popen instance, or None on failure.
+    """
+    cwd = os.getcwd()
+    wsl_path = windows_path_to_wsl(cwd)
+    env = os.environ.copy()
+    env["REQUIRE_RERANKER"] = "1"
+    cmd = [
+        "wsl", "-e", "bash", "-c",
+        f"cd '{wsl_path}' && export REQUIRE_RERANKER=1 && python3 rag_server.py"
+    ]
+    try:
+        p = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env=env,
+            cwd=cwd,
+        )
+        return p
+    except FileNotFoundError:
+        print("[Warning] WSL not found. Install WSL or use --no-wsl-rag to run RAG without reranker.")
+        return None
+    except Exception as e:
+        print(f"[Warning] Failed to start RAG in WSL: {e}")
+        return None
+
 def check_wsl_environment():
     """Check if running in WSL or Linux environment"""
     if sys.platform == "win32":
@@ -60,6 +97,18 @@ def check_wsl_environment():
     
     return False, "Unknown"
 
+def wait_for_http(host='127.0.0.1', port=8000, timeout=5):
+    """Check if HTTP server is reachable within timeout seconds."""
+    import socket
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=1):
+                return True
+        except Exception:
+            time.sleep(0.3)
+    return False
+
 def start_http_server(port=8000):
     """Start HTTP server"""
     print(f"\n{'='*60}")
@@ -69,9 +118,12 @@ def start_http_server(port=8000):
     try:
         import http.server
         import socketserver
-        
-        handler = http.server.SimpleHTTPRequestHandler
-        with socketserver.TCPServer(("", port), handler) as httpd:
+
+        class QuietHandler(http.server.SimpleHTTPRequestHandler):
+            def log_message(self, format, *args):
+                pass
+
+        with socketserver.TCPServer(("", port), QuietHandler) as httpd:
             print(f"✓ HTTP server started")
             print(f"  Access: http://localhost:{port}/medical-quiz.html")
             print(f"\nPress Ctrl+C to stop all servers\n")
@@ -107,8 +159,13 @@ def start_rag_server():
             print("  GET  /health     - Health check")
             print("  POST /rebuild    - Rebuild index from PDFs")
             print()
-            
-            rag_server.app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+            try:
+                from waitress import serve
+                print("[RAG Server] Using waitress on port 5000")
+                serve(rag_server.app, host='0.0.0.0', port=5000)
+            except Exception:
+                print("[RAG Server] Using Flask dev server on port 5000")
+                rag_server.app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
         else:
             print("\n[Warning] RAG system initialization failed")
             print("UI is still usable, but RAG functionality will be unavailable")
@@ -259,6 +316,8 @@ Examples:
                        help='Evaluator interface server port (default: 8001)')
     parser.add_argument('--restart-rag', action='store_true',
                        help='Restart RAG server (stop existing process and restart)')
+    parser.add_argument('--no-wsl-rag', action='store_true',
+                       help='On Windows: do not start RAG in WSL (RAG runs in current process, reranker may be unavailable)')
     
     args = parser.parse_args()
     
@@ -280,20 +339,27 @@ Examples:
     is_linux, env_type = check_wsl_environment()
     print(f"\nRuntime environment: {env_type}")
     
-    if args.rag and not is_linux:
-        print("\n[Warning] Windows environment detected")
-        print("  - RAG server can start, but ColBERTv2 reranker may not be available")
-        print("  - For full functionality, run in WSL/Linux environment")
-        print("  - Continuing startup...\n")
+    rag_wsl_process = None  # When on Windows, RAG may run in WSL subprocess
     
-    if is_linux and args.rag:
+    if args.rag and not is_linux and not args.no_wsl_rag:
+        print("\n[Info] Windows detected: starting RAG in WSL so ColBERTv2 reranker is used")
+        rag_wsl_process = start_rag_server_in_wsl()
+        if rag_wsl_process is not None:
+            print("  RAG server starting in WSL (port 5000)...")
+            time.sleep(3)  # WSL init takes longer
+        else:
+            print("  Falling back to RAG in current process (reranker may be unavailable)\n")
+            rag_wsl_process = None
+    elif args.rag and not is_linux:
+        print("\n[Info] --no-wsl-rag: RAG runs in current process (ColBERTv2 may be unavailable)\n")
+    elif is_linux and args.rag:
         print("✓ ColBERTv2 reranker will be available\n")
     
     # Start services
     threads = []
     
-    # Start RAG server (if needed)
-    if args.rag:
+    # Start RAG server (if needed, and not already started in WSL)
+    if args.rag and rag_wsl_process is None:
         rag_thread = threading.Thread(target=start_rag_server, daemon=True)
         rag_thread.start()
         threads.append(rag_thread)
@@ -309,7 +375,21 @@ Examples:
         eval_thread.start()
         threads.append(eval_thread)
         time.sleep(1)
-    
+
+    # Health checks
+    time.sleep(1.0)
+    print("\n[Health] Checking services...")
+    if args.ui:
+        ok = wait_for_http('127.0.0.1', args.port)
+        print(f"  UI (http://127.0.0.1:{args.port}) -> {'OK' if ok else 'NO RESPONSE'}")
+    if args.rag:
+        ok = wait_for_http('127.0.0.1', 5000)
+        print(f"  RAG (http://127.0.0.1:5000) -> {'OK' if ok else 'NO RESPONSE'}")
+    if args.evaluator:
+        ok = wait_for_http('127.0.0.1', args.evaluator_port)
+        print(f"  Evaluator (http://127.0.0.1:{args.evaluator_port}) -> {'OK' if ok else 'NO RESPONSE'}")
+    print()
+
     # Run HTTP server in main thread (so Ctrl+C can be properly caught)
     try:
         if args.ui:
@@ -323,6 +403,12 @@ Examples:
     except KeyboardInterrupt:
         print("\n\n" + "="*60)
         print("Shutting down all servers...")
+        if rag_wsl_process is not None:
+            try:
+                rag_wsl_process.terminate()
+                rag_wsl_process.wait(timeout=5)
+            except Exception:
+                rag_wsl_process.kill()
         print("="*60)
         sys.exit(0)
 
