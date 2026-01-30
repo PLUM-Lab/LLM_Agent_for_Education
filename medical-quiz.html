@@ -155,15 +155,15 @@ Author: AI for Education (Wenchao Qin)
         }
 
         .right-panel {
-            width: 400px;
-            min-width: 300px;
-            max-width: 800px;
+            width: 25vw;
+            min-width: 320px;
+            max-width: 480px;
             background: #fafafa;
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
-            box-shadow: -2px 0 8px rgba(0,0,0,0.05);
+            box-shadow: -2px 0 12px rgba(0,0,0,0.08);
         }
 
         .section {
@@ -663,25 +663,81 @@ Author: AI for Education (Wenchao Qin)
         .login-screen-wrap .login-submit { width: 100%; padding: 14px; background: #4a90e2; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
         .login-screen-wrap .login-submit:hover { background: #3a7bc8; }
         .login-screen-wrap .login-err { font-size: 13px; color: #c62828; margin-top: 12px; text-align: center; min-height: 20px; }
+        .login-screen-wrap .switch-link { margin-top: 16px; text-align: center; font-size: 14px; }
+        .login-screen-wrap .switch-link a { color: #4a90e2; text-decoration: none; }
+        .login-screen-wrap .switch-link a:hover { text-decoration: underline; }
+        .login-screen-wrap .register-card { display: none; }
+        .login-screen-wrap .register-card.show { display: block; }
+        .login-screen-wrap .login-card.hide { display: none; }
+        /* 登录屏加上 hidden 时必须隐藏，否则会被 .login-screen-wrap 的 display:flex 覆盖 */
+        .login-screen-wrap.hidden { display: none !important; }
     </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      function handleLogin() {
+        var u = document.getElementById('login-username'), p = document.getElementById('login-password'), err = document.getElementById('login-error');
+        var ls = document.getElementById('login-screen'), qa = document.getElementById('quiz-app');
+        if (!u || !p || !err) { if (err) err.textContent = 'Missing fields.'; return; }
+        if (!ls || !qa) { if (err) err.textContent = 'Page not ready.'; return; }
+        var username = (u.value || '').trim(), password = (p.value || '');
+        if (!username) { err.textContent = 'Please enter a username.'; return; }
+        if (!password) { err.textContent = 'Please enter a password.'; return; }
+        var DEFAULT_USERS = [{username:'admin',password:'admin'},{username:'student',password:'student'}];
+        var extra = [];
+        try { var s = localStorage.getItem('quiz_registered_users'); if (s) extra = JSON.parse(s); } catch(e) {}
+        var users = DEFAULT_USERS.concat(extra);
+        var valid = users.some(function(x) { return x.username === username && x.password === password; });
+        if (!valid) { err.textContent = 'Invalid username or password. Please try again.'; return; }
+        sessionStorage.setItem('quiz_auth', '1'); sessionStorage.setItem('quiz_user', username);
+        err.textContent = ''; ls.classList.add('hidden'); qa.classList.remove('hidden');
+        if (typeof window.initQuiz === 'function') { window.initQuiz(); } else { location.reload(); }
+      }
+      window.handleLogin = handleLogin;
+      var btn = document.getElementById('login-submit-btn');
+      if (btn) { btn.onclick = handleLogin; }
+    });
+    </script>
 </head>
 <body>
-    <!-- 登录屏：未登录时显示（默认显示，登录后由 JS 隐藏） -->
+    <!-- 登录屏：未登录时显示 -->
     <div id="login-screen" class="login-screen-wrap">
-        <div class="login-card">
+        <div id="login-card" class="login-card">
             <h1 class="login-title">Medical Quiz</h1>
-            <p class="login-subtitle">请使用用户名和密码登录</p>
-            <form id="login-form">
+            <p class="login-subtitle">Sign in with your username and password</p>
+            <div id="login-form">
                 <div class="form-group">
-                    <label for="login-username">用户名</label>
-                    <input type="text" id="login-username" placeholder="请输入用户名" autocomplete="username" required>
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" placeholder="Enter username" autocomplete="username">
                 </div>
                 <div class="form-group">
-                    <label for="login-password">密码</label>
-                    <input type="password" id="login-password" placeholder="请输入密码" autocomplete="current-password" required>
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password">
                 </div>
-                <button type="submit" class="login-submit">登录</button>
+                <button type="button" id="login-submit-btn" class="login-submit" onclick="if(window.handleLogin)window.handleLogin();">Sign in</button>
                 <div class="login-err" id="login-error" role="alert"></div>
+                <p class="switch-link">Don't have an account? <a href="#" id="show-register">Create account</a></p>
+                <p style="margin-top: 12px; font-size: 12px; color: #888; text-align: center;">Demo: admin / admin or student / student</p>
+            </div>
+        </div>
+        <div id="register-card" class="login-card register-card">
+            <h1 class="login-title">Create account</h1>
+            <p class="login-subtitle">Fill in the form below to register</p>
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="register-username">Username</label>
+                    <input type="text" id="register-username" placeholder="Enter username" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" placeholder="Enter password" autocomplete="new-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password2">Confirm password</label>
+                    <input type="password" id="register-password2" placeholder="Enter password again" autocomplete="new-password" required>
+                </div>
+                <button type="submit" class="login-submit">Create account</button>
+                <div class="login-err" id="register-error" role="alert"></div>
+                <p class="switch-link"><a href="#" id="show-login">Back to sign in</a></p>
             </form>
         </div>
     </div>
@@ -716,29 +772,15 @@ Author: AI for Education (Wenchao Qin)
              - #qbank-status: Display loading status and question count
              ============================================================ -->
         <!-- ============================================================
-             Student Profile Section
-             学生档案区域
-             ============================================================
-             Function: Display and manage student knowledge profile
-             功能：显示和管理学生知识档案
-             
-             Elements:
-             - #student-profile-section: Profile container
-             - #student-name-input: Student name input
+             Student Profile Section (user = logged-in username)
+             - #logged-in-user: Shows "Logged in as: {username}"
              - #knowledge-stats: Knowledge statistics display
              - #knowledge-visualization: Knowledge visualization
              ============================================================ -->
         <div class="section" style="padding: 15px; background: #f8f9fa; border-bottom: 2px solid #4a90e2;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <label style="font-weight: 600; color: #333;">👤 Student Name:</label>
-                    <input type="text" id="student-name-input" placeholder="Enter your name" 
-                           style="padding: 8px 15px; border-radius: 4px; border: 1px solid #e0e0e0; font-size: 14px; width: 200px;">
-                    <button id="init-profile-btn" class="submit-btn" style="background: #28a745; padding: 8px 15px; font-size: 14px;">
-                        Initialize Profile
-                    </button>
-                </div>
-                <a href="#" id="logout-link" style="font-size: 13px; color: #666; text-decoration: none;">退出登录</a>
+                <span id="logged-in-user" style="font-size: 13px; color: #666;"></span>
+                <a href="#" id="logout-link" style="font-size: 13px; color: #666; text-decoration: none;">Sign out</a>
                 <div id="knowledge-stats" style="font-size: 13px; color: #666; display: flex; flex-direction: column; gap: 4px;">
                     <div id="questions-answered">Questions Answered: 0</div>
                     <div id="knowledge-coverage">Knowledge Coverage: 0% (0/0 subtopics)</div>
@@ -746,7 +788,7 @@ Author: AI for Education (Wenchao Qin)
             </div>
             <div id="knowledge-visualization" style="max-height: 200px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #e0e0e0;">
                 <div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">
-                    No profile initialized. Please enter your name and click "Initialize Profile".
+                    Knowledge profile (based on your answers).
                 </div>
             </div>
         </div>
@@ -755,11 +797,7 @@ Author: AI for Education (Wenchao Qin)
             <div style="display: flex; align-items: center; gap: 15px;">
                 <label style="font-weight: 600; color: #666;">Question Bank:</label>
                 <select id="qbank-selector" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #e0e0e0; font-size: 14px;">
-                    <option value="questions.json">Clinical Guidelines (200 questions)</option>
-                    <option value="qbank_combined.json">Combined Qbank (Surgery + Amboss)</option>
-                    <option value="generated_surgery_domain_questions.json">Surgery Domain Questions (579 questions)</option>
-                    <option value="demo_questions.json">Demo Questions (Decompose & Clarify)</option>
-                    <option value="all">All Questions (Merge All)</option>
+                    <option value="generated_surgery_domain_questions.json" selected>Surgery Domain Questions (579 questions)</option>
                 </select>
                 <span id="qbank-status" style="color: #666; font-size: 13px;"></span>
             </div>
@@ -900,7 +938,7 @@ Author: AI for Education (Wenchao Qin)
         <div class="resizer" id="resizer"></div>
         <div class="right-panel" id="right-panel">
             <div style="padding: 15px 20px; border-bottom: 1px solid #e0e0e0; background: #f8f9fa;">
-                <div class="section-title" style="margin: 0;">Message</div>
+                <div class="section-title" style="margin: 0;">Tutor</div>
             </div>
             <div class="message-container">
                 <div class="conversation" id="conversation-list"></div>
@@ -1185,37 +1223,36 @@ Author: AI for Education (Wenchao Qin)
         function getQuestionId(question, questionIndex = null) {
             if (!question) return null;
             
-            // Priority 1: Use question.id if available
-            // 优先级1：如果题目有id字段，使用它
-            if (question.id) {
-                return `id_${question.id}`;
+            // Priority 1: Content-based ID when domain/topic/subtopic exist (same question = same ID, no double count on re-answer)
+            if (question.domain && question.topic && question.subtopic) {
+                const questionText = (question.question || '').substring(0, 200);
+                const content = `${question.domain}|${question.topic}|${question.subtopic}|${questionText}`;
+                let hash = 0;
+                for (let i = 0; i < content.length; i++) {
+                    hash = ((hash << 5) - hash) + content.charCodeAt(i);
+                    hash = hash & hash;
+                }
+                return `content_${Math.abs(hash)}`;
             }
             
-            // Priority 2: Use questionIndex if provided (most reliable)
-            // 优先级2：如果提供了questionIndex，使用它（最可靠）
-            if (questionIndex !== null && questionIndex >= 0) {
-                return `index_${questionIndex}`;
-            }
+            // Priority 2: Use question.id if available
+            if (question.id) return `id_${question.id}`;
             
-            // Priority 3: Try to find index in allQuestions
-            // 优先级3：尝试在allQuestions中查找索引
+            // Priority 3: Use questionIndex if provided
+            if (questionIndex !== null && questionIndex >= 0) return `index_${questionIndex}`;
+            
+            // Priority 4: Try to find index in allQuestions
             if (allQuestions && allQuestions.length > 0) {
                 const index = allQuestions.findIndex(q => q === question);
-                if (index >= 0) {
-                    return `index_${index}`;
-                }
+                if (index >= 0) return `index_${index}`;
             }
             
-            // Priority 4: Generate hash from question text (fallback)
-            // 优先级4：从题目文本生成hash（回退方案）
-            // Simple hash function for question text
-            // 简单的题目文本hash函数
+            // Priority 5: Hash from question text (fallback)
             const questionText = question.question || JSON.stringify(question);
             let hash = 0;
             for (let i = 0; i < questionText.length; i++) {
-                const char = questionText.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash; // Convert to 32-bit integer
+                hash = ((hash << 5) - hash) + questionText.charCodeAt(i);
+                hash = hash & hash;
             }
             return `hash_${Math.abs(hash)}`;
         }
@@ -1524,7 +1561,7 @@ Author: AI for Education (Wenchao Qin)
                 
                 // Check if this question has been answered correctly before
                 // 检查这道题目是否之前已经答对过
-                const isFirstTimeCorrect = !component.correctQuestionIds.includes(questionId);
+                let isFirstTimeCorrect = !component.correctQuestionIds.includes(questionId);
                 
                 console.log(`   ========================================`);
                 console.log(`   CHECKING IF FIRST TIME CORRECT:`);
@@ -1616,26 +1653,15 @@ Author: AI for Education (Wenchao Qin)
                 // correctQuestionIds is used to track unique questions answered correctly (for "known" status)
                 // correctQuestionIds用于跟踪答对的不同题目（用于判断"known"状态）
                 
-                // Always increment questionsCorrect when answer is correct (even if duplicate)
-                // 答案正确时总是增加questionsCorrect（即使重复）
+                // Only increment questionsCorrect and add to correctQuestionIds when first time correct (no double count)
                 const oldQuestionsCorrect = component.questionsCorrect;
-                component.questionsCorrect += 1;
-                
-                // Only add to correctQuestionIds if this is the first time answering this question correctly
-                // 只有当第一次答对这道题目时，才添加到correctQuestionIds
                 if (isFirstTimeCorrect) {
-                    // Add question ID to the list of correctly answered questions
-                    // 将题目ID添加到已答对题目列表
+                    component.questionsCorrect += 1;
                     component.correctQuestionIds.push(questionId);
-                    
                     console.log(`✅ First time correct for question: ${questionId ? questionId.substring(0, 50) : 'unknown'}...`);
-                    console.log(`   Updated: questionsCorrect ${oldQuestionsCorrect} → ${component.questionsCorrect} (答对的总次数)`);
-                    console.log(`   Updated: correctQuestionIds now has ${component.correctQuestionIds.length} items (答对的不同题目数)`);
-                    console.log(`   Updated: correctQuestionIds = [${component.correctQuestionIds.join(', ')}]`);
+                    console.log(`   Updated: questionsCorrect ${oldQuestionsCorrect} → ${component.questionsCorrect}, correctQuestionIds.length = ${component.correctQuestionIds.length}`);
                 } else {
-                    console.log(`✅ Answered correctly again (duplicate): ${questionId ? questionId.substring(0, 50) : 'unknown'}...`);
-                    console.log(`   Updated: questionsCorrect ${oldQuestionsCorrect} → ${component.questionsCorrect} (答对的总次数，包括重复)`);
-                    console.log(`   correctQuestionIds unchanged: [${component.correctQuestionIds.join(', ')}]`);
+                    console.log(`✅ Answered correctly again (same question): count unchanged (${component.questionsCorrect} unique correct)`);
                 }
                 
                 console.log(`   Progress: ${component.questionsCorrect}/${component.questionsAttempted} (答对的总次数/总尝试次数)`);
@@ -2186,21 +2212,18 @@ Author: AI for Education (Wenchao Qin)
             const vizEl = document.getElementById('knowledge-visualization');
             
             if (!studentProfile) {
-                // Show default values when no profile
-                // 没有profile时显示默认值
+                // Show default values when no profile, but still show "By domain" list from current qbank
+                // 没有profile时显示默认值，但仍显示当前题库的 By domain 列表
                 if (statsEl) {
                     statsEl.textContent = `Questions Answered: 0`;
                 }
                 if (coverageEl) {
                     coverageEl.textContent = `Knowledge Coverage: 0% (0/0 subtopics)`;
                 }
-                if (vizEl) {
-                    vizEl.innerHTML = '<div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">No profile initialized.</div>';
-                }
-                return;
-            }
-            
-            // Update statistics
+                // Don't return early: fall through to render "By domain (accuracy %)" from allQuestions below
+                // 不提前 return，继续用 allQuestions 渲染下方的 By domain
+            } else {
+                // Update statistics when we have profile
             // 更新统计信息
             if (statsEl) {
                 statsEl.textContent = `Questions Answered: ${studentProfile.questionsAnswered}`;
@@ -2346,41 +2369,64 @@ Author: AI for Education (Wenchao Qin)
             if (coverageEl) {
                 coverageEl.textContent = `Knowledge Coverage: ${coverage}% (${knownComponents}/${totalComponents} subtopics)`;
             }
+            }
             
-            // Update visualization
-            // 更新可视化
-            if (vizEl && totalComponents > 0) {
-                const components = Object.entries(studentProfile.knowledgeMap)
-                    .sort((a, b) => b[1].lastUpdated.localeCompare(a[1].lastUpdated))
-                    .slice(0, 20);  // Show top 20 most recent
-                                    // 显示最近20个
-                
-                let html = '<div style="font-size: 12px;">';
-                html += '<div style="font-weight: 600; margin-bottom: 10px; color: #333;">Knowledge Components:</div>';
-                
-                components.forEach(([key, component]) => {
-                    const statusColor = component.status === 'known' ? '#28a745' : '#dc3545';
-                    const statusIcon = component.status === 'known' ? '✓' : '✗';
-                    const accuracy = component.questionsAttempted > 0
-                        ? Math.round((component.questionsCorrect / component.questionsAttempted) * 100)
-                        : 0;
-                    
-                    html += `<div style="padding: 8px; margin: 5px 0; background: #f8f9fa; border-left: 3px solid ${statusColor}; border-radius: 3px;">`;
-                    html += `<div style="font-weight: 500; color: #333;">${statusIcon} ${component.subtopic}</div>`;
-                    html += `<div style="font-size: 11px; color: #666; margin-top: 3px;">`;
-                    html += `${component.domain} → ${component.topic} | Accuracy: ${accuracy}% (${component.questionsCorrect}/${component.questionsAttempted})`;
-                    html += `</div>`;
-                    html += `</div>`;
+            // Update visualization: domains only from current question bank, progress bar per domain (always show when we have questions)
+            if (vizEl) {
+                const getDomain = (q) => (q && q.domain) ? q.domain : 'Other';
+                const domainLastUpdated = {};
+                const knowledgeMap = (studentProfile && studentProfile.knowledgeMap) ? studentProfile.knowledgeMap : {};
+                Object.entries(knowledgeMap).forEach(([key, component]) => {
+                    const d = (component.domain || key.split('->')[0] || 'Other');
+                    const t = (component.lastUpdated || '');
+                    if (!domainLastUpdated[d] || t > domainLastUpdated[d]) domainLastUpdated[d] = t;
                 });
-                
-                if (totalComponents > 20) {
-                    html += `<div style="margin-top: 10px; color: #666; font-size: 11px;">... and ${totalComponents - 20} more components</div>`;
+                const hasAnyRecord = Object.keys(domainLastUpdated).length > 0;
+                let allDomains = [];
+                if (allQuestions && allQuestions.length > 0) {
+                    allDomains = [...new Set(allQuestions.map(getDomain))];
+                    allDomains.sort((a, b) => {
+                        if (hasAnyRecord) {
+                            const ta = domainLastUpdated[a] || '';
+                            const tb = domainLastUpdated[b] || '';
+                            if (ta !== tb) return tb.localeCompare(ta);
+                        }
+                        return a.localeCompare(b);
+                    });
                 }
-                
+
+                let html = '<div style="font-size: 12px;">';
+                html += '<div style="font-weight: 600; margin-bottom: 10px; color: #333;">By domain (accuracy %)</div>';
+
+                allDomains.forEach(domain => {
+                    const totalInDomain = allQuestions.filter(q => getDomain(q) === domain).length;
+                    const correctIdsInDomain = new Set();
+                    Object.entries(knowledgeMap).forEach(([key, component]) => {
+                        const d = (component.domain || key.split('->')[0] || 'Other');
+                        if (d === domain && component.correctQuestionIds && Array.isArray(component.correctQuestionIds)) {
+                            component.correctQuestionIds.forEach(id => correctIdsInDomain.add(id));
+                        }
+                    });
+                    const correctInDomain = correctIdsInDomain.size;
+                    const accuracy = totalInDomain > 0 ? Math.round((correctInDomain / totalInDomain) * 100) : 0;
+                    const barColor = accuracy >= 70 ? '#28a745' : accuracy >= 40 ? '#ffc107' : '#dc3545';
+
+                    html += '<div style="margin-bottom: 10px;">';
+                    html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">`;
+                    html += `<span style="font-weight: 500; color: #333;">${domain}</span>`;
+                    html += `<span style="font-size: 11px; color: #666;">${accuracy}% (${correctInDomain}/${totalInDomain}) · ${totalInDomain} questions</span>`;
+                    html += `</div>`;
+                    html += `<div style="height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;">`;
+                    html += `<div style="height: 100%; width: ${accuracy}%; min-width: ${accuracy > 0 ? 2 : 0}px; background: ${barColor}; border-radius: 4px;"></div>`;
+                    html += `</div>`;
+                    html += '</div>';
+                });
+
+                if (allDomains.length === 0) {
+                    html += '<div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">No domains in current question bank. Load questions to see domains.</div>';
+                }
                 html += '</div>';
                 vizEl.innerHTML = html;
-            } else if (vizEl) {
-                vizEl.innerHTML = '<div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">No knowledge tracked yet. Answer questions to build your knowledge profile.</div>';
             }
         }
         
@@ -2436,50 +2482,22 @@ Author: AI for Education (Wenchao Qin)
         }
 
         function setupProfileInitialization() {
-            const initBtn = document.getElementById('init-profile-btn');
-            const nameInput = document.getElementById('student-name-input');
-            
-            // Don't auto-load profile - let user manually enter name and initialize
-            // 不自动加载profile - 让用户手动输入姓名并初始化
-            // This prevents accidentally loading the wrong profile
-            // 这可以防止意外加载错误的profile
-            
-            if (initBtn && nameInput) {
-                initBtn.addEventListener('click', function() {
-                    const userName = nameInput.value.trim();
-                    if (!userName) {
-                        alert('Please enter your name first');
-                        return;
-                    }
-                    
-                    // Try to load existing profile, or create new one
-                    // 尝试加载现有档案，或创建新档案
-                    const existing = loadStudentProfile(userName);
-                    if (existing) {
-                        studentProfile = existing;
-                        console.log('✅ Loaded existing profile for', userName);
-                        
-                        // Re-evaluate knowledge status based on new rule
-                        // 根据新规则重新评估知识状态
-                        // This updates old profiles to use the new "all questions must be correct" rule
-                        // 这更新旧档案以使用新的"所有题目必须都正确"规则
-                        // Note: This will only work if questions are already loaded
-                        // 注意：这只有在题目已经加载时才会工作
-                        if (allQuestions && allQuestions.length > 0) {
-                            reevaluateKnowledgeStatus();
-                        }
-                    } else {
-                        studentProfile = initializeStudentProfile(userName);
-                        saveStudentProfile();
-                        console.log('✅ Created new profile for', userName);
-                    }
-                    
-                    updateKnowledgeDisplay();
-                    nameInput.disabled = true;
-                    initBtn.textContent = 'Profile Active';
-                    initBtn.style.background = '#6c757d';
-                });
+            // Use logged-in username from session (login = profile identity)
+            const userName = sessionStorage.getItem('quiz_user') || '';
+            if (!userName) return;
+
+            const loggedInEl = document.getElementById('logged-in-user');
+            if (loggedInEl) loggedInEl.textContent = 'Logged in as: ' + userName;
+
+            const existing = loadStudentProfile(userName);
+            if (existing) {
+                studentProfile = existing;
+                if (allQuestions && allQuestions.length > 0) reevaluateKnowledgeStatus();
+            } else {
+                studentProfile = initializeStudentProfile(userName);
+                saveStudentProfile();
             }
+            updateKnowledgeDisplay();
         }
 
         // 测验初始化（登录后调用）
@@ -2489,40 +2507,86 @@ Author: AI for Education (Wenchao Qin)
             setupProfileInitialization();
             setupResizer();
             updateKnowledgeDisplay();
-            await loadQuestionsFromFile('questions.json');
+            const selector = document.getElementById('qbank-selector');
+            const source = (selector && selector.value) ? selector.value : 'generated_surgery_domain_questions.json';
+            await loadQuestionsFromFile(source);
         }
+        window.initQuiz = initQuiz;
 
-        // 允许的登录账号（与登录表单同页）
-        const ALLOWED_USERS = [
+        // 默认账号 + 本地注册用户（localStorage）
+        const DEFAULT_USERS = [
             { username: 'admin', password: 'admin' },
             { username: 'student', password: 'student' }
         ];
+        const STORAGE_KEY_USERS = 'quiz_registered_users';
+
+        function getUsers() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY_USERS);
+                const extra = stored ? JSON.parse(stored) : [];
+                return [...DEFAULT_USERS, ...extra];
+            } catch (_) { return [...DEFAULT_USERS]; }
+        }
+
+        function saveRegisteredUser(username, password) {
+            const list = [];
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY_USERS);
+                if (stored) list.push(...JSON.parse(stored));
+            } catch (_) {}
+            list.push({ username: username.trim(), password });
+            localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(list));
+        }
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', async function() {
             const loginScreen = document.getElementById('login-screen');
             const quizApp = document.getElementById('quiz-app');
+            const loginCard = document.getElementById('login-card');
+            const registerCard = document.getElementById('register-card');
+
+            function showLogin() {
+                registerCard.classList.remove('show');
+                loginCard.classList.remove('hide');
+                document.getElementById('register-error').textContent = '';
+                document.getElementById('register-form').reset();
+            }
+            function showRegister() {
+                loginCard.classList.add('hide');
+                registerCard.classList.add('show');
+                document.getElementById('login-error').textContent = '';
+            }
+
+            try {
+                var showReg = document.getElementById('show-register');
+                if (showReg) showReg.addEventListener('click', function(e) { e.preventDefault(); showRegister(); });
+                var showLnk = document.getElementById('show-login');
+                if (showLnk) showLnk.addEventListener('click', function(e) { e.preventDefault(); showLogin(); });
+                var regForm = document.getElementById('register-form');
+                if (regForm) regForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const username = document.getElementById('register-username').value.trim();
+                    const password = document.getElementById('register-password').value;
+                    const password2 = document.getElementById('register-password2').value;
+                    const errEl = document.getElementById('register-error');
+                    if (errEl && !username) { errEl.textContent = 'Please enter a username.'; return; }
+                    if (errEl && password.length < 1) { errEl.textContent = 'Please enter a password.'; return; }
+                    if (errEl && password !== password2) { errEl.textContent = 'Passwords do not match. Please try again.'; return; }
+                    try {
+                        if (getUsers().some(u => u.username === username)) { if (errEl) errEl.textContent = 'This username is already taken. Please choose another.'; return; }
+                    } catch (_) {}
+                    saveRegisteredUser(username, password);
+                    if (errEl) errEl.textContent = '';
+                    showLogin();
+                    var loginErr = document.getElementById('login-error');
+                    if (loginErr) loginErr.textContent = 'Account created. Please sign in.';
+                });
+            } catch (err) { console.warn('Login UI setup:', err); }
 
             if (!sessionStorage.getItem('quiz_auth')) {
-                // 未登录：登录屏已默认显示，确保测验隐藏
+                // 未登录：确保登录屏显示，测验区隐藏，不执行 initQuiz
+                loginScreen.classList.remove('hidden');
                 quizApp.classList.add('hidden');
-                document.getElementById('login-form').addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    const username = document.getElementById('login-username').value.trim();
-                    const password = document.getElementById('login-password').value;
-                    const errEl = document.getElementById('login-error');
-                    const valid = ALLOWED_USERS.some(u => u.username === username && u.password === password);
-                    if (valid) {
-                        sessionStorage.setItem('quiz_auth', '1');
-                        sessionStorage.setItem('quiz_user', username);
-                        errEl.textContent = '';
-                        loginScreen.classList.add('hidden');
-                        quizApp.classList.remove('hidden');
-                        initQuiz();
-                    } else {
-                        errEl.textContent = '用户名或密码错误，请重试。';
-                    }
-                });
                 return;
             }
             // 已登录：隐藏登录屏，显示测验并初始化
@@ -2715,6 +2779,7 @@ Author: AI for Education (Wenchao Qin)
                 } else {
                     loadData(dataBeforeSubmit);
                 }
+                updateKnowledgeDisplay();
             } catch (error) {
                 console.error(`Failed to load ${source}:`, error);
                 if (statusEl) statusEl.textContent = 'Loading failed';
@@ -3348,16 +3413,26 @@ Author: AI for Education (Wenchao Qin)
             const messageInput = document.getElementById('message-input');
             const messageSendBtn = document.getElementById('message-send-btn');
             
-            // Support Enter key to send message
-            // 支持Enter键发送消息
+            // Enter key: send message or submit thinking (when thinking prompt visible; single input for both)
             messageInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (document.getElementById('thinking-prompt-message')) {
+                        document.getElementById('message-send-btn').click();
+                    } else {
+                        handleMessageSubmit();
+                    }
+                }
+            });
+            // Single Send button + single input: submits message OR thinking (when thinking prompt is visible)
+            messageSendBtn.addEventListener('click', function() {
+                if (document.getElementById('thinking-prompt-message')) {
+                    const text = (document.getElementById('message-input') || {}).value || '';
+                    submitStudentThinking(text);
+                } else {
                     handleMessageSubmit();
                 }
             });
-            // Send button click
-            // 发送按钮点击
-            messageSendBtn.addEventListener('click', handleMessageSubmit);
             
             // ============================================================
             // Jump to Question Functionality - Event Listeners Setup
@@ -3771,21 +3846,38 @@ Author: AI for Education (Wenchao Qin)
                 const domainTopicMatch = questionText.match(/^(.*?)\s*\(Domain:\s*(.+?),\s*Topic:\s*(.+?),\s*Subtopic:\s*(.+?)\)$/);
                 
                 if (domainTopicMatch) {
-                    // Has domain/topic/subtopic info - display with different styling
-                    // 有domain/topic/subtopic信息 - 用不同样式显示
+                    // Has domain/topic/subtopic info - display with different styling + Trigger Tutor button
+                    // 有domain/topic/subtopic信息 - 用不同样式显示，右侧加「请教导师」按钮
                     const mainQuestion = domainTopicMatch[1];
                     const domain = domainTopicMatch[2];
                     const topic = domainTopicMatch[3];
                     const subtopic = domainTopicMatch[4];
                     
                     questionTextEl.innerHTML = `
-                        <div style="margin-bottom: 8px; padding: 4px 8px; border-left: 2px solid #d0d0d0; border-radius: 2px; font-size: 12px; color: #333; line-height: 1.4;">
-                            <span style="color: #666;">Domain:</span> ${domain} | 
-                            <span style="color: #666;">Topic:</span> ${topic} | 
-                            <span style="color: #666;">Subtopic:</span> ${subtopic}
+                        <div style="margin-bottom: 8px; padding: 4px 8px; border-left: 2px solid #d0d0d0; border-radius: 2px; font-size: 12px; color: #333; line-height: 1.4; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                            <span>
+                                <span style="color: #666;">Domain:</span> ${domain} | 
+                                <span style="color: #666;">Topic:</span> ${topic} | 
+                                <span style="color: #666;">Subtopic:</span> ${subtopic}
+                            </span>
+                            <button type="button" id="trigger-tutor-btn" style="
+                                padding: 6px 14px; font-size: 12px; border-radius: 6px; border: 1px solid #667eea;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;
+                                cursor: pointer; white-space: nowrap; font-weight: 500;
+                            ">Ask Tutor</button>
                         </div>
                         <span style="font-size: 16px; line-height: 1.6;">${mainQuestion}</span>
                     `;
+                    const triggerBtn = document.getElementById('trigger-tutor-btn');
+                    if (triggerBtn) triggerBtn.addEventListener('click', function() {
+                        var rightPanel = document.getElementById('right-panel');
+                        if (rightPanel) rightPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        if (currentQuestionMeta && currentData) {
+                            submitStudentThinking('Please explain this question and help me understand.');
+                        } else {
+                            triggerHintAfterWrongAnswer(false);
+                        }
+                    });
                 } else {
                     // No domain/topic/subtopic info - display normally
                     // 没有domain/topic/subtopic信息 - 正常显示
@@ -4678,42 +4770,20 @@ Author: AI for Education (Wenchao Qin)
             thinkingPromptDiv.innerHTML = `
                 <div class="message-content" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 20px;">
                     <div style="font-weight: 600; margin-bottom: 10px; font-size: 16px;">🤔 I'd like to understand your thinking</div>
-                    <div style="margin-bottom: 15px; line-height: 1.5;">${messageText}</div>
-                    <div style="margin-bottom: 15px;">
-                        <textarea id="student-thinking-input" placeholder="Explain your reasoning here..." style="
-                            width: 100%;
-                            min-height: 80px;
-                            padding: 12px;
-                            border: none;
-                            border-radius: 8px;
-                            font-size: 14px;
-                            font-family: inherit;
-                            resize: vertical;
-                            box-sizing: border-box;
-                        "></textarea>
-                    </div>
-                    <button onclick="submitStudentThinking()" class="hint-action-btn" style="
-                        background: white;
-                        color: #667eea;
-                        border: none;
-                        padding: 12px 24px;
-                        border-radius: 25px;
-                        font-weight: 600;
-                        font-size: 15px;
-                        cursor: pointer;
-                        transition: all 0.2s;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                    ">📝 Submit My Thinking</button>
+                    <div style="line-height: 1.5;">${messageText}</div>
+                    <div style="margin-top: 10px; font-size: 13px; opacity: 0.95;">Type your reasoning in the input box below and click Send.</div>
                 </div>
             `;
             conversationList.appendChild(thinkingPromptDiv);
             conversationList.scrollTop = conversationList.scrollHeight;
             
-            // Focus on textarea
-            setTimeout(() => {
-                const textarea = document.getElementById('student-thinking-input');
-                if (textarea) textarea.focus();
-            }, 100);
+            // Use the single input + Send button: switch placeholder only (button stays "Send")
+            const mainInput = document.getElementById('message-input');
+            if (mainInput) {
+                mainInput.placeholder = 'Explain your reasoning here...';
+                mainInput.value = '';
+                mainInput.focus();
+            }
         }
         
         /**
@@ -4746,29 +4816,26 @@ Author: AI for Education (Wenchao Qin)
          * - If API call fails → Shows helpful default questions
          *   如果API调用失败 → 显示有用的默认问题
          */
-        async function submitStudentThinking() {
-            // Get the textarea element containing student's thinking
-            // 获取包含学生思考的文本区域元素
-            const thinkingInput = document.getElementById('student-thinking-input');
-            if (!thinkingInput) return;
-            
-            // Get and validate student's input
-            // 获取并验证学生的输入
-            const studentThinking = thinkingInput.value.trim();
+        async function submitStudentThinking(optionalStudentThinking) {
+            // Get student's thinking: from argument (passed from Send button when in thinking mode) or from main input
+            // 获取学生思考：来自参数（思考模式下由发送按钮传入）或来自主输入框
+            const mainInput = document.getElementById('message-input');
+            const inThinkingMode = !!document.getElementById('thinking-prompt-message');
+            const studentThinking = optionalStudentThinking !== undefined
+                ? (typeof optionalStudentThinking === 'string' ? optionalStudentThinking.trim() : '')
+                : (inThinkingMode && mainInput ? mainInput.value.trim() : '');
             if (!studentThinking) {
                 alert('Please explain your reasoning before submitting.');
                 return;
             }
             
             // Validate question data is available
-            // 验证问题数据可用
             if (!currentQuestionMeta || !currentData) return;
             
-            // Disable input and button to prevent multiple submissions
-            // 禁用输入和按钮以防止多次提交
-            thinkingInput.disabled = true;
-            const submitBtn = thinkingInput.parentElement.parentElement.querySelector('button');
-            if (submitBtn) submitBtn.disabled = true;
+            // Disable main input and Send button to prevent multiple submissions (single input for both chat and thinking)
+            if (mainInput) mainInput.disabled = true;
+            const sendBtn = document.getElementById('message-send-btn');
+            if (sendBtn) sendBtn.disabled = true;
             
             // Get conversation list and show loading indicator
             // 获取对话列表并显示加载指示器
@@ -4834,9 +4901,10 @@ Author: AI for Education (Wenchao Qin)
                     });
                 }
                 
-                // Convert answer indices to letter format (0 → 'A', 1 → 'B', etc.)
-                // 将答案索引转换为字母格式（0 → 'A', 1 → 'B', 等）
-                const studentAnswer = String.fromCharCode(65 + currentData.QA.student_prediction);
+                // Convert answer indices to letter format (0 → 'A', 1 → 'B', etc.); use null when not yet submitted
+                const studentAnswer = currentData.QA.student_prediction !== undefined
+                    ? String.fromCharCode(65 + currentData.QA.student_prediction)
+                    : null;
                 const correctAnswer = String.fromCharCode(65 + currentQuestionMeta.correctIndex);
                 
                 // Call backend API to evaluate student thinking
@@ -4887,16 +4955,24 @@ Author: AI for Education (Wenchao Qin)
                 // 移除加载指示器
                 removeMessageFromConversation(thinkingId);
                 
-                // Remove the thinking prompt box
-                // 移除思考提示框
+                // Remove the thinking prompt box and restore single input for chat
                 const thinkingPrompt = document.getElementById('thinking-prompt-message');
-                if (thinkingPrompt) {
-                    thinkingPrompt.remove();
+                if (thinkingPrompt) thinkingPrompt.remove();
+                const sendBtnRestore1 = document.getElementById('message-send-btn');
+                if (sendBtnRestore1) { sendBtnRestore1.textContent = 'Send'; sendBtnRestore1.disabled = false; }
+                const mainInputRestore = document.getElementById('message-input');
+                if (mainInputRestore) {
+                    mainInputRestore.placeholder = 'Ask ChatGPT anything...';
+                    mainInputRestore.value = '';
+                    mainInputRestore.disabled = false;
+                    mainInputRestore.focus();
                 }
                 
-                // Add student's thinking to conversation history
-                // 将学生的思考添加到对话历史
-                addMessageToConversation('user', studentThinking);
+                // Add student's thinking to conversation only when non-empty (skip "(No content)" when Ask Tutor button used)
+                // 仅在有内容时添加用户消息，避免「Ask Tutor」空白触发时显示「(No content)」
+                if (studentThinking) {
+                    addMessageToConversation('user', studentThinking);
+                }
                 
                 // Initialize iterative guidance system
                 // 初始化迭代指导系统
@@ -4944,12 +5020,15 @@ Author: AI for Education (Wenchao Qin)
                         guidanceDialogueActive = false;
                         guidanceContext = null;
                         
-                        // Reset message input placeholder
+                        // Reset single input for chat (placeholder + re-enable)
                         const messageInput = document.getElementById('message-input');
                         if (messageInput) {
                             messageInput.placeholder = 'Ask a question or share your thoughts...';
+                            messageInput.value = '';
+                            messageInput.disabled = false;
                         }
-                        
+                        const sendBtnFlow = document.getElementById('message-send-btn');
+                        if (sendBtnFlow) sendBtnFlow.disabled = false;
                         return true;  // Flow terminated
                     }
                     
@@ -4980,7 +5059,6 @@ Author: AI for Education (Wenchao Qin)
                         `;
                         
                         // Display sub-questions
-                        // 显示子问题
                         if (result.sub_questions && result.sub_questions.length > 0) {
                             questionsHtml += '<div style="margin-top: 15px;">';
                             result.sub_questions.forEach((q, i) => {
@@ -5004,45 +5082,32 @@ Author: AI for Education (Wenchao Qin)
                 }
                 
             } catch (error) {
-                // Error handling: Log error and provide fallback guidance
-                // 错误处理：记录错误并提供回退指导
-                console.error('Error evaluating student thinking:', error);
+                // Error handling: API call failed (network, backend error, timeout, etc.)
+                // 错误处理：API 调用失败（网络、后端错误、超时等）— 此时显示的是错误回退，不是 LLM 生成的内容
+                console.error('Error evaluating student thinking (tutor API failed):', error);
                 removeMessageFromConversation(thinkingId);
                 
-                // Remove thinking prompt if still exists
-                // 如果思考提示框仍存在，移除它
                 const thinkingPrompt = document.getElementById('thinking-prompt-message');
-                if (thinkingPrompt) {
-                    thinkingPrompt.remove();
+                if (thinkingPrompt) thinkingPrompt.remove();
+                const sendBtnRestore = document.getElementById('message-send-btn');
+                if (sendBtnRestore) { sendBtnRestore.textContent = 'Send'; sendBtnRestore.disabled = false; }
+                const mainInputRestore = document.getElementById('message-input');
+                if (mainInputRestore) {
+                    mainInputRestore.placeholder = 'Ask ChatGPT anything...';
+                    mainInputRestore.disabled = false;
+                    mainInputRestore.focus();
                 }
+                if (studentThinking) addMessageToConversation('user', studentThinking);
                 
-                // Add user's thinking to conversation history
-                // 将用户的思考添加到对话历史
-                addMessageToConversation('user', studentThinking);
-                
-                // Fallback: Provide default decomposition when backend fails
-                // This ensures students always get help, even if backend is unavailable
-                // Handles cases like "have no idea" or network errors
-                // 回退：当后端失败时提供默认分解
-                // 这确保学生始终能得到帮助，即使后端不可用
-                // 处理"不知道"或网络错误等情况
+                // Fallback: Tutor API (port 5000) failed. Show how to fix.
                 const fallbackHtml = `
                     <div style="color: #374151; font-size: 14px; line-height: 1.7;">
-                        <div style="margin-bottom: 10px; font-weight: 600; color: #667eea;">🔍 Let me help you work through this step by step:</div>
-                        <div style="margin-bottom: 15px;">I understand you're not sure about this question. Let's break it down into simpler parts to help you understand the key concepts.</div>
-                        <div style="margin-top: 15px;">
-                            <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
-                                <strong>1.</strong> 🤔 What are the key medical terms or concepts mentioned in this question?
-                            </div>
-                            <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
-                                <strong>2.</strong> 🤔 What do you think each answer option is trying to describe?
-                            </div>
-                            <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
-                                <strong>3.</strong> 🤔 What information from the question might help you distinguish between the options?
-                            </div>
+                        <div style="padding: 12px; background: #fee2e2; border-left: 4px solid #dc2626; border-radius: 4px; margin-bottom: 10px;">
+                            <strong>⚠️ Tutor service temporarily unavailable.</strong><br>
+                            The request to the tutor API (port 5000) failed. Both the UI (8000) and RAG/Tutor (5000) must be running.
                         </div>
-                        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; font-size: 13px;">
-                            💡 <strong>Tip:</strong> Start by identifying what the question is asking about, then think about what you know about each option.
+                        <div style="padding: 10px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; font-size: 13px;">
+                            💡 <strong>Fix:</strong> In the project folder run <code>python start.py</code> and wait until you see "RAG (http://127.0.0.1:5000) -> OK". On Windows if Tutor still fails, try <code>python start.py --no-wsl-rag</code> so the tutor runs on port 5000 locally. Then refresh and try "Ask Tutor" again.
                         </div>
                     </div>
                 `;
@@ -5427,9 +5492,8 @@ Author: AI for Education (Wenchao Qin)
             setTimeout(() => {
                 let questionHtml = "";
                 
-                // Determine how many questions to show initially (no hard limit)
-                // 确定初始显示的问题数量（无硬性限制）
-                const initialCount = numSteps;  // Show all steps, no limit
+                // Determine how many questions to show initially
+                const initialCount = numSteps;
                 
                 if (initialCount >= 2) {
                     // Show multiple initial questions for complex topics
@@ -6207,8 +6271,7 @@ ${(() => {
                 // Invalid range: show error message with valid range
                 // 无效范围：显示包含有效范围的错误消息
                 alert(
-                    `无效的题目编号 / Invalid question number.\n` +
-                    `请输入 1 到 ${allQuestions.length} 之间的数字 / ` +
+                    `Invalid question number.\n` +
                     `Please enter a number between 1 and ${allQuestions.length}`
                 );
                 return;  // Early return: cannot proceed with invalid index
@@ -6856,6 +6919,31 @@ Your response MUST follow this structure:
         console.log('🏥 Medical Quiz loaded successfully');
         console.log('📚 Use qbank selector to switch between question banks');
         console.log('💬 ChatGPT integration ready (API key required)');
+    </script>
+    <script>
+    (function() {
+      function handleLogin() {
+        var u = document.getElementById('login-username'), p = document.getElementById('login-password'), err = document.getElementById('login-error');
+        var ls = document.getElementById('login-screen'), qa = document.getElementById('quiz-app');
+        if (!u || !p || !err) return;
+        if (!ls || !qa) return;
+        var username = (u.value || '').trim(), password = (p.value || '');
+        if (!username) { err.textContent = 'Please enter a username.'; return; }
+        if (!password) { err.textContent = 'Please enter a password.'; return; }
+        var DEFAULT_USERS = [{username:'admin',password:'admin'},{username:'student',password:'student'}];
+        var extra = [];
+        try { var s = localStorage.getItem('quiz_registered_users'); if (s) extra = JSON.parse(s); } catch(e) {}
+        var users = DEFAULT_USERS.concat(extra);
+        var valid = users.some(function(x) { return x.username === username && x.password === password; });
+        if (!valid) { err.textContent = 'Invalid username or password. Please try again.'; return; }
+        sessionStorage.setItem('quiz_auth', '1'); sessionStorage.setItem('quiz_user', username);
+        err.textContent = ''; ls.classList.add('hidden'); qa.classList.remove('hidden');
+        if (typeof window.initQuiz === 'function') { window.initQuiz(); } else { location.reload(); }
+      }
+      window.handleLogin = handleLogin;
+      var btn = document.getElementById('login-submit-btn');
+      if (btn) { btn.onclick = handleLogin; }
+    })();
     </script>
 </body>
 </html>

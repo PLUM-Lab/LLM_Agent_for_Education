@@ -124,13 +124,13 @@ def start_http_server(port=8000):
                 pass
 
         with socketserver.TCPServer(("", port), QuietHandler) as httpd:
-            print(f"✓ HTTP server started")
+            print("[OK] HTTP server started")
             print(f"  Access: http://localhost:{port}/medical-quiz.html")
             print(f"\nPress Ctrl+C to stop all servers\n")
             httpd.serve_forever()
     except OSError as e:
         if "Address already in use" in str(e) or "address already in use" in str(e).lower():
-            print(f"⚠ Port {port} is already in use")
+            print(f"[WARN] Port {port} is already in use")
             print(f"Please try a different port or stop the process using this port")
             return False
         else:
@@ -140,7 +140,7 @@ def start_http_server(port=8000):
         print("\n[HTTP Server] Shutting down...")
         return True
     except Exception as e:
-        print(f"✗ HTTP server error: {e}")
+        print(f"[FAIL] HTTP server error: {e}")
         return False
 
 def start_rag_server():
@@ -201,7 +201,7 @@ def start_evaluator_server(port=8001):
                 super().end_headers()
         
         with socketserver.TCPServer(("", port), CORSRequestHandler) as httpd:
-            print(f"✓ Evaluator interface server started")
+            print("[OK] Evaluator interface server started")
             print(f"  Access: http://localhost:{port}/question_evaluator.html")
             print(f"\nPress Ctrl+C to stop server\n")
             httpd.serve_forever()
@@ -218,7 +218,7 @@ def start_evaluator_server(port=8001):
         print("\n[Evaluator Interface Server] Shutting down...")
         return True
     except Exception as e:
-        print(f"✗ Server error: {e}")
+        print(f"[FAIL] Server error: {e}")
         return False
 
 def restart_rag_server():
@@ -353,7 +353,7 @@ Examples:
     elif args.rag and not is_linux:
         print("\n[Info] --no-wsl-rag: RAG runs in current process (ColBERTv2 may be unavailable)\n")
     elif is_linux and args.rag:
-        print("✓ ColBERTv2 reranker will be available\n")
+        print("[OK] ColBERTv2 reranker will be available\n")
     
     # Start services
     threads = []
