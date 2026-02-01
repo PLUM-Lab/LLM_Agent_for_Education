@@ -32,8 +32,10 @@ LLM_Agent_for_Education/
 ├── parse_qbank_openai.py  # Amboss PDF parsing script
 ├── merge_qbanks.py        # Question bank merging script
 ├── rag_server.py          # RAG backend (FAISS + ColBERTv2)
-├── start.py              # Unified startup script (recommended)
+├── start.py               # Unified startup script (recommended)
 ├── start.bat              # Windows quick launch
+├── setup_port_forward.ps1 # Port forwarding for WSL (auto-run by start.py)
+├── setup_port_forward.bat # Run as admin to set port forward manually
 ├── api-key.js             # Your OpenAI API key (not in Git)
 ├── api-key.example.js     # API key template
 ├── README.md              # This file
@@ -67,23 +69,30 @@ pip install openai langchain-community pypdf flask flask-cors faiss-cpu ragatoui
 
 #### Method A: Unified Startup Script (Recommended)
 
-**Windows:**
+**One command starts everything:**
+
 ```bash
 python start.py
 ```
-Or double-click `start.bat`
+Or double-click `start.bat` (Windows)
 
-**Linux/WSL:**
+**What happens:**
+- **Windows**: Starts UI (8000) + RAG in WSL with ColBERTv2 (5000), **automatically sets up port forwarding** (UAC may appear once if not running as admin)
+- **Linux/WSL**: Starts UI + RAG with ColBERTv2 directly
+- First run: ColBERTv2 loads in ~12 seconds
+- Access: http://localhost:8000/medical-quiz.html
+
+**Windows options:**
 ```bash
-python3 start.py
-```
-
-**Startup Options:**
-
-```bash
-# Start all services (default: Main UI + RAG server)
+# Full ColBERTv2 reranking (WSL + auto port forward, UAC may appear once)
 python start.py
 
+# Skip WSL - no ColBERTv2, no admin needed
+python start.py --no-wsl-rag
+```
+
+**Other startup options:**
+```bash
 # Start only main UI and RAG server
 python start.py --ui --rag
 
@@ -99,14 +108,15 @@ python start.py --restart-rag
 
 **After startup:**
 - Main UI: http://localhost:8000/medical-quiz.html
-- RAG Server: http://localhost:5000/health
+- RAG Server: http://localhost:5000/health (ColBERTv2 when using WSL)
 - Evaluator Interface: http://localhost:8001/question_evaluator.html (if started)
 
 **Notes:**
-- Windows environment can start all services, but ColBERTv2 reranker may not be available
-- WSL/Linux environment supports full functionality, including ColBERTv2 reranker
-- First run takes 5-10 minutes to build RAG index (one-time only)
-- Press `Ctrl+C` to stop all servers
+- **Windows + WSL**: Port forwarding (`127.0.0.1:5000` → WSL:5000) is automatic. If UAC appears, click Yes once.
+- **Windows + --no-wsl-rag**: RAG runs in current process; ColBERTv2 may not load (FAISS-only).
+- **Linux/WSL**: Full ColBERTv2 support.
+- First run takes 5-10 minutes to build RAG index (one-time only).
+- Press `Ctrl+C` to stop all servers.
 
 #### Method B: Start Separately (For Debugging)
 
@@ -317,9 +327,11 @@ ColBERTv2 reranker requires compiling C++ extensions. There are three approaches
    ```
    If it shows the compiler path, installation is successful.
 
-#### Option 2: Use WSL (Recommended, More Stable)
+#### Option 2: Use WSL (Recommended on Windows)
 
 ColBERTv2's C++ extension uses POSIX thread library (pthread.h), which may not be compatible on Windows. Using WSL avoids this issue.
+
+**On Windows: run `python start.py` from Windows** — it automatically starts RAG in WSL and sets up port forwarding. No need to manually open WSL.
 
 **Step 1: Install WSL**
 
@@ -379,23 +391,25 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip install faiss-cpu flask flask-cors openai langchain-community pypdf pymupdf ragatouille
 ```
 
-**Step 3: Run Server in WSL**
+**Step 3: Run from Windows (recommended)**
 
+```bash
+cd d:\LLM_Agent_for_Education
+python start.py
+```
+Start.py will spawn RAG in WSL and set up port forwarding. UAC may appear once (click Yes).
+
+**Or run directly in WSL:**
 ```bash
 cd /mnt/d/LLM_Agent_for_Education
 python3 start.py
 ```
+
+**Manual port forwarding (if needed):** If `localhost:5000` is unreachable after WSL restart, run `setup_port_forward.bat` as administrator once.
 
 **Notes:**
-- Windows drives in WSL are located at `/mnt/d/`, `/mnt/c/`, etc.
-- WSL and Windows share localhost, can access directly
-- File paths need `/mnt/d/` prefix to access Windows drives
-
-**Using unified startup script in WSL:**
-```bash
-cd /mnt/d/LLM_Agent_for_Education
-python3 start.py
-```
+- Windows drives in WSL are at `/mnt/d/`, `/mnt/c/`, etc.
+- WSL2 uses a separate network; port forwarding connects `127.0.0.1:5000` to WSL.
 
 #### Option 3: Use FAISS-Only Mode (Current State)
 
@@ -472,10 +486,11 @@ Should see:
   localStorage.setItem('openai_api_key', 'sk-your-key');
   ```
 
-### "RAG Server not available"
-- If `rag_server.py` is not running, this is normal
-- System will fall back to keyword search
-- For better results, run RAG server
+### "RAG Server not available" or Tutor shows "Tutor service temporarily unavailable"
+- **Windows + WSL**: Ensure port forwarding is set. Run `setup_port_forward.bat` as administrator once.
+- Or run `python start.py` again — it auto-sets up port forwarding (UAC may appear).
+- If WSL IP changed after restart, run `setup_port_forward.bat` again.
+- Fallback: `python start.py --no-wsl-rag` (no ColBERTv2, but works without admin).
 
 ### "Reranker import failed"
 - If you see `[!] Reranker import failed`, this is normal

@@ -21,10 +21,14 @@ Usage:
     # Specify ports
     python start.py --ui --port 8000
     
-    # Windows environment (auto-detected, ColBERTv2 not required)
+    # Windows: one command starts UI + WSL RAG (ColBERTv2 reranking)
+    #          Port forwarding is automatic (UAC may appear once)
     python start.py
     
-    # WSL/Linux environment (supports ColBERTv2 reranking)
+    # Windows: skip WSL (no ColBERTv2, no admin needed)
+    python start.py --no-wsl-rag
+    
+    # WSL/Linux: ColBERTv2 reranking available
     python start.py
 """
 
@@ -73,6 +77,64 @@ def start_rag_server_in_wsl():
     except Exception as e:
         print(f"[Warning] Failed to start RAG in WSL: {e}")
         return None
+
+def get_wsl_ip():
+    """Get WSL IP address. Returns None on failure."""
+    try:
+        r = subprocess.run(
+            ["wsl", "hostname", "-I"],
+            capture_output=True, text=True, timeout=10, cwd=os.getcwd()
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            return r.stdout.strip().split()[0]
+    except Exception:
+        pass
+    return None
+
+def setup_port_forward_to_wsl():
+    """
+    Set up port forwarding: localhost:5000 -> WSL:5000 (Windows only).
+    Required for Tutor to access WSL RAG. May trigger UAC if not running as admin.
+    Returns True if successful or already accessible.
+    """
+    wsl_ip = get_wsl_ip()
+    if not wsl_ip:
+        print("[Warning] Cannot get WSL IP. Port forwarding skipped.")
+        return False
+    # Try netsh (works if Python has admin)
+    try:
+        subprocess.run(
+            ["netsh", "interface", "portproxy", "delete", "v4tov4",
+             "listenport=5000", "listenaddress=127.0.0.1"],
+            capture_output=True, timeout=5,
+        )
+        r = subprocess.run(
+            ["netsh", "interface", "portproxy", "add", "v4tov4",
+             "listenport=5000", "listenaddress=127.0.0.1",
+             f"connectport=5000", f"connectaddress={wsl_ip}"],
+            capture_output=True, timeout=5,
+        )
+        if r.returncode == 0:
+            print(f"[OK] Port forwarding: 127.0.0.1:5000 -> {wsl_ip}:5000")
+            return True
+    except Exception:
+        pass
+    # Need admin: launch setup_port_forward.ps1 with elevation (UAC popup)
+    script_dir = Path(__file__).resolve().parent
+    ps1 = script_dir / "setup_port_forward.ps1"
+    if ps1.exists():
+        print("[Info] Setting up port forwarding (may show UAC prompt)...")
+        try:
+            subprocess.run(
+                ["powershell", "-ExecutionPolicy", "Bypass", "-Command",
+                 f"Start-Process powershell -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File \"{ps1}\"' -Verb RunAs -Wait"],
+                cwd=str(script_dir), timeout=30,
+            )
+            time.sleep(1)
+            return wait_for_http("127.0.0.1", 5000, timeout=3)
+        except Exception as e:
+            print(f"[Warning] Port forwarding failed: {e}")
+    return False
 
 def check_wsl_environment():
     """Check if running in WSL or Linux environment"""
@@ -346,7 +408,11 @@ Examples:
         rag_wsl_process = start_rag_server_in_wsl()
         if rag_wsl_process is not None:
             print("  RAG server starting in WSL (port 5000)...")
-            time.sleep(3)  # WSL init takes longer
+            time.sleep(3)  # WSL init
+            # Set up port forwarding so localhost:5000 -> WSL:5000 (may trigger UAC once)
+            setup_port_forward_to_wsl()
+            print("  Waiting for ColBERTv2 to load (~12s)...")
+            time.sleep(12)  # ColBERTv2 load time
         else:
             print("  Falling back to RAG in current process (reranker may be unavailable)\n")
             rag_wsl_process = None

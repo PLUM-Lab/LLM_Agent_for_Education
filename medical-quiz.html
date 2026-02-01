@@ -2218,7 +2218,12 @@ Author: AI for Education (Wenchao Qin)
                     statsEl.textContent = `Questions Answered: 0`;
                 }
                 if (coverageEl) {
-                    coverageEl.textContent = `Knowledge Coverage: 0% (0/0 subtopics)`;
+                    const totalInBank = allQuestions && allQuestions.length > 0
+                        ? new Set(allQuestions.map(q => getKnowledgeComponentKey(q)).filter(k => k && !k.startsWith('unknown->'))).size
+                        : 0;
+                    coverageEl.textContent = totalInBank > 0
+                        ? `Knowledge Coverage: 0% (0/${totalInBank} subtopics)`
+                        : `Knowledge Coverage: 0% (0/0 subtopics)`;
                 }
                 // Don't return early: fall through to render "By domain (accuracy %)" from allQuestions below
                 // 不提前 return，继续用 allQuestions 渲染下方的 By domain
@@ -2293,21 +2298,15 @@ Author: AI for Education (Wenchao Qin)
             //
             // ============================================================
             
-            // Step 1: Count total knowledge components
-            // 步骤1：统计总知识组件数
+            // Step 1: Count total subtopics in question bank (denominator)
+            // 步骤1：统计题库中全部subtopic数（分母）
             // 
-            // Each key in knowledgeMap represents a unique subtopic
-            // knowledgeMap中的每个键代表一个唯一的子主题
-            // Key format: "domain->topic->subtopic"
-            // 键格式："domain->topic->subtopic"
+            // All unique subtopics from allQuestions (domain->topic->subtopic)
+            // 从allQuestions中获取所有唯一的subtopic（domain->topic->subtopic）
             //
-            // Example keys:
-            //   示例键：
-            //   - "Cardiology->Heart Failure->Systolic vs Diastolic Heart Failure"
-            //   - "Pulmonology->Asthma->Pathophysiology and Triggers"
-            //   - "Gastroenterology->Upper GI Bleeding->Peptic Ulcer Bleeding Management"
-            //
-            const totalComponents = Object.keys(studentProfile.knowledgeMap).length;
+            const allSubtopicsInBank = allQuestions && allQuestions.length > 0
+                ? new Set(allQuestions.map(q => getKnowledgeComponentKey(q)).filter(k => k && !k.startsWith('unknown->'))).size
+                : 0;
             
             // Step 2: Count known components (status === "known")
             // 步骤2：统计已知组件数（状态 === "known"）
@@ -2335,39 +2334,41 @@ Author: AI for Education (Wenchao Qin)
             // Step 3: Calculate coverage percentage
             // 步骤3：计算覆盖率百分比
             //
-            // Formula: Coverage = (Fully Mastered Subtopics / Attempted Subtopics) × 100%
-            // 公式：覆盖率 = (完全掌握的子主题数 / 尝试的子主题数) × 100%
+            // Formula: Coverage = (已全部答对的subtopic数 / 题库全部subtopic数) × 100%
+            // 公式：覆盖率 = (分子：已全部答对 / 分母：全部) × 100%
             //
             // Definition:
             //   定义：
-            //   - Fully Mastered Subtopics (完全掌握的子主题): Subtopics with status === "known"
-            //     状态为"known"的子主题（该子主题的所有题目都答对了）
-            //   - Attempted Subtopics (尝试的子主题): All subtopics student has answered questions for
-            //     学生回答过题目的所有子主题
+            //   - Numerator (分子): knownComponents - Subtopics fully mastered (status === "known")
+            //     已全部答对的subtopic数（该子主题的所有题目都答对了）
+            //   - Denominator (分母): allSubtopicsInBank - All unique subtopics in question bank
+            //     题库中全部subtopic数
             //
             // Round to nearest integer for display
             // 四舍五入到最近的整数以便显示
             //
-            // Edge case: If no components yet (totalComponents = 0), coverage = 0%
-            // 边界情况：如果还没有组件（totalComponents = 0），覆盖率 = 0%
+            // Edge case: If no subtopics in bank (allSubtopicsInBank = 0), coverage = 0%
+            // 边界情况：如果题库无subtopic（allSubtopicsInBank = 0），覆盖率 = 0%
             //
-            const coverage = totalComponents > 0 
-                ? Math.round((knownComponents / totalComponents) * 100) 
+            const coverage = allSubtopicsInBank > 0 
+                ? Math.round((knownComponents / allSubtopicsInBank) * 100) 
                 : 0;
             
             // Step 4: Update UI display
             // 步骤4：更新UI显示
             //
-            // Display format: "Knowledge Coverage: X% (完全答对的subtopic数/尝试的subtopic数)"
-            // 显示格式："Knowledge Coverage: X% (完全答对的subtopic数/尝试的subtopic数)"
+            // Display format: "Knowledge Coverage: X% (已全部答对/全部subtopics)"
+            // 显示格式："Knowledge Coverage: X% (分子：已全部答对 / 分母：全部subtopics)"
             //
-            // Example: "Knowledge Coverage: 74% (119/160)"
-            // 示例："Knowledge Coverage: 74% (119/160)"
-            // Meaning: 119 subtopics fully mastered out of 160 attempted subtopics
-            // 含义：160个尝试的子主题中，有119个完全掌握
+            // Example: "Knowledge Coverage: 74% (119/160 subtopics)"
+            // 示例：119个已全部答对，题库共160个subtopics
             //
             if (coverageEl) {
-                coverageEl.textContent = `Knowledge Coverage: ${coverage}% (${knownComponents}/${totalComponents} subtopics)`;
+                if (allSubtopicsInBank > 0 && knownComponents === allSubtopicsInBank) {
+                    coverageEl.textContent = `已完成全部答对 (全部 ${allSubtopicsInBank} subtopics)`;
+                } else {
+                    coverageEl.textContent = `Knowledge Coverage: ${coverage}% (${knownComponents}/${allSubtopicsInBank} subtopics)`;
+                }
             }
             }
             
