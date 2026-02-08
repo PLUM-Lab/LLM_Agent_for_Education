@@ -102,7 +102,7 @@ def get_api_key() -> str:
     api_key = os.environ.get('OPENAI_API_KEY')
     
     if not api_key:
-        config_path = Path(__file__).parent / 'api-key.js'
+        config_path = Path(__file__).resolve().parent.parent / 'api-key.js'
         if config_path.exists():
             try:
                 content = config_path.read_text()

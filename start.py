@@ -60,13 +60,14 @@ def start_rag_server_in_wsl():
     env["REQUIRE_RERANKER"] = "1"
     cmd = [
         "wsl", "-e", "bash", "-c",
-        f"cd '{wsl_path}' && export REQUIRE_RERANKER=1 && python3 rag_server.py"
+        f"cd '{wsl_path}' && export REQUIRE_RERANKER=1 && export RAG_PORT=5001 && python3 rag_server.py"
     ]
     try:
+        # 不使用 PIPE，让 RAG 的 traceback 直接输出到终端，便于排查 Tutor 500 错误
         p = subprocess.Popen(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stdout=None,
+            stderr=None,
             env=env,
             cwd=cwd,
         )
@@ -111,17 +112,17 @@ def setup_port_forward_to_wsl():
         r = subprocess.run(
             ["netsh", "interface", "portproxy", "add", "v4tov4",
              "listenport=5000", "listenaddress=127.0.0.1",
-             f"connectport=5000", f"connectaddress={wsl_ip}"],
+             f"connectport=5001", f"connectaddress={wsl_ip}"],
             capture_output=True, timeout=5,
         )
         if r.returncode == 0:
-            print(f"[OK] Port forwarding: 127.0.0.1:5000 -> {wsl_ip}:5000")
+            print(f"[OK] Port forwarding: 127.0.0.1:5000 -> {wsl_ip}:5001")
             return True
     except Exception:
         pass
     # Need admin: launch setup_port_forward.ps1 with elevation (UAC popup)
     script_dir = Path(__file__).resolve().parent
-    ps1 = script_dir / "setup_port_forward.ps1"
+    ps1 = script_dir / "wsl" / "setup_port_forward.ps1"
     if ps1.exists():
         print("[Info] Setting up port forwarding (may show UAC prompt)...")
         try:
@@ -418,6 +419,17 @@ Examples:
             rag_wsl_process = None
     elif args.rag and not is_linux:
         print("\n[Info] --no-wsl-rag: RAG runs in current process (ColBERTv2 may be unavailable)\n")
+        # Clear port proxy so 127.0.0.1:5000 hits local RAG (not dead WSL); needs admin
+        try:
+            r = subprocess.run(
+                ["netsh", "interface", "portproxy", "delete", "v4tov4",
+                 "listenport=5000", "listenaddress=127.0.0.1"],
+                capture_output=True, timeout=5,
+            )
+            if r.returncode != 0:
+                print("  [Tip] If Tutor fails, open http://<your-LAN-IP>:8000/medical-quiz.html (e.g. http://192.168.1.16:8000)\n")
+        except Exception:
+            print("  [Tip] If Tutor fails, open UI via LAN IP, e.g. http://192.168.1.16:8000/medical-quiz.html\n")
     elif is_linux and args.rag:
         print("[OK] ColBERTv2 reranker will be available\n")
     

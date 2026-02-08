@@ -75,16 +75,15 @@ except ImportError:
 # Configuration
 # =============================================================================
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 MAIN_CONFIG = {
     # 使用经过整理的完整领域→主题→子主题文件
-    # 你已经在项目根目录有：all_domains_with_subtopics.json
-    # 使用经过整理的完整领域→主题→子主题文件
-    # 输入配置文件路径：包含领域、主题、子主题的层次结构
-    "domains_config_path": "surgery_domains_with_subtopics.json",
+    # 输入配置文件路径：包含领域、主题、子主题的层次结构（项目根目录）
+    "domains_config_path": str(PROJECT_ROOT / "surgery_domains_with_subtopics.json"),
     
-    # 输出文件路径（已改为JSON格式，不再是JSONL）
-    # 输出文件路径：生成的题目将保存为JSON数组格式
-    "output_path": "generated_surgery_domain_questions.json",  # Changed to .json format
+    # 输出文件路径（项目根目录，供 medical-quiz.html 加载）
+    "output_path": str(PROJECT_ROOT / "generated_surgery_domain_questions.json"),
     
     # 每个子主题生成的题目数量
     # 每个子主题生成的题目数量：默认3题，可根据需要调整
@@ -155,9 +154,8 @@ def get_api_key() -> str:
     if api_key:
         return api_key
 
-    # 如果环境变量中没有，尝试从api-key.js文件读取
-    # If not in environment variable, try reading from api-key.js file
-    config_path = Path(__file__).parent / "api-key.js"
+    # 如果环境变量中没有，尝试从api-key.js文件读取（项目根目录）
+    config_path = PROJECT_ROOT / "api-key.js"
     if config_path.exists():
         try:
             content = config_path.read_text(encoding="utf-8")

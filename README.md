@@ -27,20 +27,24 @@ An AI-powered medical education platform that automatically generates multiple-c
 ```
 LLM_Agent_for_Education/
 ├── medical-quiz.html      # Main UI (single-page application)
-├── questions.json         # Generated questions (200 questions)
-├── generate_questions.py  # Question generation script
-├── parse_qbank_openai.py  # Amboss PDF parsing script
-├── merge_qbanks.py        # Question bank merging script
 ├── rag_server.py          # RAG backend (FAISS + ColBERTv2)
+├── proactive_question_generator.py  # Tutor / Socratic hints
 ├── start.py               # Unified startup script (recommended)
 ├── start.bat              # Windows quick launch
-├── setup_port_forward.ps1 # Port forwarding for WSL (auto-run by start.py)
-├── setup_port_forward.bat # Run as admin to set port forward manually
 ├── api-key.js             # Your OpenAI API key (not in Git)
-├── api-key.example.js     # API key template
-├── README.md              # This file
-├── Clinical Guidelines/   # 40 medical PDF files
-└── Qbanks and Practice Exams/  # Question bank PDF files
+├── *.json                 # Generated questions, qbanks, chunks (root)
+├── Clinical Guidelines/   # Medical PDF files
+├── Qbanks and Practice Exams/  # Question bank PDFs
+├── scripts/               # Utility scripts
+│   ├── domain_question_generator.py  # Generate questions by domain
+│   ├── generate_questions.py         # Generate from PDFs
+│   ├── parse_qbank_openai.py         # Parse Amboss PDFs
+│   ├── merge_qbanks.py               # Merge question banks
+│   └── amboss/           # Amboss-specific scripts
+├── tests/                 # Test scripts (API key, etc.)
+├── wsl/                   # WSL & port forwarding scripts
+├── config/                # Example configs (api-key.example.js, wslconfig.example)
+└── docs/                  # Documentation
 ```
 
 ## Quick Start
@@ -108,8 +112,17 @@ python start.py --restart-rag
 
 **After startup:**
 - Main UI: http://localhost:8000/medical-quiz.html
+- Usage Stats (token/cost per user): http://localhost:8000/usage_stats.html
 - RAG Server: http://localhost:5000/health (ColBERTv2 when using WSL)
 - Evaluator Interface: http://localhost:8001/question_evaluator.html (if started)
+
+**直接在 WSL 里跑（推荐，无端口转发）：**
+```bash
+# 在 WSL 终端
+cd /mnt/d/LLM_Agent_for_Education
+./wsl/start_wsl.sh
+```
+用 Windows 浏览器打开脚本里显示的地址，如 `http://172.x.x.x:8000/medical-quiz.html`，Tutor 即可用。
 
 **Notes:**
 - **Windows + WSL**: Port forwarding (`127.0.0.1:5000` → WSL:5000) is automatic. If UAC appears, click Yes once.
@@ -399,11 +412,19 @@ python start.py
 ```
 Start.py will spawn RAG in WSL and set up port forwarding. UAC may appear once (click Yes).
 
-**Or run directly in WSL:**
+**或者直接在 WSL 里运行（推荐，避免端口转发）：**
+
+在 WSL 终端中执行：
 ```bash
-cd /mnt/d/LLM_Agent_for_Education
-python3 start.py
+cd /mnt/d/LLM_Agent_for_Education   # 或你的项目路径
+./wsl/start_wsl.sh
+# 或：python3 start.py
 ```
+启动后会显示 WSL 的 IP（如 `172.31.177.186`）。在 **Windows 浏览器** 中打开：
+```
+http://<WSL_IP>:8000/medical-quiz.html
+```
+例如 `http://172.31.177.186:8000/medical-quiz.html`。UI 和 Tutor 都走同一 WSL IP，无需端口转发，ColBERTv2 正常可用。
 
 **Manual port forwarding (if needed):** If `localhost:5000` is unreachable after WSL restart, run `setup_port_forward.bat` as administrator once.
 
@@ -487,10 +508,16 @@ Should see:
   ```
 
 ### "RAG Server not available" or Tutor shows "Tutor service temporarily unavailable"
-- **Windows + WSL**: Ensure port forwarding is set. Run `setup_port_forward.bat` as administrator once.
+- **Windows + WSL**: Ensure port forwarding is set. Run `wsl/setup_port_forward.bat` as administrator once.
 - Or run `python start.py` again — it auto-sets up port forwarding (UAC may appear).
-- If WSL IP changed after restart, run `setup_port_forward.bat` again.
+- If WSL IP changed after restart, run `wsl/setup_port_forward.bat` again.
 - Fallback: `python start.py --no-wsl-rag` (no ColBERTv2, but works without admin).
+
+### 端口有问题 (Port issues)
+- **检查端口与连通性**：运行 `powershell -ExecutionPolicy Bypass -File fix_ports.ps1`，会显示 8000/5000 占用、端口转发和连通性。
+- **5000 连不上**：WSL 重启后 IP 可能变化。以管理员身份运行 `setup_port_forward.bat` 刷新转发。
+- **8000 被占用**：结束占用 8000 的进程后重新运行 `python start.py`，或用 `python -m http.server 8001` 改端口（需改前端访问地址）。
+- **一键修复**：先以管理员运行 `wsl/setup_port_forward.bat`，再执行 `python start.py`。
 
 ### "Reranker import failed"
 - If you see `[!] Reranker import failed`, this is normal

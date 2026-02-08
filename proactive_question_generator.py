@@ -807,6 +807,30 @@ def get_api_key() -> str:
     return api_key or ""
 
 
+def _categorize_error(err_msg: str) -> str:
+    """将异常信息转为用户可理解的失败原因"""
+    s = (err_msg or "").lower()
+    if "api" in s and ("key" in s or "invalid" in s or "incorrect" in s):
+        return "API 密钥无效或未配置"
+    if "billing" in s or "account" in s and "not active" in s:
+        return "OpenAI 账户未激活，请到 platform.openai.com 完成账单设置"
+    if "quota" in s or "insufficient" in s or "exceeded" in s:
+        return "API 额度不足或超出限制"
+    if "rate" in s and "limit" in s:
+        return "请求过于频繁，请稍后重试"
+    if "timeout" in s or "timed out" in s:
+        return "网络超时"
+    if "connection" in s or "refused" in s or "unreachable" in s:
+        return "网络连接失败"
+    if "json" in s or "parse" in s:
+        return "LLM 返回格式异常"
+    if "context" in s and "length" in s:
+        return "问题或上下文过长"
+    if len(err_msg) > 80:
+        return err_msg[:80] + "..."
+    return err_msg
+
+
 def determine_hint_round(conversation_history: Optional[List[Dict]]) -> int:
     """根据对话历史确定当前是第几轮提示
     
@@ -900,8 +924,21 @@ class ProactiveQuestionGenerator:
         
         self.client = OpenAI(api_key=self.api_key)
         self.model = "gpt-4o"  # Use GPT-4o for best quality hints
+
+    def _add_usage(self, response, usage_out: Optional[Dict] = None) -> None:
+        """从 chat 响应中累计 usage，供费用统计使用。"""
+        if usage_out is None:
+            return
+        u = getattr(response, "usage", None)
+        if not u:
+            return
+        pt = getattr(u, "prompt_tokens", 0) or 0
+        ct = getattr(u, "completion_tokens", 0) or 0
+        usage_out["prompt_tokens"] = usage_out.get("prompt_tokens", 0) + pt
+        usage_out["completion_tokens"] = usage_out.get("completion_tokens", 0) + ct
+        usage_out["model"] = self.model
     
-    def generate_sub_questions(self, request: HintRequest) -> SocraticResponse:
+    def generate_sub_questions(self, request: HintRequest, usage_out: Optional[Dict] = None) -> SocraticResponse:
         """将医学问题分解为推理步骤（MedTutor-R1风格）
         
         基于临床推理：观察 → 解释 → 结论
@@ -933,7 +970,7 @@ class ProactiveQuestionGenerator:
 ## Correct Answer: {request.correct_answer}
 (The student chose {request.student_answer}, which is wrong. Help them reason to the correct answer WITHOUT revealing it directly.)
 
-{f"## Reference Context:\\n{request.source_context[:800]}" if request.source_context else ""}
+{("## Reference Context:" + chr(10) + request.source_context[:800]) if request.source_context else ""}
 
 Generate a chain of reasoning steps that will guide the student from observation to conclusion.
 Each step should use SPECIFIC medical terms from this question.
@@ -956,19 +993,24 @@ Follow the format in my instructions exactly.
                 max_tokens=3000,  # Sufficient for reasoning steps
                 response_format={"type": "json_object"}
             )
-            
+            self._add_usage(response, usage_out)
             content = response.choices[0].message.content
             result = json.loads(content)
             
             # Parse reasoning steps (prompt instructs ChatGPT at most 2; use whatever is returned)
             steps = []
             for step_data in result.get("reasoning_steps", []):
+                kq = step_data.get("key_question", "").strip()
+                if not kq or not self._validate_question(kq):
+                    continue  # 跳过通用模板或无效问题
                 steps.append(ReasoningStep(
                     step_id=str(step_data.get("step_id", len(steps) + 1)),
-                    key_question=step_data.get("key_question", ""),
+                    key_question=kq,
                     step_summary=step_data.get("step_summary", ""),
                     expected_understanding=step_data.get("expected_understanding", "")
                 ))
+            if not steps:
+                raise RuntimeError("LLM 返回的问题均为通用模板，无法生成针对本题的引导。请重试。")
             
             decomposition = ProblemDecomposition(
                 original_question=request.question,
@@ -985,34 +1027,14 @@ Follow the format in my instructions exactly.
             )
             
         except Exception as e:
-            # Fallback with at most 2 reasoning steps
-            fallback_steps = [
-                ReasoningStep("1", 
-                    f"What are the key clinical features mentioned in this question about {request.question.split()[3] if len(request.question.split()) > 3 else 'this topic'}?",
-                    "Identify the important clinical information before analyzing options.",
-                    "The student should identify relevant clinical details."),
-                ReasoningStep("2",
-                    "How do these clinical features relate to the different answer options?",
-                    "Connect observations to potential answers.",
-                    "The student should see which options are supported by the evidence."),
-            ]
-            
-            return SocraticResponse(
-                decomposition=ProblemDecomposition(
-                    original_question=request.question,
-                    reasoning_steps=fallback_steps,
-                    synthesis_step="Combine your observations and interpretations to identify the best answer.",
-                    current_step_index=0
-                ),
-                active_step_id="1",
-                total_steps=2,
-                is_complete=False
-            )
+            # 不再返回无意义的模板问题，直接抛出以便前端显示具体错误
+            raise RuntimeError(f"问题拆解失败。{_categorize_error(str(e))}") from e
     
     def evaluate_student_thinking(
         self,
         request: HintRequest,
-        student_thinking: str
+        student_thinking: str,
+        usage_out: Optional[Dict] = None
     ) -> Dict:
         """评估学生答错后的思考过程并决定行动
         
@@ -1153,7 +1175,7 @@ Respond with valid JSON only.
                 max_tokens=500,  # Enough for structured JSON response
                 response_format={"type": "json_object"}  # Force JSON output
             )
-            
+            self._add_usage(response, usage_out)
             # Parse JSON response from LLM
             result = json.loads(response.choices[0].message.content)
             
@@ -1179,38 +1201,53 @@ Respond with valid JSON only.
                         # Validate questions - filter out invalid ones (symbols, blanks, etc.)
                         sub_questions = [q for q in raw_sub_questions if self._validate_question(q)]
                         if not sub_questions:
-                            print(f"[DEBUG] No valid sub-questions generated after validation - all {len(raw_sub_questions)} questions were invalid")
+                            print(f"[DEBUG] No valid sub-questions after validation (all {len(raw_sub_questions)} filtered as generic/invalid)")
                             result["sub_questions"] = []
+                            result["decomposition_failed"] = True
+                            result["decomposition_error"] = "LLM 返回了通用模板问题，未能生成针对本题的子问题。请检查 API 或重试。"
                         else:
                             result["sub_questions"] = sub_questions  # Prompt asks ChatGPT for at most 2; show whatever is returned
                     except Exception as e:
                         print(f"Error generating MedTutor-R1 sub-questions in evaluate_student_thinking: {e}")
                         result["sub_questions"] = []
+                        result["decomposition_failed"] = True
+                        result["decomposition_error"] = _categorize_error(str(e))
             
             return result
             
         except Exception as e:
-            # Fallback: If API call fails, default to decomposition
-            # This ensures students always get help, even if backend has issues
+            # Fallback: If API call fails, try to generate real decomposition
             print(f"Error in evaluate_student_thinking: {e}")
-            return {
-                "action_type": "decompose",
-                "understanding_level": "partial",
-                "reasoning": "Default to decomposition for Socratic learning",
-                "feedback": "Let me help you work through this step by step.",
-                "missing_concept": "",
-                "clarification": "",
-                "sub_questions": ["What are the key concepts involved in this question?"]
-            }
+            try:
+                decomposition_response = self.generate_sub_questions(request, usage_out=usage_out)
+                raw_sub = [step.key_question for step in decomposition_response.decomposition.reasoning_steps]
+                sub_questions = [q for q in raw_sub if self._validate_question(q)]
+                if sub_questions:
+                    return {
+                        "action_type": "decompose",
+                        "understanding_level": "partial",
+                        "reasoning": "Fallback: using decomposition after evaluation error",
+                        "feedback": "",
+                        "missing_concept": "",
+                        "clarification": "",
+                        "sub_questions": sub_questions,
+                        "understood": False,
+                        "flow_terminated": False
+                    }
+            except Exception as e2:
+                print(f"Fallback generate_sub_questions also failed: {e2}")
+            err_hint = _categorize_error(str(e))
+            raise RuntimeError(f"Tutor 无法生成引导问题。{err_hint}") from e
     
     def _validate_question(self, question: str) -> bool:
-        """验证问题 - 确保不为空、不只是符号、不只是单个字符
+        """验证问题 - 确保不为空、不只是符号、不只是单个字符、非通用模板
         
         检查生成的问题是否符合质量标准：
         1. 不为空且长度至少5个字符
-        2. 不只包含标点符号或空白
-        3. 至少包含一些有意义的字符（去除标点后至少3个字符）
-        4. 不只包含单个字符的单词
+        2. 不匹配通用模板（如 key clinical features about X、relate to answer options）
+        3. 不只包含标点符号或空白
+        4. 至少包含一些有意义的字符（去除标点后至少3个字符）
+        5. 不只包含单个字符的单词
         
         参数:
             question: 要验证的问题文本
@@ -1219,6 +1256,15 @@ Respond with valid JSON only.
             如果有效返回True，如果无效返回False
         """
         if not question or len(question.strip()) < 5:
+            return False
+        
+        q_lower = question.strip().lower()
+        # 拒绝 LLM 可能输出的通用模板问题
+        if "key clinical features mentioned in this question about" in q_lower:
+            return False
+        if "how do these clinical features relate to the different answer options" in q_lower:
+            return False
+        if "what are the key concepts" in q_lower and len(question) < 80:
             return False
         
         import string
@@ -1577,7 +1623,8 @@ Respond with valid JSON only.
         request: HintRequest,
         conversation_history: List[Dict],
         current_sub_questions: List[str],
-        existing_clarifications: List[str] = None
+        existing_clarifications: List[str] = None,
+        usage_out: Optional[Dict] = None
     ) -> str:
         """确保clarification有效且有意义，如果需要则生成
         
@@ -1702,7 +1749,7 @@ Respond with JSON:
                 max_tokens=300,
                 response_format={"type": "json_object"}
             )
-            
+            self._add_usage(clarification_response, usage_out)
             clarification_result = json.loads(clarification_response.choices[0].message.content)
             generated_clarification = clarification_result.get("clarification", "")
             
@@ -1733,7 +1780,8 @@ Respond with JSON:
         conversation_history: List[Dict],
         current_understanding_level: str,
         round_number: int,
-        cannot_decompose_further: bool = False
+        cannot_decompose_further: bool = False,
+        usage_out: Optional[Dict] = None
     ) -> Dict:
         """评估学生在迭代指导循环中的回答
         
@@ -2037,7 +2085,8 @@ Let me explain this step-by-step with a practical example that relates to the qu
                         request,
                         conversation_history,
                         current_sub_questions,
-                        existing_clarifications  # Pass existing clarifications to check similarity
+                        existing_clarifications,  # Pass existing clarifications to check similarity
+                        usage_out=usage_out
                     )
                     
                     # Check if clarification is similar to existing ones
@@ -2266,7 +2315,7 @@ Let me explain this step-by-step with a practical example that relates to the qu
                     if round_number == 1:
                         # First round decomposition: Use MedTutor-R1 method to generate complete reasoning step chain
                         try:
-                            decomposition_response = self.generate_sub_questions(request)
+                            decomposition_response = self.generate_sub_questions(request, usage_out=usage_out)
                             decomposition = decomposition_response.decomposition
                             
                             # Extract key_questions from reasoning steps
@@ -2328,7 +2377,8 @@ Let me explain this step-by-step with a practical example that relates to the qu
                                 step=parent_step,
                                 student_response=student_response,
                                 previous_questions=current_sub_questions,
-                                conversation_history=conversation_history
+                                conversation_history=conversation_history,
+                                usage_out=usage_out
                             )
                             
                             # Extract simpler steps from the evaluation result
@@ -2928,7 +2978,7 @@ Respond with JSON:
                                             max_tokens=300,
                                             response_format={"type": "json_object"}
                                         )
-                                        
+                                        self._add_usage(clarification_response, usage_out)
                                         clarification_result = json.loads(clarification_response.choices[0].message.content)
                                         generated_clarification = clarification_result.get("clarification", "")
                                         
@@ -2953,7 +3003,8 @@ Respond with JSON:
                                         # 如果missing_concept仍然为空，生成它
                                         final_clarification = self._ensure_valid_clarification(
                                             '', feedback_text, request, conversation_history, current_sub_questions,
-                                            existing_clarifications  # Pass existing clarifications to check similarity
+                                            existing_clarifications,  # Pass existing clarifications to check similarity
+                                            usage_out=usage_out
                                         )
                                         
                                         # Check if clarification is similar to existing ones
@@ -3127,7 +3178,7 @@ Respond with JSON:
                     # 注意：即使历史记录中有clarification，也允许decompose - 系统根据回答质量决定
                     # CRITICAL: Validate questions before returning
                     # 关键：返回前验证问题
-                    fallback_questions = result.get("sub_questions", ["What are the key concepts involved?"])
+                    fallback_questions = result.get("sub_questions", [])
                     validated_questions = [q for q in fallback_questions if self._validate_question(q)]
                     if not validated_questions:
                         print(f"[DEBUG] All fallback questions failed validation - ending flow")
@@ -3277,7 +3328,7 @@ Respond with JSON:
                 max_tokens=300,
                 response_format={"type": "json_object"}
             )
-            
+            self._add_usage(response, usage_out)
             eval_result = json.loads(response.choices[0].message.content)
             understood = eval_result.get("understood", False)
             feedback = eval_result.get("feedback", "")
@@ -3349,7 +3400,7 @@ Respond with JSON:
                 max_tokens=2000,  # Sufficient for generating up to 2 sub-steps per round
                 response_format={"type": "json_object"}
             )
-            
+            self._add_usage(decomp_response, usage_out)
             decomp_result = json.loads(decomp_response.choices[0].message.content)
             
             # Parse simpler steps (prompt asks at most 2; use whatever ChatGPT returns)

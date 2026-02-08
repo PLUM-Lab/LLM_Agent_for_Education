@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage Stats - Token & Cost Monitor</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 24px;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+        .subtitle {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin-bottom: 20px;
+        }
+        .bar {
+            background: #1e293b;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .limit-badge {
+            background: #334155;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        .limit-badge span { color: #38bdf8; font-weight: 600; }
+        .refresh-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        .refresh-btn:hover { background: #2563eb; }
+        .auto-label { font-size: 0.75rem; color: #64748b; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+        }
+        th {
+            background: #334155;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        tr:nth-child(even) { background: #1e293b; }
+        tr:hover { background: #334155; }
+        .cost { font-weight: 600; color: #22c55e; }
+        .cost.warn { color: #f59e0b; }
+        .cost.limit { color: #ef4444; }
+        .num { font-variant-numeric: tabular-nums; text-align: right; }
+        .empty {
+            text-align: center;
+            padding: 48px 24px;
+            color: #64748b;
+        }
+        .error {
+            background: #7f1d1d;
+            color: #fecaca;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Usage Stats</h1>
+    <p class="subtitle">Token usage and cost per user (total since server start)</p>
+
+    <div class="bar">
+        <div>
+            <span class="limit-badge">Limit: $0.05 per 3 min per user</span><span id="limit-val" style="display:none">0.05</span>
+            <div class="auto-label">Auto-refresh every 30s</div>
+        </div>
+        <button class="refresh-btn" id="refresh">Refresh</button>
+    </div>
+
+    <div id="error" class="error" style="display:none;"></div>
+    <table>
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th class="num">Cost (3m)</th>
+                <th class="num">Cost (Total)</th>
+                <th class="num">Prompt Tokens</th>
+                <th class="num">Completion Tokens</th>
+                <th class="num">Total Tokens</th>
+                <th class="num">Requests</th>
+            </tr>
+        </thead>
+        <tbody id="tbody">
+            <tr><td colspan="6" class="empty">Loading...</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+        const RAG_URL = 'http://' + (window.location.hostname || '127.0.0.1') + ':5000';
+
+        function showError(msg) {
+            const el = document.getElementById('error');
+            el.textContent = msg;
+            el.style.display = msg ? 'block' : 'none';
+        }
+
+        async function load() {
+            showError('');
+            try {
+                const r = await fetch(RAG_URL + '/usage_stats', { mode: 'cors' });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const data = await r.json();
+                document.getElementById('limit-val').textContent = (data.limit_per_hour ?? 0.05);
+                render(data.users || []);
+            } catch (e) {
+                showError('Cannot reach RAG server. Make sure it is running on port 5000. ' + e.message);
+                render([]);
+            }
+        }
+
+        function render(users) {
+            const tbody = document.getElementById('tbody');
+            const limit = parseFloat(document.getElementById('limit-val').textContent) || 0.05;
+            if (!users.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty">No usage yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = users.map(u => {
+                const cost3m = u.cost_last_hour || 0;
+                const costTotal = u.cost_total ?? 0;
+                let costClass = 'cost';
+                if (cost3m >= limit) costClass += ' limit';
+                else if (cost3m >= limit * 0.8) costClass += ' warn';
+                return `<tr>
+                    <td>${escapeHtml(u.user_id)}</td>
+                    <td class="num"><span class="${costClass}">$${cost3m.toFixed(6)}</span></td>
+                    <td class="num"><span class="cost">$${costTotal.toFixed(6)}</span></td>
+                    <td class="num">${formatNum(u.prompt_tokens)}</td>
+                    <td class="num">${formatNum(u.completion_tokens)}</td>
+                    <td class="num">${formatNum(u.total_tokens)}</td>
+                    <td class="num">${u.request_count || 0}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function formatNum(n) {
+            if (n == null) return '0';
+            return Number(n).toLocaleString();
+        }
+
+        function escapeHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        }
+
+        document.getElementById('refresh').addEventListener('click', load);
+        load();
+        setInterval(load, 30000);
+    </script>
+</body>
+</html>

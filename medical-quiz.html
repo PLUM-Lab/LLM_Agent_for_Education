@@ -2365,7 +2365,7 @@ Author: AI for Education (Wenchao Qin)
             //
             if (coverageEl) {
                 if (allSubtopicsInBank > 0 && knownComponents === allSubtopicsInBank) {
-                    coverageEl.textContent = `已完成全部答对 (全部 ${allSubtopicsInBank} subtopics)`;
+                    coverageEl.textContent = `All subtopics completed (${allSubtopicsInBank} subtopics)`;
                 } else {
                     coverageEl.textContent = `Knowledge Coverage: ${coverage}% (${knownComponents}/${allSubtopicsInBank} subtopics)`;
                 }
@@ -2398,6 +2398,7 @@ Author: AI for Education (Wenchao Qin)
 
                 let html = '<div style="font-size: 12px;">';
                 html += '<div style="font-weight: 600; margin-bottom: 10px; color: #333;">By domain (accuracy %)</div>';
+                html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px;">';
 
                 allDomains.forEach(domain => {
                     const totalInDomain = allQuestions.filter(q => getDomain(q) === domain).length;
@@ -2412,16 +2413,18 @@ Author: AI for Education (Wenchao Qin)
                     const accuracy = totalInDomain > 0 ? Math.round((correctInDomain / totalInDomain) * 100) : 0;
                     const barColor = accuracy >= 70 ? '#28a745' : accuracy >= 40 ? '#ffc107' : '#dc3545';
 
-                    html += '<div style="margin-bottom: 10px;">';
+                    html += '<div style="margin-bottom: 0;">';
                     html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">`;
                     html += `<span style="font-weight: 500; color: #333;">${domain}</span>`;
-                    html += `<span style="font-size: 11px; color: #666;">${accuracy}% (${correctInDomain}/${totalInDomain}) · ${totalInDomain} questions</span>`;
+                    html += `<span style="font-size: 11px; color: #666;">${accuracy}% (${correctInDomain}/${totalInDomain})</span>`;
                     html += `</div>`;
                     html += `<div style="height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;">`;
                     html += `<div style="height: 100%; width: ${accuracy}%; min-width: ${accuracy > 0 ? 2 : 0}px; background: ${barColor}; border-radius: 4px;"></div>`;
                     html += `</div>`;
                     html += '</div>';
                 });
+
+                html += '</div>';
 
                 if (allDomains.length === 0) {
                     html += '<div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">No domains in current question bank. Load questions to see domains.</div>';
@@ -3166,8 +3169,93 @@ Author: AI for Education (Wenchao Qin)
         //
         // ====================================================================
         
-        const RAG_SERVER_URL = 'http://localhost:5000';
+        const RAG_SERVER_URL = 'http://' + (window.location.hostname || '127.0.0.1') + ':5000';
         let ragServerAvailable = false;
+
+        // ========== 每用户每小时成本限制相关 ==========
+        // 获取或生成会话 ID，用于后端按用户统计费用
+        function getSessionId() {
+            let sid = sessionStorage.getItem('cost_limit_session_id');
+            if (!sid) {
+                sid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'sess-' + Date.now();
+                sessionStorage.setItem('cost_limit_session_id', sid);
+            }
+            return sid;
+        }
+        // 返回带 X-Session-Id 的请求头，供后端识别用户
+        function getSessionHeaders() {
+            const h = { 'Content-Type': 'application/json', 'X-Session-Id': getSessionId() };
+            const uid = sessionStorage.getItem('quiz_user');
+            if (uid) h['X-User-Id'] = uid;
+            return h;
+        }
+        let costLimitExceeded = false;
+        let costLimitCountdownTimer = null;
+        function formatCountdown(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return (m > 0 ? m + 'm ' : '') + s + 's';
+        }
+        function clearCostLimitState() {
+            costLimitExceeded = false;
+            const inp = document.getElementById('message-input');
+            const btn = document.getElementById('message-send-btn');
+            if (inp) { inp.disabled = false; inp.placeholder = (document.getElementById('thinking-prompt-message') ? 'Explain your reasoning here...' : 'Ask a question or share your thoughts...'); }
+            if (btn) btn.disabled = false;
+            const hint = document.getElementById('cost-limit-hint');
+            if (hint) hint.remove();
+            const banner = document.getElementById('cost-limit-banner');
+            if (banner) banner.remove();
+            if (costLimitCountdownTimer) { clearInterval(costLimitCountdownTimer); costLimitCountdownTimer = null; }
+        }
+        // 在页面顶部显示红色横幅，并显示倒计时
+        async function showCostLimitBanner() {
+            if (document.getElementById('cost-limit-banner')) return; // 避免重复显示
+            costLimitExceeded = true;
+            const inp = document.getElementById('message-input');
+            const btn = document.getElementById('message-send-btn');
+            const container = document.querySelector('.message-input-container');
+            if (inp) { inp.disabled = true; }
+            if (btn) { btn.disabled = true; }
+            let retrySec = 3600;
+            try {
+                const r = await fetch(RAG_SERVER_URL + '/cost_limit_status', { headers: getSessionHeaders(), mode: 'cors' });
+                if (r.ok) {
+                    const d = await r.json();
+                    if (d.limited && d.retry_after_seconds != null) retrySec = Math.max(0, d.retry_after_seconds);
+                }
+            } catch (e) { console.warn('Could not fetch cost limit status:', e); }
+            if (container && !document.getElementById('cost-limit-hint')) {
+                const hint = document.createElement('div');
+                hint.id = 'cost-limit-hint';
+                hint.style.cssText = 'width:100%;padding:8px 12px;background:#fee2e2;color:#dc2626;font-size:13px;border-radius:6px;margin-bottom:8px;';
+                hint.innerHTML = '⚠️ Cost limit reached. <span id="cost-limit-countdown">' + formatCountdown(retrySec) + '</span> until you can try again.';
+                container.insertBefore(hint, container.firstChild);
+            }
+            const banner = document.createElement('div');
+            banner.id = 'cost-limit-banner';
+            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc3545;color:#fff;padding:12px 20px;text-align:center;font-weight:600;font-size:14px;';
+            banner.innerHTML = '⚠️ Cost limit exceeded. Try again in <span id="banner-countdown">' + formatCountdown(retrySec) + '</span>';
+            document.body.insertBefore(banner, document.body.firstChild);
+            let remaining = retrySec;
+            const tick = () => {
+                remaining--;
+                const sp = document.getElementById('banner-countdown');
+                const sp2 = document.getElementById('cost-limit-countdown');
+                if (sp) sp.textContent = formatCountdown(remaining);
+                if (sp2) sp2.textContent = formatCountdown(remaining);
+                if (remaining <= 0) { clearCostLimitState(); }
+            };
+            if (costLimitCountdownTimer) clearInterval(costLimitCountdownTimer);
+            costLimitCountdownTimer = setInterval(tick, 1000);
+        }
+        // 响应头含 X-Cost-Limit-Exceeded 时显示超限提示（本次请求已超限，下次将被拒绝）
+        function checkCostLimitHeader(response) {
+            if (response && response.headers && response.headers.get('X-Cost-Limit-Exceeded') === 'true') {
+                showCostLimitBanner();
+                alert('Cost limit exceeded. Please try again later.');
+            }
+        }
         
         // Check if RAG server is available
         // 检查RAG服务器是否可用
@@ -3220,10 +3308,10 @@ Author: AI for Education (Wenchao Qin)
                 try {
                     const response = await fetch(`${RAG_SERVER_URL}/search`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: getSessionHeaders(),
                         body: JSON.stringify({ query, top_k: topK })
                     });
-                    
+                    if (response.status === 429) { showCostLimitBanner(); alert('Cost limit exceeded. Please try again later.'); throw new Error('Cost limit exceeded'); }
                     if (response.ok) {
                         const data = await response.json();
                         console.log(`✓ RAG: Retrieved ${data.results.length} chunks via FAISS`);
@@ -3352,7 +3440,7 @@ Author: AI for Education (Wenchao Qin)
             // This is the recommended method, api-key.js is loaded in <script src="api-key.js">
             // 优先级：从api-key.js中的全局变量读取
             // 这是推荐的方法，api-key.js在<script src="api-key.js">中加载
-            if (typeof OPENAI_API_KEY !== 'undefined' && OPENAI_API_KEY && OPENAI_API_KEY.startsWith('sk-')) {
+            if (typeof OPENAI_API_KEY !== 'undefined' && OPENAI_API_KEY && (OPENAI_API_KEY.startsWith('sk-') || OPENAI_API_KEY.startsWith('LLM|'))) {
                 openAIApiKey = cleanApiKey(OPENAI_API_KEY);
                 console.log('✅ API Key loaded from api-key.js');
                 return;
@@ -3365,7 +3453,7 @@ Author: AI for Education (Wenchao Qin)
             // 用户可以在浏览器开发者工具中手动设置：
             // localStorage.setItem('openai_api_key', 'sk-...')
             const stored = cleanApiKey(localStorage.getItem('openai_api_key'));
-            if (stored && /^sk-/.test(stored) && stored.length > 40) {
+            if (stored && (/^sk-/.test(stored) || stored.startsWith('LLM|')) && stored.length > 10) {
                 openAIApiKey = stored;
                 console.log('✅ API Key loaded from localStorage');
             } else {
@@ -3434,6 +3522,7 @@ Author: AI for Education (Wenchao Qin)
                     handleMessageSubmit();
                 }
             });
+            
             
             // ============================================================
             // Jump to Question Functionality - Event Listeners Setup
@@ -4818,6 +4907,7 @@ Author: AI for Education (Wenchao Qin)
          *   如果API调用失败 → 显示有用的默认问题
          */
         async function submitStudentThinking(optionalStudentThinking) {
+            if (costLimitExceeded) return;
             // Get student's thinking: from argument (passed from Send button when in thinking mode) or from main input
             // 获取学生思考：来自参数（思考模式下由发送按钮传入）或来自主输入框
             const mainInput = document.getElementById('message-input');
@@ -4914,11 +5004,9 @@ Author: AI for Education (Wenchao Qin)
                 // 此端点使用LLM分析理解程度并决定行动
                 let response;
                 try {
-                    response = await fetch('http://localhost:5000/evaluate_student_thinking', {
+                    response = await fetch(RAG_SERVER_URL + '/evaluate_student_thinking', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: getSessionHeaders(),
                         body: JSON.stringify({
                             question: question,  // Original medical question
                             choices: choices,  // Answer options dictionary
@@ -4934,12 +5022,25 @@ Author: AI for Education (Wenchao Qin)
                     throw new Error('Cannot connect to backend server. Please make sure the Flask server is running on port 5000.');
                 }
                 
+                // 超限时显示横幅和弹窗
+                if (response.status === 429) {
+                    showCostLimitBanner();
+                    alert('Cost limit exceeded. Please try again later.');
+                    throw new Error('Cost limit exceeded');
+                }
+                if (response.ok) checkCostLimitHeader(response);
+                
                 // Check HTTP response status
                 // 检查HTTP响应状态
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Backend error:', response.status, errorText);
-                    throw new Error(`Backend error (${response.status}): ${errorText.substring(0, 100)}`);
+                    let errDetail = errorText;
+                    try {
+                        const j = JSON.parse(errorText);
+                        if (j && j.error) errDetail = j.error;
+                    } catch (_) {}
+                    throw new Error(`Backend error (${response.status}): ${errDetail.substring(0, 200)}`);
                 }
                 
                 // Parse JSON response
@@ -4969,9 +5070,9 @@ Author: AI for Education (Wenchao Qin)
                     mainInputRestore.focus();
                 }
                 
-                // Add student's thinking to conversation only when non-empty (skip "(No content)" when Ask Tutor button used)
-                // 仅在有内容时添加用户消息，避免「Ask Tutor」空白触发时显示「(No content)」
-                if (studentThinking) {
+                // 仅在有内容且非 Ask Tutor 默认文案时添加用户消息（点 Ask Tutor 时只显示解析，不显示该提示语）
+                const isDefaultAskTutor = /^\s*please explain this question and help me understand\.?\s*$/i.test(studentThinking || '');
+                if (studentThinking && !isDefaultAskTutor) {
                     addMessageToConversation('user', studentThinking);
                 }
                 
@@ -5049,34 +5150,47 @@ Author: AI for Education (Wenchao Qin)
                         `;
                         addMessageToConversation('assistant', clarificationHtml, true);
                     } else if (result.action_type === 'decompose') {
-                        // Action: DECOMPOSE - Student has fundamental gaps, needs step-by-step guidance
-                        // Show simpler sub-questions to build understanding gradually
-                        // 行动：分解 - 学生有基础缺口，需要逐步引导
-                        // 显示更简单的子问题，逐步建立理解
-                        let questionsHtml = `
-                            <div style="color: #374151; font-size: 14px; line-height: 1.7;">
-                                ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
-                                <div style="margin-bottom: 10px;">${result.feedback}</div>
-                        `;
-                        
-                        // Display sub-questions
-                        if (result.sub_questions && result.sub_questions.length > 0) {
-                            questionsHtml += '<div style="margin-top: 15px;">';
-                            result.sub_questions.forEach((q, i) => {
-                                questionsHtml += `
-                                    <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
-                                        <strong>${i + 1}.</strong> 🤔 ${q}
+                        // Action: DECOMPOSE - Show sub-questions (no Partial Understanding / template)
+                        // 检测分析失败：模板兜底 或 拆解生成异常
+                        const isTemplateFallback = result.sub_questions && result.sub_questions.length > 0 &&
+                            result.sub_questions.every(q => /key concept|main concept|basic concept|关键概念|key clinical features|relate to the different answer options/i.test(q));
+                        const decompositionFailed = result.decomposition_failed || isTemplateFallback;
+                        const errDetail = (result.decomposition_error || '').trim();
+                        if (decompositionFailed || (result.sub_questions && result.sub_questions.length === 0)) {
+                            const causesList = [
+                                'API key not configured or invalid (api-key.js / OPENAI_API_KEY)',
+                                'OpenAI account not activated (complete billing setup at platform.openai.com)',
+                                'API quota exceeded or limit reached',
+                                'Request rate limit exceeded',
+                                'Network timeout or connection failed',
+                                'Backend service not running or port forwarding not configured (5000)'
+                            ];
+                            const reasonBlock = errDetail
+                                ? `Reason: ${errDetail}`
+                                : `Possible causes:<br>• ${causesList.join('<br>• ')}`;
+                            const errorHtml = `
+                                <div style="color: #374151; font-size: 14px; line-height: 1.7;">
+                                    <div style="padding: 12px; background: #fee2e2; border-left: 4px solid #dc2626; border-radius: 4px;">
+                                        <strong>⚠️ Analysis failed</strong><br>
+                                        <small>Unable to generate guidance for this question. ${reasonBlock}</small>
                                     </div>
-                                `;
-                            });
+                                </div>
+                            `;
+                            addMessageToConversation('assistant', errorHtml, true);
+                        } else {
+                            let questionsHtml = `<div style="color: #374151; font-size: 14px; line-height: 1.7;">`;
+                            if (result.sub_questions && result.sub_questions.length > 0) {
+                                result.sub_questions.forEach((q, i) => {
+                                    questionsHtml += `
+                                        <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                                            <strong>${i + 1}.</strong> 🤔 ${q}
+                                        </div>
+                                    `;
+                                });
+                            }
                             questionsHtml += '</div>';
-                            questionsHtml += '<div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; font-size: 13px;">';
-                            questionsHtml += '💬 <strong>Please answer:</strong> Try to answer these questions one by one. Start with the first question.';
-                            questionsHtml += '</div>';
+                            addMessageToConversation('assistant', questionsHtml, true);
                         }
-                        
-                        questionsHtml += '</div>';
-                        addMessageToConversation('assistant', questionsHtml, true);
                     }
                 } else {
                     throw new Error(result.error || 'Unknown error');
@@ -5084,7 +5198,6 @@ Author: AI for Education (Wenchao Qin)
                 
             } catch (error) {
                 // Error handling: API call failed (network, backend error, timeout, etc.)
-                // 错误处理：API 调用失败（网络、后端错误、超时等）— 此时显示的是错误回退，不是 LLM 生成的内容
                 console.error('Error evaluating student thinking (tutor API failed):', error);
                 removeMessageFromConversation(thinkingId);
                 
@@ -5098,17 +5211,25 @@ Author: AI for Education (Wenchao Qin)
                     mainInputRestore.disabled = false;
                     mainInputRestore.focus();
                 }
-                if (studentThinking) addMessageToConversation('user', studentThinking);
+                const isDefaultAskTutorErr = /^\s*please explain this question and help me understand\.?\s*$/i.test(studentThinking || '');
+                if (studentThinking && !isDefaultAskTutorErr) addMessageToConversation('user', studentThinking);
                 
-                // Fallback: Tutor API (port 5000) failed. Show how to fix.
+                const errMsg = (error && error.message) ? error.message : String(error);
+                const isNetwork = /fetch|network|failed|refused|timeout/i.test(errMsg);
+                const isBackend500 = /backend error \(500\)|500/i.test(errMsg);
+                const errDetail = errMsg ? errMsg.replace(/^Backend error \(\d+\):\s*/i, '').substring(0, 200) : '';
                 const fallbackHtml = `
                     <div style="color: #374151; font-size: 14px; line-height: 1.7;">
                         <div style="padding: 12px; background: #fee2e2; border-left: 4px solid #dc2626; border-radius: 4px; margin-bottom: 10px;">
                             <strong>⚠️ Tutor service temporarily unavailable.</strong><br>
-                            The request to the tutor API (port 5000) failed. Both the UI (8000) and RAG/Tutor (5000) must be running.
+                            Request to <code>${RAG_SERVER_URL}/evaluate_student_thinking</code> failed.
+                            ${errDetail ? `<br><small>Reason: ${errDetail}</small>` : ''}
                         </div>
                         <div style="padding: 10px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; font-size: 13px;">
-                            💡 <strong>Fix:</strong> In the project folder run <code>python start.py</code> and wait until you see "RAG (http://127.0.0.1:5000) -> OK". On Windows if Tutor still fails, try <code>python start.py --no-wsl-rag</code> so the tutor runs on port 5000 locally. Then refresh and try "Ask Tutor" again.
+                            💡 <strong>Troubleshooting:</strong><br>
+                            ${isNetwork ? '• <b>Cannot reach port 5000</b>: Ensure RAG/Tutor is running; if using WSL, run <code>wsl/setup_port_forward.bat</code> as Administrator on Windows for port forwarding.<br>' : ''}
+                            ${isBackend500 ? '• <b>Analysis failed</b>: Invalid API key, quota exceeded, rate limit, or network issue. Check OPENAI_API_KEY in api-key.js.<br>' : ''}
+                            • Or run <code>python start.py --no-wsl-rag</code> in the project directory to run Tutor locally, then retry.
                         </div>
                     </div>
                 `;
@@ -5134,6 +5255,7 @@ Author: AI for Education (Wenchao Qin)
          *    循环直到学生真正理解
          */
         async function processGuidanceResponse(studentResponse) {
+            if (costLimitExceeded) return false;
             if (!guidanceDialogueActive || !guidanceContext) return false;
             
             // Add student's response to conversation
@@ -5149,11 +5271,9 @@ Author: AI for Education (Wenchao Qin)
             try {
                 // Call backend to evaluate student's response
                 // 调用后端评估学生的回答
-                const response = await fetch('http://localhost:5000/evaluate_guidance_response', {
+                const response = await fetch(RAG_SERVER_URL + '/evaluate_guidance_response', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: getSessionHeaders(),
                     body: JSON.stringify({
                         original_question: guidanceContext.originalQuestion,
                         choices: guidanceContext.choices,
@@ -5169,6 +5289,8 @@ Author: AI for Education (Wenchao Qin)
                     })
                 });
                 
+                if (response.status === 429) { showCostLimitBanner(); alert('Cost limit exceeded. Please try again later.'); throw new Error('Cost limit exceeded'); }
+                if (response.ok) checkCostLimitHeader(response);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -5288,25 +5410,22 @@ Author: AI for Education (Wenchao Qin)
                 
             } catch (error) {
                 console.error('Error processing guidance response:', error);
-                console.error('Error details:', {
-                    message: error.message,
-                    stack: error.stack,
-                    guidanceContext: guidanceContext
-                });
                 removeMessageFromConversation(thinkingId);
-                
-                // Fallback: Continue with encouragement and show error message for debugging
-                // 回退：继续鼓励并显示错误消息用于调试
                 const errorMessage = error.message || 'Unknown error';
-                const fallbackHtml = `
+                const isCostLimit = /cost limit|429/i.test(errorMessage);
+                if (isCostLimit) {
+                    const fallbackHtml = `<div style="padding: 12px; background: #fee2e2; border-left: 4px solid #dc2626; border-radius: 4px;">
+                        <strong>Cost limit exceeded.</strong> Please try again later.
+                    </div>`;
+                    addMessageToConversation('assistant', fallbackHtml, true);
+                } else {
+                    const fallbackHtml = `
                     <div style="color: #374151; font-size: 14px; line-height: 1.6;">
-                        <div style="padding: 10px; background: #fee; border-left: 4px solid #f00; border-radius: 4px; margin-bottom: 10px; font-size: 12px;">
-                            ⚠️ Error: ${errorMessage}
-                        </div>
-                        <div>I encountered an error, but let's keep going! Can you try explaining what you understand so far?</div>
-                    </div>
-                `;
-                addMessageToConversation('assistant', fallbackHtml, true);
+                        <div style="padding: 10px; background: #fee; border-left: 4px solid #f00; border-radius: 4px; margin-bottom: 10px; font-size: 12px;">⚠️ Error: ${errorMessage}</div>
+                        <div>I encountered an error. Can you try explaining what you understand so far?</div>
+                    </div>`;
+                    addMessageToConversation('assistant', fallbackHtml, true);
+                }
                 return false;
             }
         }
@@ -5315,6 +5434,7 @@ Author: AI for Education (Wenchao Qin)
          * Request hints and display in the chat/message area
          */
         async function requestHintsInChat() {
+            if (costLimitExceeded) return;
             if (!currentQuestionMeta || !currentData) {
                 addMessageToConversation('assistant', 'Please answer a question first before requesting hints.');
                 return;
@@ -5374,12 +5494,13 @@ Author: AI for Education (Wenchao Qin)
                 };
                 
                 // Call the hint generation API
-                const response = await fetch('http://localhost:5000/generate_hints', {
+                const response = await fetch(RAG_SERVER_URL + '/generate_hints', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getSessionHeaders(),
                     body: JSON.stringify(requestData)
                 });
-                
+                if (response.status === 429) { showCostLimitBanner(); alert('Cost limit exceeded. Please try again later.'); throw new Error('Cost limit exceeded'); }
+                if (response.ok) checkCostLimitHeader(response);
                 const result = await response.json();
                 
                 // Remove loading message
@@ -5468,21 +5589,6 @@ Author: AI for Education (Wenchao Qin)
             // Store for context
             socraticContext.synthesis = decomp?.synthesis_step || "";
             
-            // Natural conversation opening with complexity indication
-            let openingText = "I see you're having some trouble with this question. Let me help you work through it.";
-            
-            if (numSteps >= 4) {
-                openingText += " This is a complex question that requires understanding several concepts.";
-            } else if (numSteps >= 3) {
-                openingText += " Let's break this down step by step.";
-            }
-            
-            const openingHtml = `
-                <div style="color: #374151; font-size: 14px; line-height: 1.6;">
-                    ${openingText}
-                </div>
-            `;
-            addMessageToConversation('assistant', openingHtml, true);
             
             // Ask first question(s) based on complexity
             // 根据复杂度提问（无数量限制）
@@ -5507,7 +5613,7 @@ Author: AI for Education (Wenchao Qin)
                         }
                     }
                     
-                    questionHtml += `<em style="color: #6b7280;">Start with whichever you find easier. If you're unsure, I can break them down.</em></div>`;
+                    questionHtml += `</div>`;
                     
                     // Store for context
                     hintConversationHistory.push({
@@ -5518,7 +5624,7 @@ Author: AI for Education (Wenchao Qin)
                     // Simple question - just ask one
                     questionHtml = `
                         <div style="color: #374151; font-size: 14px; line-height: 1.6;">
-                            🤔 <strong>${steps[0]?.key_question || "What do you think is the key concept here?"}</strong>
+                            🤔 <strong>${steps[0]?.key_question || ""}</strong>
                         </div>
                     `;
                     hintConversationHistory.push({
@@ -5680,25 +5786,35 @@ ${(() => {
 - When synthesizing: summarize the REASONING PROCESS, not the answer
 - Final message should encourage student to apply their understanding, NOT tell them the answer`;
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${openAIApiKey}`
-                },
-                body: JSON.stringify({
-                    model: 'gpt-4o',
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        ...hintConversationHistory.slice(-8),
-                        { role: 'user', content: studentAnswer }
-                    ],
-                    temperature: 0.7,
-                    max_tokens: 400,
-                    response_format: { type: "json_object" }
+            const reqBody = {
+                model: 'gpt-4o',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    ...hintConversationHistory.slice(-8),
+                    { role: 'user', content: studentAnswer }
+                ],
+                temperature: 0.7,
+                max_tokens: 400,
+                response_format: { type: "json_object" }
+            };
+            // RAG 可用时走代理（统计费用并限制），否则直连 OpenAI
+            const response = ragServerAvailable
+                ? await fetch(RAG_SERVER_URL + '/chat_completion', {
+                    method: 'POST',
+                    headers: getSessionHeaders(),
+                    body: JSON.stringify(reqBody)
                 })
-            });
-            
+                : await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openAIApiKey}` },
+                    body: JSON.stringify(reqBody)
+                });
+            if (response.status === 429) {
+                showCostLimitBanner();
+                alert('Cost limit exceeded. Please try again later.');  // 超出每小时成本限额
+                throw new Error('Cost limit exceeded');
+            }
+            if (ragServerAvailable && response.ok) checkCostLimitHeader(response);
             const data = await response.json();
             let result;
             
@@ -6651,57 +6767,63 @@ Your response MUST follow this structure:
                 }
             ];
 
-            // Use XMLHttpRequest to avoid headers encoding issues
-            const requestData = JSON.stringify({
+            const requestData = {
                 model: 'gpt-4o-mini',
                 messages: messages,
                 max_tokens: 1000,
                 temperature: 0.7
-            });
+            };
 
-            // Make API call using XMLHttpRequest
-            // Build Authorization header value as ASCII-only string
-            const authHeader = 'Bearer ' + apiKey;
-            
-            const assistantResponse = await new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', 'https://api.openai.com/v1/chat/completions', true);
-                
-                try {
-                    // Set headers one at a time with error handling
-                    xhr.setRequestHeader('Content-Type', 'application/json');
-                    xhr.setRequestHeader('Authorization', authHeader);
-                } catch (e) {
-                    reject(new Error('Failed to set headers: ' + e.message + '. API Key length: ' + apiKey.length));
-                    return;
+            let assistantResponse;
+            // RAG 可用时走代理（统计费用并限制），否则直连 OpenAI
+            if (ragServerAvailable) {
+                const resp = await fetch(RAG_SERVER_URL + '/chat_completion', {
+                    method: 'POST',
+                    headers: getSessionHeaders(),
+                    body: JSON.stringify(requestData)
+                });
+                if (resp.status === 429) {
+                    showCostLimitBanner();
+                    alert('Cost limit exceeded. Please try again later.');  // 超出每小时成本限额
+                    throw new Error('Cost limit exceeded');
                 }
-                
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
-                            try {
-                                const data = JSON.parse(xhr.responseText);
-                                resolve(data.choices[0].message.content);
-                            } catch (e) {
-                                reject(new Error('Failed to parse response: ' + e.message));
-                            }
-                        } else {
-                            try {
-                                const error = JSON.parse(xhr.responseText);
-                                reject(new Error(error.error?.message || 'OpenAI API error: ' + xhr.status));
-                            } catch (e) {
-                                reject(new Error('OpenAI API error: ' + xhr.status + ' - ' + xhr.statusText));
+                if (resp.ok) checkCostLimitHeader(resp);
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+                assistantResponse = data.choices?.[0]?.message?.content || '';
+            } else {
+                const authHeader = 'Bearer ' + apiKey;
+                assistantResponse = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', 'https://api.openai.com/v1/chat/completions', true);
+                    try {
+                        xhr.setRequestHeader('Content-Type', 'application/json');
+                        xhr.setRequestHeader('Authorization', authHeader);
+                    } catch (e) {
+                        reject(new Error('Failed to set headers: ' + e.message));
+                        return;
+                    }
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                try {
+                                    const d = JSON.parse(xhr.responseText);
+                                    resolve(d.choices[0].message.content);
+                                } catch (e) { reject(new Error('Failed to parse response')); }
+                            } else {
+                                try {
+                                    const err = JSON.parse(xhr.responseText);
+                                    reject(new Error(err.error?.message || 'OpenAI API error: ' + xhr.status));
+                                } catch (e) {
+                                    reject(new Error('OpenAI API error: ' + xhr.status));
+                                }
                             }
                         }
-                    }
-                };
-                
-                xhr.onerror = function() {
-                    reject(new Error('Network error occurred'));
-                };
-                
-                xhr.send(requestData);
-            });
+                    };
+                    xhr.onerror = () => reject(new Error('Network error'));
+                    xhr.send(JSON.stringify(requestData));
+                });
+            }
             
             // ========================================================================
             // Validate and Supplement Citations

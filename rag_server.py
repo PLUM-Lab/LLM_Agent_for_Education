@@ -103,20 +103,20 @@ RAG 服务器 - 医学教育知识库
 # 导入模块
 # =============================================================================
 
-import os
+from collections import defaultdict
 import json
-import re
+import os
 from pathlib import Path
-from typing import List, Dict, Optional
+import re
+from threading import Lock
+import time
+import types
+from typing import Dict, List, Optional
 
-# Flask Web 框架，用于 REST API
-from flask import Flask, request, jsonify
-from flask_cors import CORS  # 启用跨域资源共享
-
-# 数值计算
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+import langchain
 import numpy as np
-
-# OpenAI API 客户端，用于生成向量
 from openai import OpenAI
 
 # -----------------------------------------------------------------------------
@@ -157,8 +157,7 @@ except ImportError:
 
 # 修复 langchain.retrievers 兼容性问题
 # 必须在导入 ragatouille 之前创建兼容层
-import langchain
-import types
+
 
 # 检查并创建 langchain.retrievers 兼容层
 if not hasattr(langchain, 'retrievers'):
@@ -230,7 +229,17 @@ app = Flask(__name__)
 # 启用 CORS 允许来自前端（medical-quiz.html）的请求
 # 这是必要的，因为前端运行在不同的端口（8000）
 # 使用简单配置，允许所有来源、方法和头部
-CORS(app, supports_credentials=True)
+# expose_headers 让前端能读取 X-Cost-Limit-Exceeded（超限即时提示）
+CORS(app, supports_credentials=True, expose_headers=["X-Cost-Limit-Exceeded"])
+
+
+@app.errorhandler(500)
+def handle_500(e):
+    """确保 500 错误始终返回 JSON，便于前端显示具体错误信息。"""
+    import traceback
+    traceback.print_exc()
+    err = str(e) if e else "Internal server error"
+    return jsonify({"success": False, "error": err}), 500
 
 # =============================================================================
 # 全局状态
@@ -280,6 +289,159 @@ def get_api_key() -> str:
                 print(f"[!] 读取 api-key.js 出错：{e}")
     
     return api_key
+
+
+# =============================================================================
+# 每用户每小时成本限制（5 美分/小时）
+# Per-user hourly cost limit ($0.05/hour)
+# =============================================================================
+
+
+
+# Per-user cost limit: $0.05 per 3 minutes (rolling window)
+COST_LIMIT_WINDOW_SECONDS = 180  # 3 minutes
+COST_LIMIT = 0.05  # $0.05 (5 cents) per user per window
+_user_costs: Dict[str, List[tuple]] = defaultdict(list)  # 用户ID -> [(时间戳, 费用), ...]，用于限额检查
+_user_tokens: Dict[str, List[tuple]] = defaultdict(list)  # 用户ID -> [(时间戳, pt, ct), ...]，用于限额
+_user_totals: Dict[str, Dict] = defaultdict(lambda: {"cost": 0.0, "prompt_tokens": 0, "completion_tokens": 0, "request_count": 0})  # 累计总量（不清理）
+_cost_lock = Lock()  # 线程锁，保证并发安全
+
+# OpenAI 定价（美元/百万token），近似值
+_PRICE = {
+    "gpt-4o-mini": (0.15, 0.60),       # (输入, 输出)
+    "gpt-4o": (2.50, 10.0),
+    "gpt-4o-2024": (2.50, 10.0),
+    "text-embedding-3-small": (0.02, 0.02),
+}
+
+
+def _get_user_id() -> str:
+    """
+    从请求中获取用户标识，用于按用户统计费用、执行每小时限额。
+    优先级：X-User-Id（登录用户名）> X-Session-Id（会话）> IP
+    这样 $0.05/小时 限制按每个登录用户独立计算，同一用户名换设备/换标签仍共用限额。
+    """
+    if request:
+        uid = request.headers.get("X-User-Id")
+        if uid and uid.strip():
+            return ("user:" + uid.strip())[:64]
+        sid = request.headers.get("X-Session-Id")
+        if sid and sid.strip():
+            return ("sess:" + sid.strip())[:64]
+        addr = request.remote_addr or "unknown"
+        return f"ip:{addr}"
+    return "unknown"
+
+
+def _estimate_chat_cost(prompt_tokens: int, completion_tokens: int, model: str) -> float:
+    """根据 token 数量估算 chat 费用（美元）。"""
+    prices = _PRICE.get(model, _PRICE["gpt-4o-mini"])
+    inp, out = prices
+    return (prompt_tokens * inp + completion_tokens * out) / 1_000_000
+
+
+def _estimate_embedding_cost(total_tokens: int) -> float:
+    """估算 embedding 费用（美元）。"""
+    p = _PRICE["text-embedding-3-small"][0]
+    return total_tokens * p / 1_000_000
+
+
+def cost_add(user_id: str, cost: float) -> None:
+    """记录用户当前时刻产生的费用。"""
+    with _cost_lock:
+        _user_costs[user_id].append((time.time(), cost))
+        _user_totals[user_id]["cost"] += cost
+        _user_totals[user_id]["request_count"] += 1
+        cutoff = time.time() - COST_LIMIT_WINDOW_SECONDS
+        _user_costs[user_id] = [(t, c) for t, c in _user_costs[user_id] if t > cutoff]
+
+
+def token_add(user_id: str, prompt_tokens: int, completion_tokens: int) -> None:
+    """记录用户 token 用量（用于统计展示）。"""
+    if prompt_tokens <= 0 and completion_tokens <= 0:
+        return
+    with _cost_lock:
+        _user_tokens[user_id].append((time.time(), prompt_tokens, completion_tokens))
+        _user_totals[user_id]["prompt_tokens"] += prompt_tokens
+        _user_totals[user_id]["completion_tokens"] += completion_tokens
+        cutoff = time.time() - COST_LIMIT_WINDOW_SECONDS
+        _user_tokens[user_id] = [(t, a, b) for t, a, b in _user_tokens[user_id] if t > cutoff]
+
+
+def usage_get_all() -> List[Dict]:
+    """返回所有用户的累计用量统计（总量 + 过去3分钟费用用于限额提示）。"""
+    cutoff = time.time() - COST_LIMIT_WINDOW_SECONDS
+    with _cost_lock:
+        users = set(_user_costs.keys()) | set(_user_tokens.keys()) | set(_user_totals.keys())
+        result = []
+        for uid in users:
+            t = _user_totals[uid]
+            cost_hourly = sum(c for t2, c in _user_costs[uid] if t2 > cutoff)
+            result.append({
+                "user_id": uid[:16] + "..." if len(uid) > 16 else uid,
+                "cost_total": round(t["cost"], 6),
+                "cost_last_hour": round(cost_hourly, 6),
+                "prompt_tokens": t["prompt_tokens"],
+                "completion_tokens": t["completion_tokens"],
+                "total_tokens": t["prompt_tokens"] + t["completion_tokens"],
+                "request_count": t["request_count"],
+            })
+        return sorted(result, key=lambda x: -x["cost_total"])
+
+
+def cost_get_hourly(user_id: str) -> float:
+    """返回用户过去 3 分钟内的总费用（美元）。"""
+    cutoff = time.time() - COST_LIMIT_WINDOW_SECONDS
+    with _cost_lock:
+        return sum(c for t, c in _user_costs[user_id] if t > cutoff)
+
+
+def _cost_limit_exceeded_after_add() -> bool:
+    """本次请求记账后是否超出限额。用于在 200 响应中附加 X-Cost-Limit-Exceeded 头。"""
+    uid = _get_user_id()
+    return cost_get_hourly(uid) >= COST_LIMIT
+
+
+def cost_check_limit() -> Optional[tuple]:
+    """
+    检查用户是否超出限额（每3分钟 $0.05）。
+    若未超限返回 None；超限则返回 (响应字典, 状态码)。
+    """
+    uid = _get_user_id()
+    if cost_get_hourly(uid) >= COST_LIMIT:
+        return (
+            {
+                "error": "cost_limit_exceeded",
+                "message": "Cost limit exceeded. Please try again later.",
+                "limit_exceeded": True,
+            },
+            429,
+        )
+    return None
+
+
+def cost_get_retry_after_seconds(user_id: str) -> int:
+    """
+    返回用户超限后需等待的秒数，才能再次使用。
+    基于滚动3分钟窗口：找到最早可使费用降至限额以下的时刻。
+    """
+    now = time.time()
+    cutoff = now - COST_LIMIT_WINDOW_SECONDS
+    with _cost_lock:
+        costs = [(t, c) for t, c in _user_costs[user_id] if t > cutoff]
+    if not costs:
+        return 0
+    if sum(c for _, c in costs) < COST_LIMIT:
+        return 0
+    costs_sorted = sorted(costs, key=lambda x: x[0])
+    for t, _ in costs_sorted:
+        T = t + COST_LIMIT_WINDOW_SECONDS
+        if T < now:
+            continue
+        remaining = sum(c for t2, c in costs_sorted if t2 > T - COST_LIMIT_WINDOW_SECONDS)
+        if remaining < COST_LIMIT:
+            return max(0, int(T - now))
+    return COST_LIMIT_WINDOW_SECONDS
 
 
 def load_pdfs(directory: str) -> List[Dict]:
@@ -635,6 +797,10 @@ def search_similar(
         input=[query]
     )
     query_embedding = np.array([response.data[0].embedding], dtype='float32')
+    # 从 embeddings API 获取 token 用量（用于费用统计）
+    embedding_total_tokens = 0
+    if hasattr(response, 'usage') and response.usage:
+        embedding_total_tokens = getattr(response.usage, 'total_tokens', 0) or 0
     
     # 归一化查询向量以实现余弦相似度
     # 重要：查询向量必须与文档向量使用相同的归一化方法
@@ -707,7 +873,7 @@ def search_similar(
                         break
             
             print(f"  [OK] 重排序后返回前 {len(final_results)} 个文档")
-            return final_results
+            return final_results, embedding_total_tokens
             
         except Exception as e:
             print(f"  [!] 重排序失败：{e}，使用 FAISS 结果")
@@ -724,7 +890,7 @@ def search_similar(
             "score": r["faiss_score"]
         })
     
-    return results
+    return results, embedding_total_tokens
 
 
 # =============================================================================
@@ -875,6 +1041,14 @@ def initialize_rag():
 
 @app.route('/search', methods=['POST'])
 def search():
+    """搜索入口：先检查用户是否超出每小时成本限额。"""
+    blocked = cost_check_limit()
+    if blocked:
+        return jsonify(blocked[0]), blocked[1]
+    return _search_impl()
+
+
+def _search_impl():
     """
     搜索端点 - 为查询查找相关块。
     
@@ -921,7 +1095,7 @@ def search():
             return jsonify({"error": "未提供查询"}), 400
         
         # 执行两阶段检索
-        results = search_similar(
+        results, embedding_tokens = search_similar(
             query, 
             openai_client, 
             faiss_index, 
@@ -929,15 +1103,83 @@ def search():
             num_retrieved=num_retrieved,
             num_final=num_final
         )
-        
-        return jsonify({
+        # 按实际 token 数记录 embedding 费用
+        uid = _get_user_id()
+        if embedding_tokens > 0:
+            cost_add(uid, _estimate_embedding_cost(embedding_tokens))
+            token_add(uid, embedding_tokens, 0)  # embedding 只有输入 token
+        else:
+            cost_add(uid, 0.000002)  # 兜底：API 未返回 usage 时用估算
+        resp = jsonify({
             "query": query,
             "num_retrieved": num_retrieved,
             "num_final": num_final,
             "reranker": "ColBERTv2" if reranker else "None",
             "results": results
         })
+        if _cost_limit_exceeded_after_add():
+            resp.headers["X-Cost-Limit-Exceeded"] = "true"
+        return resp
     
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/chat_completion', methods=['POST'])
+def chat_completion():
+    """
+    OpenAI chat 代理：转发请求、统计费用、强制 $0.05/小时 限制。
+    超限时返回 429。
+    """
+    blocked = cost_check_limit()
+    if blocked:
+        return jsonify(blocked[0]), blocked[1]
+
+    try:
+        data = request.json or {}
+        model = data.get("model", "gpt-4o-mini")
+        messages = data.get("messages", [])
+        max_tokens = data.get("max_tokens", 1000)
+        temperature = data.get("temperature", 0.7)
+        response_format = data.get("response_format")
+
+        if not messages:
+            return jsonify({"error": "messages required"}), 400
+
+        kwargs = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if response_format:
+            kwargs["response_format"] = response_format
+
+        resp = openai_client.chat.completions.create(**kwargs)
+        usage = getattr(resp, "usage", None)
+        if usage:
+            pt = getattr(usage, "prompt_tokens", 0) or 0
+            ct = getattr(usage, "completion_tokens", 0) or 0
+            cost = _estimate_chat_cost(pt, ct, model)
+            uid = _get_user_id()
+            cost_add(uid, cost)
+            token_add(uid, pt, ct)
+
+        choice = resp.choices[0] if resp.choices else None
+        if not choice:
+            return jsonify({"error": "no response"}), 500
+
+        content = choice.message.content
+        resp = jsonify({
+            "choices": [{"message": {"content": content, "role": "assistant"}}],
+            "usage": {
+                "prompt_tokens": getattr(usage, "prompt_tokens", 0),
+                "completion_tokens": getattr(usage, "completion_tokens", 0),
+            } if usage else None,
+        })
+        if _cost_limit_exceeded_after_add():
+            resp.headers["X-Cost-Limit-Exceeded"] = "true"
+        return resp
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -976,6 +1218,27 @@ def health():
             "num_final": NUM_DOCS_FINAL
         }
     })
+
+
+@app.route('/usage_stats', methods=['GET'])
+def usage_stats():
+    """
+    返回各用户在过去 1 小时内的 token 用量与费用统计（用于管理界面）。
+    Returns per-user token usage and cost in the last hour.
+    """
+    return jsonify({"users": usage_get_all(), "limit_per_hour": COST_LIMIT})
+
+
+@app.route('/cost_limit_status', methods=['GET'])
+def cost_limit_status():
+    """
+    返回当前用户的限额状态，用于前端显示倒计时。
+    Returns: { "limited": bool, "retry_after_seconds": int }
+    """
+    uid = _get_user_id()
+    limited = cost_get_hourly(uid) >= COST_LIMIT
+    retry = cost_get_retry_after_seconds(uid) if limited else 0
+    return jsonify({"limited": limited, "retry_after_seconds": retry})
 
 
 @app.route('/rebuild', methods=['POST'])
@@ -1042,17 +1305,23 @@ hint_generator = None
 def initialize_hint_generator():
     """
     初始化苏格拉底式提示生成器。
-    
-    在服务器启动时调用，加载 ProactiveQuestionGenerator。
+    使用 rag_server 的 get_api_key（与 RAG/embedding 相同），确保密钥一致。
     """
     global hint_generator
     try:
         from proactive_question_generator import ProactiveQuestionGenerator
-        hint_generator = ProactiveQuestionGenerator()
+        api_key = get_api_key()
+        if not api_key:
+            print("[!] 提示生成器：未找到 API 密钥")
+            hint_generator = None
+            return False
+        hint_generator = ProactiveQuestionGenerator(api_key=api_key)
         print("[OK] 提示生成器已加载")
         return True
     except Exception as e:
         print(f"[!] 提示生成器加载失败: {e}")
+        import traceback
+        traceback.print_exc()
         hint_generator = None
         return False
 
@@ -1105,6 +1374,9 @@ def generate_hints():
     错误响应：
         {"success": false, "error": "错误信息"}, 状态码 400 或 500
     """
+    blocked = cost_check_limit()
+    if blocked:
+        return jsonify(blocked[0]), blocked[1]
     global hint_generator
     
     try:
@@ -1143,7 +1415,8 @@ def generate_hints():
         )
         
         # 生成推理步骤链 (基于 MedTutor-R1 方法)
-        response = hint_generator.generate_sub_questions(hint_request)
+        usage_out = {}
+        response = hint_generator.generate_sub_questions(hint_request, usage_out=usage_out)
         
         # 格式化显示
         formatted = hint_generator.format_hints_for_display(response)
@@ -1151,7 +1424,17 @@ def generate_hints():
         # 转换为可序列化格式
         response_data = hint_generator.to_dict(response)
         
-        return jsonify({
+        # 按实际 token 记录费用
+        uid = _get_user_id()
+        pt = usage_out.get("prompt_tokens", 0) or 0
+        ct = usage_out.get("completion_tokens", 0) or 0
+        model = usage_out.get("model", "gpt-4o")
+        if pt or ct:
+            cost_add(uid, _estimate_chat_cost(pt, ct, model))
+            token_add(uid, pt, ct)
+        else:
+            cost_add(uid, 0.02)  # 兜底
+        resp = jsonify({
             "success": True,
             "decomposition": response_data["decomposition"],
             "active_step_id": response_data["active_step_id"],
@@ -1159,6 +1442,9 @@ def generate_hints():
             "is_complete": response_data["is_complete"],
             "formatted_display": formatted
         })
+        if _cost_limit_exceeded_after_add():
+            resp.headers["X-Cost-Limit-Exceeded"] = "true"
+        return resp
         
     except Exception as e:
         import traceback
@@ -1200,6 +1486,9 @@ def evaluate_answer():
             "missing_concept": "缺失的概念"
         }
     """
+    blocked = cost_check_limit()
+    if blocked:
+        return jsonify(blocked[0]), blocked[1]
     global hint_generator
     
     try:
@@ -1231,11 +1520,24 @@ def evaluate_answer():
         )
         
         # 评估学生回答
+        usage_out = {}
         result = hint_generator.evaluate_response(
             request=hint_request,
             step=step,
-            student_response=data['student_response']
+            student_response=data['student_response'],
+            usage_out=usage_out
         )
+        
+        # 按实际 token 记录费用
+        uid = _get_user_id()
+        pt = usage_out.get("prompt_tokens", 0) or 0
+        ct = usage_out.get("completion_tokens", 0) or 0
+        model = usage_out.get("model", "gpt-4o")
+        if pt or ct:
+            cost_add(uid, _estimate_chat_cost(pt, ct, model))
+            token_add(uid, pt, ct)
+        else:
+            cost_add(uid, 0.02)
         
         # 转换子步骤为可序列化格式
         sub_steps = []
@@ -1247,7 +1549,8 @@ def evaluate_answer():
                 "expected_understanding": s.expected_understanding
             })
         
-        return jsonify({
+        cost_add(_get_user_id(), 0.02)
+        resp = jsonify({
             "success": True,
             "step_id": result.step_id,
             "understood": result.understood,
@@ -1255,6 +1558,9 @@ def evaluate_answer():
             "sub_steps": sub_steps,
             "missing_concept": result.missing_concept
         })
+        if _cost_limit_exceeded_after_add():
+            resp.headers["X-Cost-Limit-Exceeded"] = "true"
+        return resp
         
     except Exception as e:
         import traceback
@@ -1339,6 +1645,9 @@ def evaluate_student_thinking():
             "sub_questions": []
         }
     """
+    blocked = cost_check_limit()
+    if blocked:
+        return jsonify(blocked[0]), blocked[1]
     global hint_generator
     
     try:
@@ -1354,6 +1663,8 @@ def evaluate_student_thinking():
         # Parse request data
         # 解析请求数据
         data = request.json
+        if not data:
+            return jsonify({"success": False, "error": "Request body is empty or invalid JSON"}), 400
         
         # Validate required fields
         # 验证必需字段
@@ -1381,10 +1692,23 @@ def evaluate_student_thinking():
         # This uses LLM to decide between DECOMPOSE and CLARIFY actions
         # 调用评估方法分析学生思考
         # 这使用LLM在DECOMPOSE和CLARIFY行动之间做决定
+        usage_out = {}
         result = hint_generator.evaluate_student_thinking(
             request=hint_request,
-            student_thinking=data['student_thinking']  # Student's explanation of their reasoning
+            student_thinking=data['student_thinking'],
+            usage_out=usage_out
         )
+        
+        # 按实际 token 记录费用
+        uid = _get_user_id()
+        pt = usage_out.get("prompt_tokens", 0) or 0
+        ct = usage_out.get("completion_tokens", 0) or 0
+        model = usage_out.get("model", "gpt-4o")
+        if pt or ct:
+            cost_add(uid, _estimate_chat_cost(pt, ct, model))
+            token_add(uid, pt, ct)
+        else:
+            cost_add(uid, 0.02)
         
         # Note: evaluate_student_thinking already generates sub_questions for "decompose" action
         # using MedTutor-R1 style decomposition (see proactive_question_generator.py line 1079-1086)
@@ -1393,7 +1717,8 @@ def evaluate_student_thinking():
         
         # Return structured response with all guidance information
         # 返回包含所有指导信息的结构化响应
-        return jsonify({
+        cost_add(_get_user_id(), 0.02)
+        resp = jsonify({
             "success": True,
             "action_type": result.get("action_type"),  # "decompose" or "clarify" or None (if understood)
             "understanding_level": result.get("understanding_level", "partial"),  # "none" | "partial" | "close" | "understood"
@@ -1404,14 +1729,25 @@ def evaluate_student_thinking():
             "missing_concept": result.get("missing_concept", ""),  # What concept student needs to understand
             "clarification": result.get("clarification", ""),  # Clarification text (if action_type is "clarify")
             "sub_questions": result.get("sub_questions", []),  # List of simpler questions (if action_type is "decompose")
-            "summary": result.get("summary", "")  # Summary if student understands
+            "summary": result.get("summary", ""),  # Summary if student understands
+            "decomposition_failed": result.get("decomposition_failed", False),  # True if generate_sub_questions threw
+            "decomposition_error": result.get("decomposition_error", "")  # Error message when decomposition failed
         })
-        
+        if _cost_limit_exceeded_after_add():
+            resp.headers["X-Cost-Limit-Exceeded"] = "true"
+        return resp
+
     except Exception as e:
-        # Log error for debugging
-        # 记录错误以便调试
         import traceback
+        tb_str = traceback.format_exc()
         traceback.print_exc()
+        # 写入日志文件便于排查
+        try:
+            (Path(__file__).parent / "tutor_error.log").write_text(
+                f"=== {time.strftime('%Y-%m-%d %H:%M:%S')} ===\n{tb_str}\n", encoding="utf-8"
+            )
+        except Exception:
+            pass
         return jsonify({
             "success": False,
             "error": str(e)
@@ -1462,6 +1798,9 @@ def evaluate_guidance_response():
             "summary": "总结（如果理解了）"
         }
     """
+    blocked = cost_check_limit()
+    if blocked:
+        return jsonify(blocked[0]), blocked[1]
     global hint_generator
     
     try:
@@ -1487,6 +1826,7 @@ def evaluate_guidance_response():
         
         # Call evaluation method
         # 调用评估方法
+        usage_out = {}
         result = hint_generator.evaluate_guidance_response(
             request=hint_request,
             current_action=data.get('current_action'),
@@ -1496,10 +1836,19 @@ def evaluate_guidance_response():
             conversation_history=data.get('conversation_history', []),
             current_understanding_level=data.get('understanding_level', 'partial'),
             round_number=data.get('round_number', 1),
-            cannot_decompose_further=data.get('cannot_decompose_further', False)
+            cannot_decompose_further=data.get('cannot_decompose_further', False),
+            usage_out=usage_out
         )
         
-        return jsonify({
+        # 按实际 token 记录费用
+        pt = usage_out.get("prompt_tokens", 0) or 0
+        ct = usage_out.get("completion_tokens", 0) or 0
+        model = usage_out.get("model", "gpt-4o")
+        if pt or ct:
+            cost_add(_get_user_id(), _estimate_chat_cost(pt, ct, model))
+        else:
+            cost_add(_get_user_id(), 0.02)
+        resp = jsonify({
             "success": True,
             "understood": result.get("understood", False),
             "understanding_level": result.get("understanding_level", "partial"),
@@ -1509,6 +1858,9 @@ def evaluate_guidance_response():
             "next_clarification": result.get("next_clarification", ""),
             "summary": result.get("summary", "")
         })
+        if _cost_limit_exceeded_after_add():
+            resp.headers["X-Cost-Limit-Exceeded"] = "true"
+        return resp
         
     except Exception as e:
         import traceback
@@ -1613,7 +1965,8 @@ if __name__ == '__main__':
         # 初始化提示生成器
         initialize_hint_generator()
         
-        print("\n服务器启动在 http://localhost:5000")
+        port = int(os.environ.get('RAG_PORT', 5000))
+        print(f"\n服务器启动在 http://localhost:{port}")
         print("\nAPI 端点：")
         print("  POST /search          - 搜索相关块")
         print("       Body: {\"query\": \"你的问题\"}")
@@ -1624,8 +1977,8 @@ if __name__ == '__main__':
         print("  POST /rebuild         - 从 PDF 重建索引")
         print("\n按 Ctrl+C 停止服务器\n")
         
-        # 启动 Flask 服务器
-        app.run(host='0.0.0.0', port=5000, debug=False)
+        # 启动 Flask 服务器（支持 RAG_PORT 环境变量，用于 WSL 避让端口冲突）
+        app.run(host='0.0.0.0', port=port, debug=False)
     else:
         print("\n[错误] RAG 系统初始化失败")
         print("请检查上面的错误信息")

@@ -23,9 +23,9 @@ def get_api_key() -> str:
     api_key = os.getenv("OPENAI_API_KEY")
     
     if not api_key:
-        # Try to read from api-key.js
+        # Try to read from api-key.js (project root)
         from pathlib import Path
-        config_path = Path(__file__).parent / 'api-key.js'
+        config_path = Path(__file__).resolve().parent.parent / 'api-key.js'
         if config_path.exists():
             try:
                 content = config_path.read_text(encoding='utf-8')

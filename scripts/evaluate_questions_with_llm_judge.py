@@ -65,8 +65,8 @@ def get_openai_api_key(api_key: Optional[str] = None) -> Optional[str]:
     if api_key:
         return api_key
     
-    # 尝试从 api-key.js 读取
-    api_key_path = Path('api-key.js')
+    # 尝试从 api-key.js 读取（项目根目录）
+    api_key_path = Path(__file__).resolve().parent.parent / 'api-key.js'
     if api_key_path.exists():
         try:
             with open(api_key_path, 'r', encoding='utf-8') as f:

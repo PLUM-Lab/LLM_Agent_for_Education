@@ -1,0 +1,8 @@
+# 复制到 %UserProfile%\.wslconfig 并执行 wsl --shutdown 后生效
+# 启用后，在 WSL 里跑全部服务，Windows 浏览器用 127.0.0.1 即可访问
+
+[wsl2]
+networkingMode=mirrored
+
+[experimental]
+hostAddressLoopback=true
