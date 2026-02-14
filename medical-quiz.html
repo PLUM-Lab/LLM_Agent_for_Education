@@ -629,7 +629,7 @@ Author: AI for Education (Wenchao Qin)
             display: none;
         }
 
-        /* 登录页（与测验集成在同一页） */
+        /* Login screen (integrated with quiz on same page) */
         .login-screen-wrap {
             position: fixed;
             inset: 0;
@@ -669,8 +669,16 @@ Author: AI for Education (Wenchao Qin)
         .login-screen-wrap .register-card { display: none; }
         .login-screen-wrap .register-card.show { display: block; }
         .login-screen-wrap .login-card.hide { display: none; }
-        /* 登录屏加上 hidden 时必须隐藏，否则会被 .login-screen-wrap 的 display:flex 覆盖 */
+        /* When login screen has hidden class it must be hidden, else .login-screen-wrap display:flex overrides */
         .login-screen-wrap.hidden { display: none !important; }
+        /* Custom alert modal (English only: title + OK button, no browser 确定) */
+        .app-alert-overlay { display: none; position: fixed; inset: 0; z-index: 100000; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; }
+        .app-alert-overlay.show { display: flex; }
+        .app-alert-dialog { background: #fff; padding: 20px 24px; border-radius: 8px; min-width: 280px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .app-alert-title { font-weight: 600; font-size: 16px; margin-bottom: 10px; color: #333; }
+        .app-alert-message { font-size: 14px; color: #555; margin-bottom: 16px; line-height: 1.5; }
+        .app-alert-ok { display: block; margin-left: auto; padding: 8px 20px; background: #4a90e2; color: #fff; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; }
+        .app-alert-ok:hover { background: #357abd; }
     </style>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -699,7 +707,15 @@ Author: AI for Education (Wenchao Qin)
     </script>
 </head>
 <body>
-    <!-- 登录屏：未登录时显示 -->
+    <!-- Custom alert overlay (English title + OK button, avoids browser 确定 / localhost title) -->
+    <div id="app-alert-overlay" class="app-alert-overlay">
+        <div class="app-alert-dialog">
+            <div id="app-alert-title" class="app-alert-title">Notice</div>
+            <div id="app-alert-message" class="app-alert-message"></div>
+            <button type="button" id="app-alert-ok" class="app-alert-ok">OK</button>
+        </div>
+    </div>
+    <!-- Login screen: shown when not logged in -->
     <div id="login-screen" class="login-screen-wrap">
         <div id="login-card" class="login-card">
             <h1 class="login-title">Medical Quiz</h1>
@@ -741,7 +757,7 @@ Author: AI for Education (Wenchao Qin)
             </form>
         </div>
     </div>
-    <!-- 测验主内容：登录后显示 -->
+    <!-- Quiz main content: shown after login -->
     <div id="quiz-app" class="hidden">
     <!-- ====================================================================
          HTML Main Structure
@@ -833,50 +849,23 @@ Author: AI for Education (Wenchao Qin)
                 
                 <!-- ============================================================
                      Jump to Question Control
-                     跳转到指定题目控件
                      ============================================================
-                     
                      Function: Allow users to quickly jump to any question by number
-                     功能：允许用户通过输入题目编号快速跳转到任意题目
-                     
                      Elements:
-                     - #jump-to-input: Number input field for question number (1-based)
-                       跳转输入框：用于输入题目编号的数字输入框（从1开始）
-                     - #jump-to-btn: Button to trigger jump action
-                       跳转按钮：触发跳转操作的按钮
-                     
-                     Usage:
-                     使用方法：
-                     1. Enter question number (1 to total questions) in the input field
-                        在输入框中输入题目编号（1到总题目数）
-                     2. Click "跳转" button or press Enter key
-                        点击"跳转"按钮或按Enter键
-                     3. System validates and jumps to the specified question
-                        系统验证并跳转到指定的题目
-                     
-                     Features:
-                     特性：
-                     - Auto-updates placeholder to show valid range (e.g., "1-477")
-                       自动更新占位符显示有效范围（例如："1-477"）
-                     - Auto-updates input value when navigating questions
-                       导航题目时自动更新输入框的值
-                     - Validates input range before jumping
-                       跳转前验证输入范围
-                     - Supports both button click and Enter key
-                       支持按钮点击和Enter键两种方式
-                     
+                     - #jump-to-input: Number input for question number (1-based)
+                     - #jump-to-btn: Button to trigger jump
+                     Usage: Enter question number (1 to total), click Jump or press Enter
+                     Features: Auto-updates placeholder range, validates before jump
                      ============================================================ -->
                 <div style="margin-left: 15px; display: inline-flex; align-items: center; gap: 8px;">
                     <label style="font-size: 13px; color: #666;">Jump to:</label>
-                    <!-- Number input for question number (1-based, user-friendly)
-                         题目编号输入框（从1开始，用户友好） -->
+                    <!-- Question number input (1-based) -->
                     <input type="number" 
                            id="jump-to-input" 
                            placeholder="Question #" 
                            min="1" 
                            style="width: 80px; padding: 6px 10px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 14px;">
-                    <!-- Jump button to trigger navigation
-                         跳转按钮，触发导航操作 -->
+                    <!-- Jump button -->
                     <button class="submit-btn" 
                             id="jump-to-btn" 
                             style="padding: 6px 15px; font-size: 13px; background: #17a2b8;">Jump</button>
@@ -1055,129 +1044,70 @@ Author: AI for Education (Wenchao Qin)
 
         // ====================================================================
         // Part 2: Global State Variables
-        // 第二部分：全局状态变量
+ //
         // ====================================================================
         // 
         // These variables are shared across the entire application to track 
         // quiz state and user interactions. They are initialized on page load 
         // and updated as users interact.
-        // 这些变量在整个应用程序中共享，用于跟踪测验状态和用户交互。
-        // 它们在页面加载时初始化，并在用户交互时更新。
+ //
+ //
         //
         // State Flow:
         //   Page Load → Initialize Variables → Load Questions → User Answers → Update State → Display Feedback
-        //   状态流程：页面加载 → 初始化变量 → 加载问题 → 用户回答 → 更新状态 → 显示反馈
+ // → → → → →
         //
         // ====================================================================
         
         let currentData = null;           // Current question data being displayed (includes question, options, feedback, etc.)
-                                          // 当前显示的问题数据（包括问题、选项、反馈等）
+ //
         let selectedAnswer = null;        // Student's selected answer index (0=A, 1=B, 2=C, 3=D, 4=E)
-                                          // 学生选择的答案索引（0=A, 1=B, 2=C, 3=D, 4=E）
+ // 0=A, 1=B, 2=C, 3=D, 4=E
         let generatedQuestions = [];      // Legacy feature: ChatGPT dynamically generated questions array
-                                          // 遗留功能：ChatGPT动态生成的问题数组
+ // ChatGPT
         let currentGeneratedIndex = 0;    // Current question index in allQuestions array (0-based)
-                                          // 当前问题在allQuestions数组中的索引（从0开始）
-        let currentQuestionMeta = null;   // Current question metadata object, contains:
-                                          // 当前问题的元数据对象，包含：
-                                          //   - correctIndex: Correct answer index
-                                          //     正确答案索引
-                                          //   - explanations: Array of explanations for each option
-                                          //     每个选项的解释数组
-                                          //   - source: Question source PDF name
-                                          //     问题来源PDF名称
-                                          //   - sourceChunk: Original text used to generate the question
-                                          //     用于生成问题的原始文本块
-                                          //   - sourcePage: Page number of original text
-                                          //     原始文本的页码
+ // allQuestions0
+        let currentQuestionMeta = null;   // Current question metadata: correctIndex, explanations, source, sourceChunk, sourcePage
         let allQuestions = [];            // All questions loaded from JSON file
-                                          // 从JSON文件加载的所有问题
         let currentQbankSource = '';      // Current question bank source file name
-                                          // 当前题库源文件名
-        let openAIApiKey = '';            // OpenAI API key for calling ChatGPT
-                                          // 用于调用ChatGPT的OpenAI API密钥
-        let messageChatHistory = [];      // ChatGPT conversation history for maintaining context coherence
-                                          // ChatGPT对话历史，用于保持上下文连贯性
-                                          // Format: [{role: 'user', content: '...'}, {role: 'assistant', content: '...'}]
-                                          // 格式：[{role: 'user', content: '...'}, {role: 'assistant', content: '...'}]
+        let openAIApiKey = '';            // OpenAI API key for ChatGPT
+        let messageChatHistory = [];      // ChatGPT conversation history; format: [{role, content}, ...]
         
         // Hint System State (Socratic Questioning)
-        // 提示系统状态（苏格拉底式提问）
         let hintConversationHistory = []; // Track hint rounds for progressive guidance
-                                          // 跟踪提示轮次以进行渐进式引导
-        let currentHintRound = 0;         // Current hint round (for reference only, no hard limit)
-                                          // 当前提示轮次（仅用于参考，无硬性限制）
-                                          // 当前提示轮次（1-3，0表示尚未提供提示）
+        let currentHintRound = 0;         // Current hint round (1-3, 0 = none yet)
         let hintSystemEnabled = true;     // Whether hint system is available (requires RAG server)
-                                          // 提示系统是否可用（需要RAG服务器）
 
         // ====================================================================
         // Student Profile & Knowledge Tracking System
-        // 学生档案和知识追踪系统
         // ====================================================================
-        //
-        // Data Structure:
-        //   数据结构：
-        //   {
-        //     userName: string,                    // 学生姓名
-        //     questionsAnswered: number,            // 已回答的问题数
-        //     knowledgeMap: {                       // 知识图谱
-        //       "domain->topic->subtopic": {        // 知识组件键（领域->主题->子主题）
-        //         status: "known" | "unknown",     // 知识状态：已知/未知
-        //         lastUpdated: timestamp,           // 最后更新时间
-        //         questionsAttempted: number,       // 尝试的问题数
-        //         questionsCorrect: number          // 答对的问题数
-        //       }
-        //     }
-        //   }
-        //
-        // Knowledge Tracking Rules:
-        //   知识追踪规则：
-        //   - Correct answer → status = "known" (知道该子主题)
-        //     答对 → 状态 = "known"（知道该子主题）
-        //   - Wrong answer → status = "unknown" (不知道该子主题)
-        //     答错 → 状态 = "unknown"（不知道该子主题）
-        //   - Initial state: All subtopics are "unknown" (假设学生什么都不知道)
-        //     初始状态：所有子主题都是"unknown"（假设学生什么都不知道）
-        //
-        // Storage:
-        //   存储：
-        //   - Uses localStorage with key "student_profile_{userName}"
-        //     使用localStorage，键为"student_profile_{userName}"
-        //   - Auto-saves after each answer submission
-        //     每次提交答案后自动保存
-        //
+        // Data: userName, questionsAnswered, knowledgeMap (domain->topic->subtopic -> status, lastUpdated, questionsAttempted, questionsCorrect)
+        // Rules: Correct -> "known"; Wrong -> "unknown"; Initial: all "unknown"
+        // Storage: localStorage key "student_profile_{userName}", auto-save after each submission
         // ====================================================================
         
         let studentProfile = null;       // Current student profile object
-                                          // 当前学生档案对象
-        const PROFILE_STORAGE_PREFIX = 'student_profile_';  // localStorage key prefix
-                                                             // localStorage键前缀
+        const PROFILE_STORAGE_PREFIX = 'student_profile_';
 
         // ====================================================================
         // Part 3: Initialization
-        // 第三部分：初始化
         // ====================================================================
 
         // ====================================================================
         // Student Profile Management Functions
-        // 学生档案管理函数
         // ====================================================================
         
         /**
          * Initialize student profile (assume they know nothing initially)
-         * 初始化学生档案（初始假设学生什么都不知道）
          * @param {string} userName - Student name
-         *   参数：学生姓名
          * @returns {Object} - Initialized profile object
-         *   返回：初始化后的档案对象
          */
         function initializeStudentProfile(userName) {
             return {
                 userName: userName,
                 questionsAnswered: 0,
                 knowledgeMap: {},  // Will be populated as questions are answered
-                                   // 随着问题回答而填充
+ //
                 createdAt: new Date().toISOString(),
                 lastUpdated: new Date().toISOString()
             };
@@ -1185,40 +1115,39 @@ Author: AI for Education (Wenchao Qin)
         
         /**
          * Get knowledge component key from question
-         * 从问题中获取知识组件键
+ *
          * @param {Object} question - Question object
-         *   参数：问题对象
+ *
          * @returns {string|null} - Knowledge component key (domain->topic->subtopic) or null
-         *   返回：知识组件键（领域->主题->子主题）或null
+ * ->->null
          */
         function getKnowledgeComponentKey(question) {
             if (!question) return null;
             
             // Check if question has domain/topic/subtopic fields
-            // 检查问题是否有domain/topic/subtopic字段
+ // domain/topic/subtopic
             if (question.domain && question.topic && question.subtopic) {
                 return `${question.domain}->${question.topic}->${question.subtopic}`;
             }
             
             // Fallback: Try to extract from question text or use question ID
-            // 回退：尝试从问题文本提取或使用问题ID
+ // ID
             return question.id ? `unknown->unknown->${question.id}` : null;
         }
         
         /**
          * Generate a unique identifier for a question
-         * 为题目生成唯一标识符
+ *
          * 
          * This is used to track if a question has been answered correctly before,
          * preventing duplicate counting when the same question is answered multiple times.
-         * 这用于跟踪一道题目是否之前已经答对过，防止重复答题时重复计数。
+ *
          * 
          * @param {Object} question - Question object
-         *   参数：问题对象
+ *
          * @param {number} questionIndex - Index of question in allQuestions array (optional)
-         *   参数：题目在allQuestions数组中的索引（可选）
          * @returns {string} - Unique question identifier
-         *   返回：唯一的题目标识符
+ *
          */
         function getQuestionId(question, questionIndex = null) {
             if (!question) return null;
@@ -1259,11 +1188,11 @@ Author: AI for Education (Wenchao Qin)
         
         /**
          * Update knowledge status based on answer
-         * 根据答案更新知识状态
+ *
          * @param {Object} question - Question object
-         *   参数：问题对象
+ *
          * @param {boolean} isCorrect - Whether answer is correct
-         *   参数：答案是否正确
+ *
          */
         function updateKnowledgeStatus(question, isCorrect, questionIndexHint = null) {
             if (!studentProfile) return;
@@ -1275,35 +1204,35 @@ Author: AI for Education (Wenchao Qin)
             }
             
             // Find the actual index of this question in allQuestions
-            // 在allQuestions中找到这道题目的实际索引
+ // allQuestions
             // This is important because currentGeneratedIndex might have changed
-            // 这很重要，因为currentGeneratedIndex可能已经改变了
+ // currentGeneratedIndex
             // 
             // IMPORTANT: If questionIndexHint is provided, use it directly (most reliable)
-            // 重要：如果提供了questionIndexHint，直接使用它（最可靠）
+ // questionIndexHint
             let questionIndex = -1;
             
             if (questionIndexHint !== null && questionIndexHint >= 0) {
                 // Use the hint directly - this is the most reliable method
-                // 直接使用提示 - 这是最可靠的方法
+ // -
                 questionIndex = questionIndexHint;
                 console.log(`✅ Using questionIndexHint: ${questionIndex}`);
             } else {
                 // Only search for index if hint was not provided
-                // 只有在没有提供提示时才搜索索引
+ //
                 console.log(`ℹ️ No questionIndexHint provided, searching for index...`);
             }
             
             if (questionIndex < 0 && allQuestions && allQuestions.length > 0) {
                 // Try to find by reference first (fastest)
-                // 首先尝试通过引用查找（最快）
+ //
                 questionIndex = allQuestions.findIndex(q => q === question);
                 
                 // If not found by reference, try to find by content
-                // 如果通过引用找不到，尝试通过内容查找
+ //
                 if (questionIndex < 0) {
                     // Try to match by question text and options
-                    // 尝试通过题目文本和选项匹配
+ //
                     const questionText = question.question || '';
                     questionIndex = allQuestions.findIndex(q => {
                         const qText = q.question || '';
@@ -1313,13 +1242,13 @@ Author: AI for Education (Wenchao Qin)
                 }
                 
                 // If still not found, use currentGeneratedIndex as fallback
-                // 如果仍然找不到，使用currentGeneratedIndex作为回退
+ // currentGeneratedIndex
                 // BUT: Only use currentGeneratedIndex if the current question actually matches
-                // 但是：只有当当前题目确实匹配时才使用currentGeneratedIndex
+ // currentGeneratedIndex
                 if (questionIndex < 0 && currentGeneratedIndex >= 0 && currentGeneratedIndex < allQuestions.length) {
                     const currentQuestion = allQuestions[currentGeneratedIndex];
                     // Check if current question matches
-                    // 检查当前题目是否匹配
+ //
                     if (currentQuestion === question || 
                         (currentQuestion.question === question.question && 
                          JSON.stringify(currentQuestion.options) === JSON.stringify(question.options))) {
@@ -1333,7 +1262,7 @@ Author: AI for Education (Wenchao Qin)
                 }
                 
                 // Debug: Log index finding result
-                // 调试：记录索引查找结果
+ //
                 if (questionIndex < 0) {
                     console.warn(`⚠️ Could not find question index in allQuestions`);
                     console.warn(`   Question text: ${(question.question || '').substring(0, 50)}...`);
@@ -1342,7 +1271,7 @@ Author: AI for Education (Wenchao Qin)
                     console.warn(`   Attempting to find by searching all questions...`);
                     
                     // Last resort: Search all questions by content
-                    // 最后手段：通过内容搜索所有题目
+ //
                     const questionText = question.question || '';
                     const questionOptions = JSON.stringify(question.options || {});
                     for (let i = 0; i < allQuestions.length; i++) {
@@ -1361,10 +1290,10 @@ Author: AI for Education (Wenchao Qin)
             }
             
             // Initialize knowledge component if not exists
-            // 如果知识组件不存在，则初始化
+ //
             if (!studentProfile.knowledgeMap[key]) {
                 // Count total questions for this subtopic in allQuestions
-                // 统计allQuestions中该子主题的总题目数
+ // allQuestions
                 const totalQuestionsForSubtopic = allQuestions.filter(q => {
                     const qKey = getKnowledgeComponentKey(q);
                     return qKey === key;
@@ -1376,9 +1305,9 @@ Author: AI for Education (Wenchao Qin)
                     questionsAttempted: 0,
                     questionsCorrect: 0,
                     totalQuestionsForSubtopic: totalQuestionsForSubtopic,  // Total questions for this subtopic
-                                                                           // 该子主题的总题目数
+ //
                     correctQuestionIds: [],  // Track which questions have been answered correctly (prevent duplicates)
-                                               // 跟踪哪些题目已经答对过（防止重复计数）
+ //
                     domain: question.domain || 'unknown',
                     topic: question.topic || 'unknown',
                     subtopic: question.subtopic || 'unknown'
@@ -1389,24 +1318,24 @@ Author: AI for Education (Wenchao Qin)
             
             // ============================================================
             // Backward Compatibility: Initialize missing fields
-            // 向后兼容：初始化缺失的字段
+ //
             // ============================================================
             //
             // This handles old profiles that were created before these fields were added
-            // 这处理了在这些字段添加之前创建的旧档案
+ //
             //
             if (component.totalQuestionsForSubtopic === undefined) {
                 // Count total questions for this subtopic in allQuestions
-                // 统计allQuestions中该子主题的总题目数
+ // allQuestions
                 component.totalQuestionsForSubtopic = allQuestions.filter(q => {
                     const qKey = getKnowledgeComponentKey(q);
                     return qKey === key;
                 }).length;
                 
                 // Re-evaluate status based on new rule (all questions must be correct)
-                // 根据新规则重新评估状态（所有题目必须都正确）
+ //
                 // Use >= instead of === to handle cases where questionsCorrect > totalQuestionsForSubtopic
-                // 使用 >= 而不是 === 来处理questionsCorrect > totalQuestionsForSubtopic的情况
+ // >= === questionsCorrect > totalQuestionsForSubtopic
                 if (component.questionsCorrect >= component.totalQuestionsForSubtopic && 
                     component.totalQuestionsForSubtopic > 0) {
                     component.status = 'known';
@@ -1416,7 +1345,7 @@ Author: AI for Education (Wenchao Qin)
             }
             
             // Initialize correctQuestionIds if missing (for tracking unique correct answers)
-            // 如果缺少correctQuestionIds则初始化（用于跟踪唯一的正确答案）
+ // correctQuestionIds
             if (!component.correctQuestionIds) {
                 component.correctQuestionIds = [];
             }
@@ -1425,76 +1354,76 @@ Author: AI for Education (Wenchao Qin)
             
             // ============================================================
             // Update Status: Only "known" if ALL questions are correct
-            // 更新状态：只有当所有题目都答对时才标记为"known"
+ // "known"
             // ============================================================
             //
             // New Rule:
-            //   新规则：
+ //
             //   - A subtopic is "known" ONLY if student answered ALL questions correctly
-            //     只有当学生答对该子主题的所有题目时，才标记为"known"
+ // "known"
             //   - If ANY question is wrong, status = "unknown"
-            //     如果有任何题目答错，状态 = "unknown"
+ // = "unknown"
             //
             // Logic:
-            //   逻辑：
+ //
             //   1. If answer is correct: Increment questionsCorrect
-            //      如果答案正确：增加questionsCorrect
+ // questionsCorrect
             //   2. Check if questionsCorrect === totalQuestionsForSubtopic
-            //      检查是否 questionsCorrect === totalQuestionsForSubtopic
+ // questionsCorrect === totalQuestionsForSubtopic
             //   3. If yes: status = "known" (all questions correct)
-            //      如果是：状态 = "known"（所有题目都正确）
+ // = "known"
             //   4. If answer is wrong: status = "unknown" (not all correct)
-            //      如果答案错误：状态 = "unknown"（不是全部正确）
+ // = "unknown"
             //
             // Example:
-            //   示例：
+ //
             //   - Subtopic has 3 questions total
-            //     子主题总共有3道题目
+ // 3
             //   - Student answers: Question 1 (correct), Question 2 (correct), Question 3 (wrong)
-            //     学生回答：题目1（正确），题目2（正确），题目3（错误）
+ // 123
             //   - questionsCorrect = 2, totalQuestionsForSubtopic = 3
             //   - 2 !== 3 → status = "unknown" (not all correct)
-            //   - 2 !== 3 → 状态 = "unknown"（不是全部正确）
+ // - 2 !== 3 → = "unknown"
             //
             //   - If student later answers Question 3 correctly:
-            //     如果学生后来答对题目3：
+ // 3
             //   - questionsCorrect = 3, totalQuestionsForSubtopic = 3
             //   - 3 === 3 → status = "known" (all correct!)
-            //   - 3 === 3 → 状态 = "known"（全部正确！）
+ // - 3 === 3 → = "known"
             //
             // ============================================================
             
             // ============================================================
             // Prevent Duplicate Counting: Track Unique Correct Answers
-            // 防止重复计数：跟踪唯一的正确答案
+ //
             // ============================================================
             //
             // Problem: In old rule, questionsCorrect was incremented every time student answered correctly,
             // even if it was the same question multiple times. This caused questionsCorrect to exceed
             // totalQuestionsForSubtopic, leading to incorrect status evaluation.
-            // 问题：在旧规则下，questionsCorrect每次答对都会递增，即使重复回答同一道题目。
-            // 这导致questionsCorrect超过totalQuestionsForSubtopic，导致状态评估错误。
+ // questionsCorrect
+ // questionsCorrecttotalQuestionsForSubtopic
             //
             // Solution: Track which questions have been answered correctly using question IDs.
             // Only increment questionsCorrect if this is the first time this question is answered correctly.
-            // 解决方案：使用题目ID跟踪哪些题目已经答对过。
-            // 只有当这道题目第一次答对时，才增加questionsCorrect。
+ // ID
+ // questionsCorrect
             //
             // ============================================================
             
             // Get unique question identifier
-            // 获取唯一的题目标识符
+ //
             // Use the actual questionIndex we found, not currentGeneratedIndex
-            // 使用我们找到的实际questionIndex，而不是currentGeneratedIndex
+ // questionIndexcurrentGeneratedIndex
             console.log(`   Generating questionId with questionIndex: ${questionIndex >= 0 ? questionIndex : 'null'}`);
             let questionId = getQuestionId(question, questionIndex >= 0 ? questionIndex : null);
             console.log(`   Generated questionId: ${questionId}`);
             
             // If questionId is still null or not unique enough, generate a more unique ID
-            // 如果questionId仍然是null或不够唯一，生成更唯一的ID
+ // questionIdnullID
             if (!questionId || (questionIndex < 0 && questionId.startsWith('hash_'))) {
                 // Try to generate a unique ID based on question content + domain/topic/subtopic
-                // 尝试基于题目内容 + domain/topic/subtopic生成唯一ID
+ // + domain/topic/subtopicID
                 const questionText = question.question || '';
                 const domain = question.domain || '';
                 const topic = question.topic || '';
@@ -1502,7 +1431,7 @@ Author: AI for Education (Wenchao Qin)
                 const optionsStr = JSON.stringify(question.options || {});
                 
                 // Create a unique identifier combining all these
-                // 创建一个结合所有这些的唯一标识符
+ //
                 const uniqueContent = `${domain}|${topic}|${subtopic}|${questionText.substring(0, 100)}|${optionsStr}`;
                 let hash = 0;
                 for (let i = 0; i < uniqueContent.length; i++) {
@@ -1516,9 +1445,9 @@ Author: AI for Education (Wenchao Qin)
             }
             
             // Debug: Log question ID and current state
-            // 调试：记录题目ID和当前状态
+ // ID
             // Calculate actual total questions for this subtopic
-            // 计算该子主题的实际总题目数
+ //
             const actualTotalForSubtopic = allQuestions.filter(q => {
                 const qKey = getKnowledgeComponentKey(q);
                 return qKey === key;
@@ -1532,14 +1461,14 @@ Author: AI for Education (Wenchao Qin)
             console.log(`   Question domain: ${question.domain || 'unknown'}`);
             console.log(`   Question topic: ${question.topic || 'unknown'}`);
             console.log(`   Question subtopic: ${question.subtopic || 'unknown'}`);
-            console.log(`   Current questionsCorrect: ${component.questionsCorrect} (答对的不同题目数)`);
-            console.log(`   Current totalQuestionsForSubtopic: ${component.totalQuestionsForSubtopic} (该子主题的总题目数)`);
-            console.log(`   Actual total (from allQuestions): ${actualTotalForSubtopic} (实际总题目数)`);
+            console.log(`   Current questionsCorrect: ${component.questionsCorrect} (distinct questions correct)`);
+            console.log(`   Current totalQuestionsForSubtopic: ${component.totalQuestionsForSubtopic} (total for this subtopic)`);
+            console.log(`   Actual total (from allQuestions): ${actualTotalForSubtopic} (actual total)`);
             console.log(`   Current correctQuestionIds: [${component.correctQuestionIds.join(', ')}]`);
             console.log(`   Is correct: ${isCorrect}`);
             
             // IMPORTANT: If actualTotalForSubtopic is different from totalQuestionsForSubtopic, update it
-            // 重要：如果actualTotalForSubtopic与totalQuestionsForSubtopic不同，更新它
+ // actualTotalForSubtopictotalQuestionsForSubtopic
             if (actualTotalForSubtopic !== component.totalQuestionsForSubtopic) {
                 console.warn(`⚠️ totalQuestionsForSubtopic MISMATCH!`);
                 console.warn(`   Current: ${component.totalQuestionsForSubtopic}`);
@@ -1550,17 +1479,17 @@ Author: AI for Education (Wenchao Qin)
             
             if (isCorrect) {
                 // Answer is correct
-                // 答案正确
+ //
                 
                 // Ensure correctQuestionIds is an array (defensive check)
-                // 确保correctQuestionIds是数组（防御性检查）
+ // correctQuestionIds
                 if (!Array.isArray(component.correctQuestionIds)) {
                     console.warn(`⚠️ correctQuestionIds is not an array, initializing...`);
                     component.correctQuestionIds = [];
                 }
                 
                 // Check if this question has been answered correctly before
-                // 检查这道题目是否之前已经答对过
+ //
                 let isFirstTimeCorrect = !component.correctQuestionIds.includes(questionId);
                 
                 console.log(`   ========================================`);
@@ -1575,40 +1504,40 @@ Author: AI for Education (Wenchao Qin)
                 // Note: questionsCorrect and correctQuestionIds.length can be different
                 // questionsCorrect = total number of correct answers (including duplicates)
                 // correctQuestionIds.length = number of unique questions answered correctly
-                // 注意：questionsCorrect和correctQuestionIds.length可以不同
-                // questionsCorrect = 答对的总次数（包括重复）
-                // correctQuestionIds.length = 答对的不同题目数
+ // questionsCorrectcorrectQuestionIds.length
+ // questionsCorrect =
+ // correctQuestionIds.length =
                 
                 // CRITICAL FIX: If questionsCorrect >= totalQuestionsForSubtopic but correctQuestionIds doesn't contain this questionId,
                 // it means the data is inconsistent. We should trust correctQuestionIds as the source of truth.
-                // 关键修复：如果questionsCorrect >= totalQuestionsForSubtopic但correctQuestionIds不包含此questionId，
-                // 说明数据不一致。我们应该信任correctQuestionIds作为真相来源。
+ // questionsCorrect >= totalQuestionsForSubtopiccorrectQuestionIdsquestionId
+ // correctQuestionIds
                 if (component.questionsCorrect >= component.totalQuestionsForSubtopic && 
                     component.totalQuestionsForSubtopic > 0 &&
                     !component.correctQuestionIds.includes(questionId)) {
                     console.warn(`⚠️ CRITICAL: questionsCorrect (${component.questionsCorrect}) >= totalQuestionsForSubtopic (${component.totalQuestionsForSubtopic}) but questionId "${questionId}" not in correctQuestionIds!`);
                     console.warn(`   This means questionsCorrect is inflated. Resetting questionsCorrect to correctQuestionIds.length (${component.correctQuestionIds.length})`);
                     // Reset questionsCorrect to match correctQuestionIds.length
-                    // 重置questionsCorrect以匹配correctQuestionIds.length
+ // questionsCorrectcorrectQuestionIds.length
                     component.questionsCorrect = component.correctQuestionIds.length;
                     // Now check again if this is first time correct
-                    // 现在再次检查是否是第一次答对
+ //
                     const isFirstTimeCorrectAfterFix = !component.correctQuestionIds.includes(questionId);
                     console.warn(`   After fix, isFirstTimeCorrect: ${isFirstTimeCorrectAfterFix}`);
                     if (isFirstTimeCorrectAfterFix) {
                         // This is actually first time, so we should proceed
-                        // 这实际上是第一次，所以我们应该继续
+ //
                         console.log(`   ✅ Proceeding with first-time correct logic...`);
                         // IMPORTANT: Override isFirstTimeCorrect flag
-                        // 重要：覆盖isFirstTimeCorrect标志
+ // isFirstTimeCorrect
                         isFirstTimeCorrect = true;
                     }
                 }
                 
                 // ADDITIONAL FIX: If isFirstTimeCorrect is false but questionId is not in correctQuestionIds,
                 // it means there's a bug. Force it to be true.
-                // 额外修复：如果isFirstTimeCorrect为false但questionId不在correctQuestionIds中，
-                // 说明有bug。强制将其设置为true。
+ // isFirstTimeCorrectfalsequestionIdcorrectQuestionIds
+ // bugtrue
                 if (!isFirstTimeCorrect && !component.correctQuestionIds.includes(questionId)) {
                     console.warn(`⚠️ BUG DETECTED: isFirstTimeCorrect is false but questionId "${questionId}" is NOT in correctQuestionIds!`);
                     console.warn(`   This should not happen. Forcing isFirstTimeCorrect to true...`);
@@ -1619,8 +1548,8 @@ Author: AI for Education (Wenchao Qin)
                 
                 // CRITICAL FIX: If questionsCorrect >= totalQuestionsForSubtopic but questionId is not in correctQuestionIds,
                 // it means the data is inconsistent. We should add it and update questionsCorrect.
-                // 关键修复：如果questionsCorrect >= totalQuestionsForSubtopic但questionId不在correctQuestionIds中，
-                // 说明数据不一致。我们应该添加它并更新questionsCorrect。
+ // questionsCorrect >= totalQuestionsForSubtopicquestionIdcorrectQuestionIds
+ // questionsCorrect
                 if (!isFirstTimeCorrect && 
                     component.questionsCorrect >= component.totalQuestionsForSubtopic && 
                     component.totalQuestionsForSubtopic > 0 &&
@@ -1631,27 +1560,27 @@ Author: AI for Education (Wenchao Qin)
                     console.warn(`   This means questionsCorrect is inflated. Fixing...`);
                     
                     // Reset questionsCorrect to match correctQuestionIds.length
-                    // 重置questionsCorrect以匹配correctQuestionIds.length
+ // questionsCorrectcorrectQuestionIds.length
                     component.questionsCorrect = component.correctQuestionIds.length;
                     console.warn(`   Reset questionsCorrect to ${component.questionsCorrect} (correctQuestionIds.length)`);
                     
                     // Now check again if this is first time correct
-                    // 现在再次检查是否是第一次答对
+ //
                     const isFirstTimeCorrectAfterFix = !component.correctQuestionIds.includes(questionId);
                     console.warn(`   After fix, isFirstTimeCorrect: ${isFirstTimeCorrectAfterFix}`);
                     
                     if (isFirstTimeCorrectAfterFix) {
                         // This is actually first time, so proceed with normal logic
-                        // 这实际上是第一次，所以继续正常逻辑
+ //
                         console.log(`   ✅ Proceeding with first-time correct logic...`);
                         isFirstTimeCorrect = true; // Override the flag
                     }
                 }
                 
                 // IMPORTANT: questionsCorrect now represents "total number of correct answers" (including duplicates)
-                // 重要：questionsCorrect现在表示"答对的总次数"（包括重复）
+ // questionsCorrect""
                 // correctQuestionIds is used to track unique questions answered correctly (for "known" status)
-                // correctQuestionIds用于跟踪答对的不同题目（用于判断"known"状态）
+ // correctQuestionIds"known"
                 
                 // Only increment questionsCorrect and add to correctQuestionIds when first time correct (no double count)
                 const oldQuestionsCorrect = component.questionsCorrect;
@@ -1664,11 +1593,11 @@ Author: AI for Education (Wenchao Qin)
                     console.log(`✅ Answered correctly again (same question): count unchanged (${component.questionsCorrect} unique correct)`);
                 }
                 
-                console.log(`   Progress: ${component.questionsCorrect}/${component.questionsAttempted} (答对的总次数/总尝试次数)`);
-                console.log(`   Status: ${component.correctQuestionIds.length}/${component.totalQuestionsForSubtopic} (答对的不同题目数/该子主题总题目数)`);
+                console.log(`   Progress: ${component.questionsCorrect}/${component.questionsAttempted} (correct/attempted)`);
+                console.log(`   Status: ${component.correctQuestionIds.length}/${component.totalQuestionsForSubtopic} (distinct correct/total for subtopic)`);
                 
                 // IMPORTANT: Recalculate totalQuestionsForSubtopic in case it's wrong
-                // 重要：重新计算totalQuestionsForSubtopic，以防它是错误的
+ // totalQuestionsForSubtopic
                 const actualTotal = allQuestions.filter(q => {
                     const qKey = getKnowledgeComponentKey(q);
                     return qKey === key;
@@ -1683,58 +1612,58 @@ Author: AI for Education (Wenchao Qin)
                 }
                 
                 // Check if ALL questions for this subtopic have been answered correctly at least once
-                // 检查该子主题的所有题目是否都至少答对过一次
+ //
                 // 
                 // Rule: A subtopic is "known" if ALL questions have been answered correctly at least once
-                // 规则：如果所有题目都至少答对过一次，则该子主题标记为"known"
+ // "known"
                 // 
                 // Note: questionsCorrect now represents "number of unique questions answered correctly",
                 // which is tracked via correctQuestionIds to prevent duplicate counting
-                // 注意：questionsCorrect现在表示"答对的不同题目数"，
-                // 通过correctQuestionIds跟踪以防止重复计数
+ // questionsCorrect""
+ // correctQuestionIds
                 //
                 // Example:
-                //   示例：
+ //
                 //   - Subtopic has 3 questions
-                //     子主题有3道题目
+ // 3
                 //   - Question 1: answered correctly → questionsCorrect = 1, correctQuestionIds = ["index_0"]
-                //     题目1：答对 → questionsCorrect = 1, correctQuestionIds = ["index_0"]
+ // 1 → questionsCorrect = 1, correctQuestionIds = ["index_0"]
                 //   - Question 2: answered correctly → questionsCorrect = 2, correctQuestionIds = ["index_0", "index_5"]
-                //     题目2：答对 → questionsCorrect = 2, correctQuestionIds = ["index_0", "index_5"]
+ // 2 → questionsCorrect = 2, correctQuestionIds = ["index_0", "index_5"]
                 //   - Question 3: answered correctly → questionsCorrect = 3, correctQuestionIds = ["index_0", "index_5", "index_12"]
-                //     题目3：答对 → questionsCorrect = 3, correctQuestionIds = ["index_0", "index_5", "index_12"]
+ // 3 → questionsCorrect = 3, correctQuestionIds = ["index_0", "index_5", "index_12"]
                 //   - correctQuestionIds.length (3) === totalQuestionsForSubtopic (3) → status = "known" ✅
-                //     correctQuestionIds.length (3) === totalQuestionsForSubtopic (3) → 状态 = "known" ✅
+ // correctQuestionIds.length (3) === totalQuestionsForSubtopic (3) → = "known" ✅
                 //
                 if (component.correctQuestionIds.length === component.totalQuestionsForSubtopic && 
                     component.totalQuestionsForSubtopic > 0) {
                     // All questions for this subtopic have been answered correctly at least once
                     // → Student knows this subtopic
-                    // 该子主题的所有题目都至少答对过一次 → 学生知道该子主题
+ // →
                     component.status = 'known';
                     console.log(`✅ Subtopic fully mastered: ${key} (${component.correctQuestionIds.length}/${component.totalQuestionsForSubtopic} questions correct)`);
                 } else {
                     // Not all questions have been answered correctly yet → Still unknown
-                    // 还不是所有题目都答对过 → 仍然未知
+ // →
                     component.status = 'unknown';
                     console.log(`⏳ Subtopic not fully mastered yet: ${key} (${component.correctQuestionIds.length}/${component.totalQuestionsForSubtopic} questions correct)`);
                 }
                 
                 // Force save immediately to ensure persistence
-                // 立即强制保存以确保持久化
+ //
                 saveStudentProfile();
                 
                 // Update knowledge display after status update
-                // 状态更新后更新知识显示
+ //
                 updateKnowledgeDisplay();
             } else {
                 // Answer is wrong: Cannot be "known" (not all questions correct)
-                // 答案错误：不能是"known"（不是所有题目都正确）
+ // "known"
                 component.status = 'unknown';
                 // Note: questionsCorrect is NOT incremented for wrong answers
-                // 注意：答错时不会增加questionsCorrect
+ // questionsCorrect
                 // Note: Wrong answers are not tracked in correctQuestionIds
-                // 注意：错误答案不会记录在correctQuestionIds中
+ // correctQuestionIds
             }
             
             component.lastUpdated = new Date().toISOString();
@@ -1742,17 +1671,16 @@ Author: AI for Education (Wenchao Qin)
             studentProfile.lastUpdated = new Date().toISOString();
             
             // Save to localStorage
-            // 保存到localStorage
+ // localStorage
             saveStudentProfile();
             
             // Update UI
-            // 更新UI
+ // UI
             updateKnowledgeDisplay();
         }
         
         /**
          * Save student profile to localStorage
-         * 将学生档案保存到localStorage
          */
         function saveStudentProfile() {
             if (!studentProfile || !studentProfile.userName) return;
@@ -1761,7 +1689,7 @@ Author: AI for Education (Wenchao Qin)
                 const key = PROFILE_STORAGE_PREFIX + studentProfile.userName;
                 
                 // Debug: Log what we're saving
-                // 调试：记录我们正在保存的内容
+ //
                 const profileToSave = JSON.parse(JSON.stringify(studentProfile)); // Deep copy
                 const totalCorrectQuestionIds = Object.values(profileToSave.knowledgeMap || {})
                     .reduce((sum, comp) => sum + (comp.correctQuestionIds ? comp.correctQuestionIds.length : 0), 0);
@@ -1777,7 +1705,7 @@ Author: AI for Education (Wenchao Qin)
                 console.log('✅ Student profile saved to localStorage');
                 
                 // Verify it was saved correctly
-                // 验证它是否被正确保存
+ //
                 const saved = localStorage.getItem(key);
                 if (saved) {
                     const parsed = JSON.parse(saved);
@@ -1791,18 +1719,14 @@ Author: AI for Education (Wenchao Qin)
         }
         
         /**
-         * Re-evaluate all knowledge components based on new rule
-         * 根据新规则重新评估所有知识组件
-         * 
+         * Re-evaluate all knowledge components based on new rule.
          * This function updates old profiles to use the new rule:
-         * "known" only if ALL questions for the subtopic are correct
-         * 此函数更新旧档案以使用新规则：
-         * 只有当该子主题的所有题目都答对时，才标记为"known"
+         * "known" only if ALL questions for the subtopic are correct.
          */
         function reevaluateKnowledgeStatus() {
             if (!studentProfile || !allQuestions || allQuestions.length === 0) {
                 return;  // Cannot re-evaluate without profile or questions
-                         // 没有档案或题目无法重新评估
+ //
             }
             
             let updatedCount = 0;
@@ -1815,21 +1739,21 @@ Author: AI for Education (Wenchao Qin)
             console.log(`   Total questions loaded: ${allQuestions.length}`);
             
             // Iterate through all knowledge components
-            // 遍历所有知识组件
+ //
             for (const [key, component] of Object.entries(studentProfile.knowledgeMap)) {
                 totalComponents++;
                 
                 // Initialize correctQuestionIds if missing (for tracking unique correct answers)
-                // 如果缺少correctQuestionIds则初始化（用于跟踪唯一的正确答案）
+ // correctQuestionIds
                 if (!component.correctQuestionIds) {
                     component.correctQuestionIds = [];
                 }
                 
                 // Check if totalQuestionsForSubtopic is missing (old profile)
-                // 检查是否缺少totalQuestionsForSubtopic（旧档案）
+ // totalQuestionsForSubtopic
                 if (component.totalQuestionsForSubtopic === undefined) {
                     // Count total questions for this subtopic
-                    // 统计该子主题的总题目数
+ //
                     component.totalQuestionsForSubtopic = allQuestions.filter(q => {
                         const qKey = getKnowledgeComponentKey(q);
                         return qKey === key;
@@ -1837,12 +1761,12 @@ Author: AI for Education (Wenchao Qin)
                     
                     if (component.totalQuestionsForSubtopic === 0) {
                         // Debug: Try to find why no questions match
-                        // 调试：尝试找出为什么没有题目匹配
+ //
                         console.warn(`⚠️ Component has 0 total questions: ${key}`);
                         console.warn(`   Component domain: "${component.domain}", topic: "${component.topic}", subtopic: "${component.subtopic}"`);
                         
                         // Check if there are similar keys in allQuestions
-                        // 检查allQuestions中是否有类似的键
+ // allQuestions
                         const similarKeys = [];
                         for (const q of allQuestions.slice(0, 100)) {  // Check first 100 questions
                             const qKey = getKnowledgeComponentKey(q);
@@ -1854,14 +1778,14 @@ Author: AI for Education (Wenchao Qin)
                             console.warn(`   Found similar keys in questions:`, similarKeys.slice(0, 3));
                         } else {
                             console.warn(`   No similar keys found. This component might be from a different question bank.`);
-                            console.warn(`   未找到类似键。该组件可能来自不同的题目库。`);
+                            console.warn(`   No similar key found. This component may be from a different question bank.`);
                         }
                     }
                     
                     updatedCount++;
                 } else if (component.totalQuestionsForSubtopic === 0) {
                     // Re-check even if totalQuestionsForSubtopic was already set to 0
-                    // 即使totalQuestionsForSubtopic已经设置为0，也重新检查
+ // totalQuestionsForSubtopic0
                     const newCount = allQuestions.filter(q => {
                         const qKey = getKnowledgeComponentKey(q);
                         return qKey === key;
@@ -1876,27 +1800,27 @@ Author: AI for Education (Wenchao Qin)
                 
                 // ============================================================
                 // Handle components with 0 totalQuestionsForSubtopic
-                // 处理totalQuestionsForSubtopic为0的组件
+ // totalQuestionsForSubtopic0
                 // ============================================================
                 //
                 // If totalQuestionsForSubtopic is 0, it means no questions in current question bank
                 // match this component. This could happen if:
-                // 如果totalQuestionsForSubtopic为0，说明当前题目库中没有题目匹配该组件。这可能是因为：
+ // totalQuestionsForSubtopic0
                 // 1. Profile was created with a different question bank
-                //    档案是用不同的题目库创建的
+ //
                 // 2. Question bank was changed or questions were removed
-                //    题目库被更改或题目被删除
+ //
                 //
                 // Solution: If questionsCorrect > 0, we assume the student knows this subtopic
                 // (because they answered correctly before, even if we can't find the questions now)
-                // 解决方案：如果questionsCorrect > 0，我们假设学生知道该子主题
-                // （因为他们之前答对过，即使我们现在找不到这些题目）
+ // questionsCorrect > 0
+ //
                 //
                 if (component.totalQuestionsForSubtopic === 0) {
                     // Cannot determine if all questions are correct (no questions found)
-                    // 无法确定是否所有题目都正确（找不到题目）
+ //
                     // If student answered correctly before, mark as "known" (conservative approach)
-                    // 如果学生之前答对过，标记为"known"（保守方法）
+ // "known"
                     if (component.questionsCorrect > 0) {
                         console.log(`ℹ️ Component has 0 total questions but questionsCorrect > 0: ${key.substring(0, 50)}...`);
                         console.log(`   Marking as "known" (student answered correctly before, questions may be from different bank)`);
@@ -1907,99 +1831,99 @@ Author: AI for Education (Wenchao Qin)
                         unknownCount++;
                     }
                     // Skip further evaluation for this component
-                    // 跳过该组件的进一步评估
+ //
                     continue;
                 }
                 
                 // Re-evaluate status based on new rule (even if totalQuestionsForSubtopic exists)
-                // 根据新规则重新评估状态（即使totalQuestionsForSubtopic已存在）
+ // totalQuestionsForSubtopic
                 const oldStatus = component.status;
                 
                 // Debug: Log component info for troubleshooting
-                // 调试：记录组件信息以便故障排除
+ //
                 if (component.totalQuestionsForSubtopic === 0) {
                     console.warn(`⚠️ Component has 0 total questions: ${key}`, component);
                 }
                 
                 // Check if questionsCorrect is valid (should be <= totalQuestionsForSubtopic)
-                // 检查questionsCorrect是否有效（应该 <= totalQuestionsForSubtopic）
+ // questionsCorrect <= totalQuestionsForSubtopic
                 // 
                 // IMPORTANT: In old rule, questionsCorrect was incremented every time student answered correctly,
                 // even if it was the same question multiple times. This could cause questionsCorrect to exceed
                 // totalQuestionsForSubtopic. We need to cap it.
-                // 重要：在旧规则下，questionsCorrect每次答对都会递增，即使重复回答同一道题目。
-                // 这可能导致questionsCorrect超过totalQuestionsForSubtopic。我们需要限制它。
+ // questionsCorrect
+ // questionsCorrecttotalQuestionsForSubtopic
                 //
                 // ============================================================
                 // Handle Old Profile Data: Cap questionsCorrect if it exceeds total
-                // 处理旧档案数据：如果questionsCorrect超过总数，则限制它
+ // questionsCorrect
                 // ============================================================
                 //
                 // In old profiles, questionsCorrect might exceed totalQuestionsForSubtopic
                 // because it counted duplicate answers. We cap it to totalQuestionsForSubtopic.
-                // 在旧档案中，questionsCorrect可能超过totalQuestionsForSubtopic，
-                // 因为它计算了重复答案。我们将其限制为totalQuestionsForSubtopic。
+ // questionsCorrecttotalQuestionsForSubtopic
+ // totalQuestionsForSubtopic
                 //
                 // This means: if student answered correctly more times than total questions,
                 // we assume they answered all questions correctly (at least once each)
-                // 这意味着：如果学生答对的次数超过总题目数，
-                // 我们假设他们答对了所有题目（每道至少一次）
+ //
+ //
                 //
                 if (component.questionsCorrect > component.totalQuestionsForSubtopic && component.totalQuestionsForSubtopic > 0) {
                     console.warn(`⚠️ Component has more correct answers than total questions: ${key}`, {
                         questionsCorrect: component.questionsCorrect,
                         totalQuestionsForSubtopic: component.totalQuestionsForSubtopic,
                         correctQuestionIdsLength: component.correctQuestionIds ? component.correctQuestionIds.length : 0,
-                        reason: '可能是旧规则下重复答题导致的，已自动修正'
+                        reason: 'Likely duplicate answers under old rules; auto-corrected.'
                     });
                     
                     // IMPORTANT: If correctQuestionIds exists and has accurate data, use it as source of truth
-                    // 重要：如果correctQuestionIds存在且有准确数据，使用它作为真相来源
+ // correctQuestionIds
                     if (component.correctQuestionIds && component.correctQuestionIds.length > 0) {
                         // Use correctQuestionIds.length as the accurate count
-                        // 使用correctQuestionIds.length作为准确计数
+ // correctQuestionIds.length
                         console.warn(`   Using correctQuestionIds.length (${component.correctQuestionIds.length}) as accurate count`);
                         component.questionsCorrect = component.correctQuestionIds.length;
                     } else {
                         // Cap questionsCorrect to totalQuestionsForSubtopic
-                        // 将questionsCorrect限制为totalQuestionsForSubtopic
+ // questionsCorrecttotalQuestionsForSubtopic
                         component.questionsCorrect = component.totalQuestionsForSubtopic;
                     }
                 }
                 
                 // Re-evaluate status
-                // 重新评估状态
+ //
                 // 
                 // Rule: A subtopic is "known" if ALL questions have been answered correctly at least once
-                // 规则：如果所有题目都至少答对过一次，则该子主题标记为"known"
+ // "known"
                 //
                 // Logic:
-                //   逻辑：
+ //
                 //   - questionsCorrect: Number of unique questions answered correctly (tracked via correctQuestionIds)
-                //     questionsCorrect：答对的不同题目数（通过correctQuestionIds跟踪）
+ // questionsCorrectcorrectQuestionIds
                 //   - totalQuestionsForSubtopic: Total number of questions for this subtopic
-                //     totalQuestionsForSubtopic：该子主题的总题目数
+ // totalQuestionsForSubtopic
                 //   - If questionsCorrect === totalQuestionsForSubtopic: All questions answered correctly at least once
-                //     如果questionsCorrect === totalQuestionsForSubtopic：所有题目都至少答对过一次
+ // questionsCorrect === totalQuestionsForSubtopic
                 //   - If questionsCorrect < totalQuestionsForSubtopic: Not all questions answered correctly yet
-                //     如果questionsCorrect < totalQuestionsForSubtopic：还不是所有题目都答对过
+ // questionsCorrect < totalQuestionsForSubtopic
                 //
                 // For old profiles without correctQuestionIds:
-                // 对于没有correctQuestionIds的旧档案：
+ // correctQuestionIds
                 //   - questionsCorrect might be inaccurate (includes duplicates)
-                //     questionsCorrect可能不准确（包含重复）
+ // questionsCorrect
                 //   - Use >= to be lenient: if questionsCorrect >= totalQuestionsForSubtopic,
                 //     assume all questions were answered correctly (even if there were duplicates)
-                //     使用 >= 以更宽松：如果questionsCorrect >= totalQuestionsForSubtopic，
-                //     假设所有题目都答对过（即使有重复）
+ // >= questionsCorrect >= totalQuestionsForSubtopic
+ //
                 //
                 const hasCorrectQuestionIds = component.correctQuestionIds && component.correctQuestionIds.length > 0;
                 
                 if (hasCorrectQuestionIds) {
                     // New profile with accurate tracking: Use strict comparison (===)
-                    // 有准确跟踪的新档案：使用严格比较（===）
+ // ===
                     // questionsCorrect is accurate (no duplicates)
-                    // questionsCorrect是准确的（无重复）
+ // questionsCorrect
                     if (component.questionsCorrect === component.totalQuestionsForSubtopic && 
                         component.totalQuestionsForSubtopic > 0) {
                         component.status = 'known';
@@ -2010,9 +1934,9 @@ Author: AI for Education (Wenchao Qin)
                     }
                 } else {
                     // Old profile without accurate tracking: Use lenient comparison (>=)
-                    // 没有准确跟踪的旧档案：使用宽松比较（>=）
+ // >=
                     // questionsCorrect might include duplicates, so >= is more lenient
-                    // questionsCorrect可能包含重复，所以 >= 更宽松
+ // questionsCorrect >=
                     if (component.questionsCorrect >= component.totalQuestionsForSubtopic && 
                         component.totalQuestionsForSubtopic > 0) {
                         component.status = 'known';
@@ -2024,7 +1948,7 @@ Author: AI for Education (Wenchao Qin)
                 }
                 
                 // Debug: Log detailed information for each component (only for first 5 to avoid spam)
-                // 调试：记录每个组件的详细信息（仅前5个，避免日志过多）
+ // 5
                 if (totalComponents <= 5) {
                     const hasCorrectQuestionIdsDebug = component.correctQuestionIds && component.correctQuestionIds.length > 0;
                     const willBeKnown = component.questionsCorrect >= component.totalQuestionsForSubtopic && 
@@ -2046,7 +1970,6 @@ Author: AI for Education (Wenchao Qin)
                 }
                 
                 // Debug: Log status changes
-                // 调试：记录状态变化
                 if (oldStatus !== component.status) {
                     console.log(`🔄 Status changed for ${key}: ${oldStatus} → ${component.status}`, {
                         questionsCorrect: component.questionsCorrect,
@@ -2058,7 +1981,7 @@ Author: AI for Education (Wenchao Qin)
             }
             
             // Summary
-            // 总结
+ //
             const coverage = totalComponents > 0 ? Math.round((knownCount / totalComponents) * 100) : 0;
             console.log('📈 Re-evaluation summary:', {
                 totalComponents: totalComponents,
@@ -2070,13 +1993,13 @@ Author: AI for Education (Wenchao Qin)
             
             // ============================================================
             // Detailed Analysis: Why Coverage is 0?
-            // 详细分析：为什么Coverage是0？
+ // Coverage0
             // ============================================================
             if (coverage === 0 && totalComponents > 0) {
                 console.warn('⚠️ Coverage is 0%! Analyzing reasons...');
                 
                 // Count components by questionsCorrect vs totalQuestionsForSubtopic
-                // 统计questionsCorrect与totalQuestionsForSubtopic的关系
+ // questionsCorrecttotalQuestionsForSubtopic
                 let correctEqualsTotal = 0;
                 let correctLessThanTotal = 0;
                 let correctGreaterThanTotal = 0;
@@ -2124,27 +2047,27 @@ Author: AI for Education (Wenchao Qin)
                 console.log('📋 Example components:', examples);
                 
                 // Show why components are not "known"
-                // 显示为什么组件不是"known"
+ // "known"
                 if (correctLessThanTotal > 0) {
                     console.warn(`⚠️ ${correctLessThanTotal} components have questionsCorrect < totalQuestionsForSubtopic`);
                     console.warn('   This means students haven\'t answered all questions correctly for these subtopics.');
-                    console.warn('   这意味着学生还没有答对这些子主题的所有题目。');
+                    console.warn('   Student has not answered all questions for these subtopics yet.');
                 }
                 
                 if (correctGreaterThanTotal > 0) {
                     console.warn(`⚠️ ${correctGreaterThanTotal} components have questionsCorrect > totalQuestionsForSubtopic`);
                     console.warn('   This might be due to duplicate answers in old profiles.');
-                    console.warn('   这可能是由于旧档案中的重复答题导致的。');
+                    console.warn('   This may be due to duplicate answers in old profile data.');
                 }
             }
             
             if (updatedCount > 0) {
                 console.log(`✅ Re-evaluated ${updatedCount} knowledge components based on new rule`);
                 // Save updated profile
-                // 保存更新后的档案
+ //
                 saveStudentProfile();
                 // Update UI
-                // 更新UI
+ // UI
                 updateKnowledgeDisplay();
             } else {
                 console.log('ℹ️ No components needed re-evaluation');
@@ -2153,11 +2076,11 @@ Author: AI for Education (Wenchao Qin)
         
         /**
          * Load student profile from localStorage
-         * 从localStorage加载学生档案
+ * localStorage
          * @param {string} userName - Student name
-         *   参数：学生姓名
+ *
          * @returns {Object|null} - Profile object or null if not found
-         *   返回：档案对象，如果未找到则返回null
+ * null
          */
         function loadStudentProfile(userName) {
             if (!userName) return null;
@@ -2169,7 +2092,6 @@ Author: AI for Education (Wenchao Qin)
                     const profile = JSON.parse(stored);
                     
                     // Debug: Log what we loaded
-                    // 调试：记录我们加载的内容
                     const totalCorrectQuestionIds = Object.values(profile.knowledgeMap || {})
                         .reduce((sum, comp) => sum + (comp.correctQuestionIds ? comp.correctQuestionIds.length : 0), 0);
                     
@@ -2181,7 +2103,7 @@ Author: AI for Education (Wenchao Qin)
                     });
                     
                     // Ensure correctQuestionIds exists for all components
-                    // 确保所有组件都有correctQuestionIds
+ // correctQuestionIds
                     let fixedCount = 0;
                     for (const [key, component] of Object.entries(profile.knowledgeMap || {})) {
                         if (!component.correctQuestionIds) {
@@ -2204,7 +2126,7 @@ Author: AI for Education (Wenchao Qin)
         
         /**
          * Update knowledge visualization display
-         * 更新知识可视化显示
+ *
          */
         function updateKnowledgeDisplay() {
             const statsEl = document.getElementById('questions-answered');
@@ -2213,7 +2135,7 @@ Author: AI for Education (Wenchao Qin)
             
             if (!studentProfile) {
                 // Show default values when no profile, but still show "By domain" list from current qbank
-                // 没有profile时显示默认值，但仍显示当前题库的 By domain 列表
+ // profile By domain
                 if (statsEl) {
                     statsEl.textContent = `Questions Answered: 0`;
                 }
@@ -2226,142 +2148,142 @@ Author: AI for Education (Wenchao Qin)
                         : `Knowledge Coverage: 0% (0/0 subtopics)`;
                 }
                 // Don't return early: fall through to render "By domain (accuracy %)" from allQuestions below
-                // 不提前 return，继续用 allQuestions 渲染下方的 By domain
+ // return allQuestions By domain
             } else {
                 // Update statistics when we have profile
-            // 更新统计信息
+ //
             if (statsEl) {
                 statsEl.textContent = `Questions Answered: ${studentProfile.questionsAnswered}`;
             }
             
             // ============================================================
             // Calculate Knowledge Coverage
-            // 计算知识覆盖率
+ //
             // ============================================================
             //
             // Definition:
-            //   定义：
-            //   Knowledge Coverage = (已知的知识组件数 / 总知识组件数) × 100%
-            //   知识覆盖率 = (已知的知识组件数 / 总知识组件数) × 100%
+ //
+ // Knowledge Coverage = ( / ) × 100%
+ // = ( / ) × 100%
             //
-            // Knowledge Component (知识组件):
+ // Knowledge Component ():
             //   - A unique subtopic identified by: domain->topic->subtopic
-            //     由 domain->topic->subtopic 标识的唯一子主题
+ // domain->topic->subtopic
             //   - Example: "Cardiology->Heart Failure->Systolic vs Diastolic Heart Failure"
-            //     示例："Cardiology->Heart Failure->Systolic vs Diastolic Heart Failure"
+ // "Cardiology->Heart Failure->Systolic vs Diastolic Heart Failure"
             //
-            // Component Status (组件状态):
+ // Component Status ():
             //   - "known": Student answered correctly at least once for this subtopic
-            //     "known"：学生对该子主题至少答对过一次
+ // "known"
             //   - "unknown": Student answered incorrectly or never answered correctly
-            //     "unknown"：学生答错或从未答对过
+ // "unknown"
             //
             // Calculation Steps:
-            //   计算步骤：
+ //
             //   1. Count total components: All unique subtopics encountered
-            //      统计总组件数：所有遇到的唯一子主题
+ //
             //   2. Count known components: Components with status === "known"
-            //      统计已知组件数：状态为"known"的组件
+ // "known"
             //   3. Calculate percentage: (known / total) × 100%
-            //      计算百分比：(已知数 / 总数) × 100%
+ // ( / ) × 100%
             //
             // Example:
-            //   示例：
+ //
             //   - Total components: 160 (student has encountered 160 different subtopics)
-            //     总组件数：160（学生遇到了160个不同的子主题）
+ // 160160
             //   - Known components: 119 (student answered correctly for 119 subtopics)
-            //     已知组件数：119（学生对119个子主题答对过）
+ // 119119
             //   - Coverage: (119 / 160) × 100% = 74.4%
-            //     覆盖率：(119 / 160) × 100% = 74.4%
+ // (119 / 160) × 100% = 74.4%
             //
             // Important Notes:
-            //   重要说明：
+ //
             //   - Coverage is based on subtopics, NOT individual questions
-            //     覆盖率基于子主题，而非单个题目
+ //
             //   - Multiple questions can belong to the same subtopic
-            //     多个题目可以属于同一个子主题
+ //
             //   - Status is binary: "known" or "unknown" (latest answer determines status)
-            //     状态是二元的："known"或"unknown"（最新答案决定状态）
+ // "known""unknown"
             //   - If student answers correctly → status = "known"
-            //     如果学生答对 → 状态 = "known"
+ // → = "known"
             //   - If student answers incorrectly → status = "unknown"
-            //     如果学生答错 → 状态 = "unknown"
+ // → = "unknown"
             //
             // Edge Cases:
-            //   边界情况：
+ //
             //   - If totalComponents = 0: Coverage = 0% (no questions answered yet)
-            //     如果totalComponents = 0：覆盖率 = 0%（尚未回答任何题目）
+ // totalComponents = 0 = 0%
             //   - If knownComponents = 0: Coverage = 0% (no subtopics mastered)
-            //     如果knownComponents = 0：覆盖率 = 0%（没有掌握任何子主题）
+ // knownComponents = 0 = 0%
             //   - If knownComponents = totalComponents: Coverage = 100% (all subtopics mastered)
-            //     如果knownComponents = totalComponents：覆盖率 = 100%（所有子主题都已掌握）
+ // knownComponents = totalComponents = 100%
             //
             // ============================================================
             
             // Step 1: Count total subtopics in question bank (denominator)
-            // 步骤1：统计题库中全部subtopic数（分母）
+ // 1subtopic
             // 
             // All unique subtopics from allQuestions (domain->topic->subtopic)
-            // 从allQuestions中获取所有唯一的subtopic（domain->topic->subtopic）
+ // allQuestionssubtopicdomain->topic->subtopic
             //
             const allSubtopicsInBank = allQuestions && allQuestions.length > 0
                 ? new Set(allQuestions.map(q => getKnowledgeComponentKey(q)).filter(k => k && !k.startsWith('unknown->'))).size
                 : 0;
             
             // Step 2: Count known components (status === "known")
-            // 步骤2：统计已知组件数（状态 === "known"）
+ // 2 === "known"
             //
             // Filter knowledgeMap values to find components with status === "known"
-            // 过滤knowledgeMap的值，找到状态为"known"的组件
+ // knowledgeMap"known"
             //
             // A component is "known" if:
-            //   组件在以下情况下为"known"：
+ // "known"
             //   - Student answered correctly for at least one question of this subtopic
-            //     学生对该子主题的至少一道题目答对过
+ //
             //   - Latest answer for this subtopic was correct
-            //     该子主题的最新答案是正确的
+ //
             //
             // Note: Status is updated based on the LATEST answer for each subtopic
-            // 注意：状态根据每个子主题的"最新答案"更新
+ // ""
             // - If latest answer is correct → status = "known"
-            //   如果最新答案正确 → 状态 = "known"
+ // → = "known"
             // - If latest answer is wrong → status = "unknown"
-            //   如果最新答案错误 → 状态 = "unknown"
+ // → = "unknown"
             //
             const knownComponents = Object.values(studentProfile.knowledgeMap)
                 .filter(c => c.status === 'known').length;
             
             // Step 3: Calculate coverage percentage
-            // 步骤3：计算覆盖率百分比
+ // 3
             //
-            // Formula: Coverage = (已全部答对的subtopic数 / 题库全部subtopic数) × 100%
-            // 公式：覆盖率 = (分子：已全部答对 / 分母：全部) × 100%
+ // Formula: Coverage = (subtopic / subtopic) × 100%
+ // = ( / ) × 100%
             //
             // Definition:
-            //   定义：
-            //   - Numerator (分子): knownComponents - Subtopics fully mastered (status === "known")
-            //     已全部答对的subtopic数（该子主题的所有题目都答对了）
-            //   - Denominator (分母): allSubtopicsInBank - All unique subtopics in question bank
-            //     题库中全部subtopic数
+ //
+ // - Numerator (): knownComponents - Subtopics fully mastered (status === "known")
+ // subtopic
+ // - Denominator (): allSubtopicsInBank - All unique subtopics in question bank
+ // subtopic
             //
             // Round to nearest integer for display
-            // 四舍五入到最近的整数以便显示
+ //
             //
             // Edge case: If no subtopics in bank (allSubtopicsInBank = 0), coverage = 0%
-            // 边界情况：如果题库无subtopic（allSubtopicsInBank = 0），覆盖率 = 0%
+ // subtopicallSubtopicsInBank = 0 = 0%
             //
             const coverage = allSubtopicsInBank > 0 
                 ? Math.round((knownComponents / allSubtopicsInBank) * 100) 
                 : 0;
             
             // Step 4: Update UI display
-            // 步骤4：更新UI显示
+ // 4UI
             //
-            // Display format: "Knowledge Coverage: X% (已全部答对/全部subtopics)"
-            // 显示格式："Knowledge Coverage: X% (分子：已全部答对 / 分母：全部subtopics)"
+ // Display format: "Knowledge Coverage: X% (/subtopics)"
+ // "Knowledge Coverage: X% ( / subtopics)"
             //
             // Example: "Knowledge Coverage: 74% (119/160 subtopics)"
-            // 示例：119个已全部答对，题库共160个subtopics
+ // 119160subtopics
             //
             if (coverageEl) {
                 if (allSubtopicsInBank > 0 && knownComponents === allSubtopicsInBank) {
@@ -2436,11 +2358,11 @@ Author: AI for Education (Wenchao Qin)
         
         /**
          * Initialize profile button handler
-         * 初始化档案按钮处理器
+ *
          */
         // ============================================================
         // Setup Resizer for Right Panel
-        // 设置右侧面板的调整大小功能
+ //
         // ============================================================
         function setupResizer() {
             const resizer = document.getElementById('resizer');
@@ -2504,7 +2426,7 @@ Author: AI for Education (Wenchao Qin)
             updateKnowledgeDisplay();
         }
 
-        // 测验初始化（登录后调用）
+ //
         async function initQuiz() {
             setupEventListeners();
             setupQbankSelector();
@@ -2517,7 +2439,7 @@ Author: AI for Education (Wenchao Qin)
         }
         window.initQuiz = initQuiz;
 
-        // 默认账号 + 本地注册用户（localStorage）
+ // + localStorage
         const DEFAULT_USERS = [
             { username: 'admin', password: 'admin' },
             { username: 'student', password: 'student' }
@@ -2588,19 +2510,19 @@ Author: AI for Education (Wenchao Qin)
             } catch (err) { console.warn('Login UI setup:', err); }
 
             if (!sessionStorage.getItem('quiz_auth')) {
-                // 未登录：确保登录屏显示，测验区隐藏，不执行 initQuiz
+ // initQuiz
                 loginScreen.classList.remove('hidden');
                 quizApp.classList.add('hidden');
                 return;
             }
-            // 已登录：隐藏登录屏，显示测验并初始化
+ //
             loginScreen.classList.add('hidden');
             quizApp.classList.remove('hidden');
             await initQuiz();
         });
 
         // Setup question bank selector
-        // 设置问题库选择器
+ //
         function setupQbankSelector() {
             const selector = document.getElementById('qbank-selector');
             if (selector) {
@@ -2613,35 +2535,35 @@ Author: AI for Education (Wenchao Qin)
 
         // ============================================================
         // Load Questions from Specified Source
-        // 从指定源加载问题
+ //
         // ============================================================
         // 
         // @param {string} source - Question source, optional values:
-        //   参数：问题源，可选值：
+ //
         //   - 'questions.json': Questions generated from clinical guidelines
-        //     从临床指南生成的问题
+ //
         //   - 'qbank_combined.json': Combined question bank (Surgery + Amboss)
-        //     合并的问题库（外科+Amboss）
+ // +Amboss
         //   - 'all': Merge all question banks
-        //     合并所有问题库
+ //
         //
         // Loading Process:
-        //   加载过程：
+ //
         //   1. Determine loading strategy based on source parameter
-        //      根据source参数确定加载策略
+ // source
         //   2. Use fetch API to asynchronously get JSON data
-        //      使用fetch API异步获取JSON数据
+ // fetch APIJSON
         //   3. Update allQuestions array
-        //      更新allQuestions数组
+ // allQuestions
         //   4. Display first question
-        //      显示第一个问题
+ //
         //   5. Update status bar to show question count
-        //      更新状态栏以显示问题数量
+ //
         //
         // Error Handling:
-        //   错误处理：
+ //
         //   - If loading fails, display error message and server startup instructions
-        //     如果加载失败，显示错误消息和服务器启动说明
+ //
         //
         // ============================================================
         async function loadQuestionsFromFile(source = 'questions.json') {
@@ -2652,9 +2574,9 @@ Author: AI for Education (Wenchao Qin)
                 
                 if (source === 'all') {
                     // Load all question banks (including merged file and generated questions)
-                    // 加载所有问题库（包括合并文件和生成的问题）
+ //
                     // Add timestamp parameter to force browser reload (avoid cache issues)
-                    // 添加时间戳参数以强制浏览器重新加载（避免缓存问题）
+ //
                     const timestamp = new Date().getTime();
                     const [clinical, combined, surgery] = await Promise.all([
                         fetch(`questions.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
@@ -2662,7 +2584,7 @@ Author: AI for Education (Wenchao Qin)
                         fetch(`generated_surgery_domain_questions.json?t=${timestamp}`).then(r => r.json()).catch(() => [])
                     ]);
                     // Merge all questions, deduplicate (based on question text)
-                    // 合并所有问题，去重（基于问题文本）
+ //
                     const allQuestions = [...clinical, ...combined, ...surgery];
                     const seen = new Set();
                     questions = allQuestions.filter(q => {
@@ -2674,17 +2596,17 @@ Author: AI for Education (Wenchao Qin)
                     if (statusEl) statusEl.textContent = `Loaded all ${questions.length} questions (after deduplication)`;
                 } else {
                     // Add timestamp parameter to force browser reload (avoid cache issues)
-                    // 添加时间戳参数以强制浏览器重新加载（避免缓存问题）
+ //
                     const timestamp = new Date().getTime();
                     const url = source.includes('?') ? `${source}&t=${timestamp}` : `${source}?t=${timestamp}`;
                     const response = await fetch(url);
                     if (!response.ok) throw new Error('Failed to fetch');
                     
                     // Check if it's JSONL format (ends with .jsonl)
-                    // 检查是否为JSONL格式（以.jsonl结尾）
+ // JSONL.jsonl
                     if (source.endsWith('.jsonl')) {
                         // Parse JSONL: each line is a JSON object
-                        // 解析JSONL：每行是一个JSON对象
+ // JSONLJSON
                         const text = await response.text();
                         const lines = text.split('\n').filter(line => line.trim());
                         questions = lines.map(line => {
@@ -2697,7 +2619,7 @@ Author: AI for Education (Wenchao Qin)
                         }).filter(q => q !== null);
                     } else {
                         // Regular JSON array
-                        // 常规JSON数组
+ // JSON
                         questions = await response.json();
                     }
                     
@@ -2713,57 +2635,57 @@ Author: AI for Education (Wenchao Qin)
                 console.log(`✓ Loaded ${allQuestions.length} questions from ${source}`);
                 
                 // Re-evaluate knowledge status if profile is already loaded
-                // 如果档案已经加载，重新评估知识状态
+ //
                 // This ensures old profiles are updated with the new rule
-                // 这确保旧档案使用新规则更新
+ //
                 if (studentProfile) {
                     reevaluateKnowledgeStatus();
                 }
                 
                 // ============================================================
                 // Initialize Jump-to-Question Input Field After Loading Questions
-                // 加载题目后初始化跳转到题目输入框
+ //
                 // ============================================================
                 // 
                 // This section initializes the jump-to-question input field
                 // when questions are first loaded from a file.
-                // 此部分在首次从文件加载题目时初始化跳转输入框。
+ //
                 //
                 // Initialization Steps:
-                //   初始化步骤：
+ //
                 //   1. Set placeholder to show valid range (e.g., "1-477")
-                //      设置占位符以显示有效范围（例如："1-477"）
+ // "1-477"
                 //   2. Set max attribute to total number of questions
-                //      设置max属性为总题目数
+ // max
                 //   3. Reset value to 1 (first question)
-                //      重置值为1（第一题）
+ // 1
                 //
                 // Why This is Needed:
-                //   为什么需要这个：
+ //
                 //   - When questions are loaded, we start at question 1
-                //     加载题目时，我们从第1题开始
+ // 1
                 //   - Input field needs to reflect this initial state
-                //     输入框需要反映这个初始状态
+ //
                 //   - Placeholder helps user understand valid input range
-                //     占位符帮助用户理解有效输入范围
+ //
                 //
                 // ============================================================
                 const jumpInput = document.getElementById('jump-to-input');
                 if (jumpInput && allQuestions.length > 0) {
                     // Set placeholder to show valid range
-                    // 设置占位符以显示有效范围
+ //
                     // Example: "1-479" for 479 questions
-                    // 示例：479题时显示"1-479"
+ // 479"1-479"
                     jumpInput.placeholder = `1-${allQuestions.length}`;
                     
                     // Set maximum value for HTML5 number input validation
-                    // 设置HTML5数字输入框的最大值以进行验证
+ // HTML5
                     jumpInput.max = allQuestions.length;
                     
                     // Reset to first question (1-based)
-                    // 重置为第一题（从1开始）
+ // 1
                     // This ensures input field shows correct position after loading
-                    // 这确保加载后输入框显示正确的位置
+ //
                     jumpInput.value = 1;
                 }
                 
@@ -2805,62 +2727,62 @@ Author: AI for Education (Wenchao Qin)
 
         // ============================================================
         // Convert Question Format: From JSON format to UI display format
-        // 转换问题格式：从JSON格式转换为UI显示格式
+ // JSONUI
         // ============================================================
         //
         // @param {Object} q - Original question object from JSON file
-        //   参数：来自JSON文件的原始问题对象
+ // JSON
         //   - q.question: Question text
-        //     问题文本
+ //
         //   - q.options: Options object {A: '...', B: '...', C: '...', D: '...', E: '...'}
-        //     选项对象 {A: '...', B: '...', C: '...', D: '...', E: '...'}
+ // {A: '...', B: '...', C: '...', D: '...', E: '...'}
         //   - q.correct_answer: Correct answer letter ('A', 'B', 'C', 'D', or 'E')
-        //     正确答案字母（'A', 'B', 'C', 'D'或'E'）
+ // 'A', 'B', 'C', 'D''E'
         //   - q.explanations: Explanations object for each option (optional)
-        //     每个选项的解释对象（可选）
+ //
         //   - q.explanation: Single explanation text (optional, qbank format)
-        //     单个解释文本（可选，qbank格式）
+ // qbank
         //   - q.tip: Tip text (optional, qbank format)
-        //     提示文本（可选，qbank格式）
+ // qbank
         //   - q.source: Question source PDF name
-        //     问题来源PDF名称
+ // PDF
         //
         // @param {number} index - Question index in array
-        //   参数：问题在数组中的索引
+ //
         //
         // @returns {Object|null} - Converted UI format object, or null (if question is invalid)
-        //   返回：转换后的UI格式对象，或null（如果问题无效）
+ // UInull
         //   - QA.question: Question text
-        //     问题文本
+ //
         //   - QA.choices: Options array ['A. ...', 'B. ...', ...]
-        //     选项数组 ['A. ...', 'B. ...', ...]
+ // ['A. ...', 'B. ...', ...]
         //   - QA.answer: Correct answer index (0-4)
-        //     正确答案索引（0-4）
+ // 0-4
         //   - QA.source: Question source
-        //     问题来源
+ //
         //   - explanations: Explanations array
-        //     解释数组
+ //
         //
         // Special handling:
-        //   特殊处理：
+ //
         //   - Supports 2-10 options (A-J)
-        //     支持2-10个选项（A-J）
+ // 2-10A-J
         //   - Automatically skips invalid questions missing options
-        //     自动跳过缺少选项的无效问题
+ //
         //   - Compatible with multiple explanation formats (explanations/explanation/tip)
-        //     兼容多种解释格式（explanations/explanation/tip）
+ // explanations/explanation/tip
         //
         // ============================================================
         function convertQuestionFormat(q, index) {
             // Check if question is valid
-            // 检查问题是否有效
+ //
             if (!q || !q.options || !q.question) {
                 console.warn('Invalid question at index', index, q);
                 return null;
             }
             
             // Dynamically get available option letters (supports A-J, up to 10 options)
-            // 动态获取可用选项字母（支持A-J，最多10个选项）
+ // A-J10
             const allLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
             const letters = allLetters.filter(letter => q.options[letter]);
             
@@ -2873,18 +2795,18 @@ Author: AI for Education (Wenchao Qin)
             const correctIndex = letters.indexOf(q.correct_answer);
             
             // For generated_surgery_domain_questions.json, append domain/topic/subtopic to question text
-            // 对于generated_surgery_domain_questions.json，在问题文本后追加domain/topic/subtopic
+ // generated_surgery_domain_questions.jsondomain/topic/subtopic
             // Only show domain/topic/subtopic for questions from Surgery Domain Questions (not old question banks)
-            // 只为来自Surgery Domain Questions的题目显示domain/topic/subtopic（不是老题库）
+ // Surgery Domain Questionsdomain/topic/subtopic
             let questionText = q.question;
             // Check if question has domain/topic/subtopic fields (indicating it's from generated_surgery_domain_questions.json)
-            // 检查题目是否有domain/topic/subtopic字段（表示它来自generated_surgery_domain_questions.json）
+ // domain/topic/subtopicgenerated_surgery_domain_questions.json
             if (q.domain && q.topic && q.subtopic) {
                 questionText = `${q.question} (Domain: ${q.domain}, Topic: ${q.topic}, Subtopic: ${q.subtopic})`;
             }
             
             // Build explanations array
-            // 构建解释数组
+ //
             const explanations = letters.map(letter => {
                 if (q.explanations && q.explanations[letter]) {
                     return `${letter}. ${q.explanations[letter]}`;
@@ -2919,39 +2841,39 @@ Author: AI for Education (Wenchao Qin)
 
         // ============================================================
         // Load Question by Index
-        // 根据索引加载问题
+ //
         // ============================================================
         //
         // @param {number} index - Question index (0-based)
-        //   参数：问题索引（从0开始）
+ // 0
         //
         // Functions:
-        //   功能：
+ //
         //   1. Validate index validity
-        //      验证索引有效性
+ //
         //   2. Reset user selection state
-        //      重置用户选择状态
+ //
         //   3. Convert question format
-        //      转换问题格式
+ //
         //   4. Set question metadata (for ChatGPT context)
-        //      设置问题元数据（用于ChatGPT上下文）
+ // ChatGPT
         //   5. Render question to UI
-        //      将问题渲染到UI
+ // UI
         //   6. Update progress display
-        //      更新进度显示
+ //
         //
         // Metadata (currentQuestionMeta):
-        //   元数据（currentQuestionMeta）：
+ // currentQuestionMeta
         //   - correctIndex: Correct answer index
-        //     正确答案索引
+ //
         //   - explanations: Explanations array
-        //     解释数组
+ //
         //   - source: Source PDF
-        //     来源PDF
+ // PDF
         //   - sourceChunk: Original text chunk
-        //     原始文本块
+ //
         //   - sourcePage: Page number
-        //     页码
+ //
         //
         // ============================================================
         function loadQuestionByIndex(index) {
@@ -2961,15 +2883,15 @@ Author: AI for Education (Wenchao Qin)
             selectedAnswer = null;
             
             // Reset hint system when loading new question
-            // 加载新问题时重置提示系统
+ //
             resetHintState();
             
             // Clear message chat history for new question (each question has its own conversation)
-            // 为新问题清除消息聊天历史（每个问题都有自己的对话）
+ //
             messageChatHistory = [];
             
             // Clear message list (refresh when switching questions)
-            // 清除消息列表（切换问题时刷新）
+ //
             const conversationList = document.getElementById('conversation-list');
             if (conversationList) {
                 conversationList.innerHTML = '';
@@ -2977,7 +2899,7 @@ Author: AI for Education (Wenchao Qin)
             
             const q = allQuestions[index];
             // Debug info: Check images field
-            // 调试信息：检查images字段
+ // images
             if (q && q.images) {
                 console.log(`🔍 Question ${index + 1} (index ${index}) images field:`, q.images);
                 console.log(`   Type: ${typeof q.images}, isArray: ${Array.isArray(q.images)}, length: ${Array.isArray(q.images) ? q.images.length : 'N/A'}`);
@@ -2985,7 +2907,7 @@ Author: AI for Education (Wenchao Qin)
             const converted = convertQuestionFormat(q, index);
             
             // If conversion fails, skip to next question
-            // 如果转换失败，跳到下一个问题
+ //
             if (!converted) {
                 console.warn('Skipping invalid question at index', index);
                 if (index < allQuestions.length - 1) {
@@ -3002,32 +2924,32 @@ Author: AI for Education (Wenchao Qin)
                 topic: converted.QA.topic || q.topic || '',    // Store topic for knowledge tracking
                 subtopic: converted.QA.subtopic || q.subtopic || '',  // Store subtopic for knowledge tracking
                 // Store the source chunk for RAG context
-                // 存储源文本块用于RAG上下文
+ // RAG
                 sourceChunk: q.source_chunk || null,
                 // Store page number if available
-                // 如果可用，存储页码
+ //
                 sourcePage: q.source_page || q.page_number || q.page || 'N/A'
             };
             loadData(converted);
             
             // Update progress display
-            // 更新进度显示
+ //
             updateProgressDisplay();
         }
 
         // ============================================================
         // Update Progress Display
-        // 更新进度显示
+ //
         // ============================================================
         //
         // Updates:
-        //   更新内容：
+ //
         //   - Next question button text ("Next →" or "Finish ✓")
-        //     下一个问题按钮文本（"Next →" 或 "Finish ✓"）
+ // "Next →" "Finish ✓"
         //   - Previous question button state (disabled on first question)
-        //     上一个问题按钮状态（在第一个问题时禁用）
+ //
         //   - Progress information ("Question X of Y | 📄 Source")
-        //     进度信息（"Question X of Y | 📄 Source"）
+ // "Question X of Y | 📄 Source"
         //
         // ============================================================
         function updateProgressDisplay() {
@@ -3038,37 +2960,37 @@ Author: AI for Education (Wenchao Qin)
             if (nextBtn) {
                 // ============================================================
                 // Update Next Button Text Based on Position
-                // 根据位置更新"下一个"按钮文本
+ // ""
                 // ============================================================
                 // 
                 // Button Text Logic:
-                //   按钮文本逻辑：
+ //
                 //   - If NOT on last question: Show "Next →"
-                //     如果不在最后一题：显示"Next →"
+ // "Next →"
                 //   - If on last question: Show "Finish ✓"
-                //     如果在最后一题：显示"Finish ✓"
+ // "Finish ✓"
                 //
                 // Condition Explanation:
-                //   条件说明：
+ //
                 //   - currentGeneratedIndex < allQuestions.length - 1
-                //     当前索引 < 总题目数 - 1
+ // < - 1
                 //     → Not on last question (still has next question)
-                //        → 不在最后一题（还有下一题）
+ // →
                 //   - Otherwise: currentGeneratedIndex === allQuestions.length - 1
-                //     否则：当前索引 === 总题目数 - 1
+ // === - 1
                 //     → On last question (no more questions)
-                //        → 在最后一题（没有更多题目）
+ // →
                 //
                 // Example:
-                //   示例：
+ //
                 //   - 479 questions total, currentGeneratedIndex = 477 (0-based)
-                //     总共479题，当前索引 = 477（基于0）
+ // 479 = 4770
                 //   - 477 < 479 - 1 = 478? No → Show "Finish ✓"
-                //     477 < 479 - 1 = 478？否 → 显示"Finish ✓"
+ // 477 < 479 - 1 = 478 → "Finish ✓"
                 //   - 479 questions total, currentGeneratedIndex = 100 (0-based)
-                //     总共479题，当前索引 = 100（基于0）
+ // 479 = 1000
                 //   - 100 < 479 - 1 = 478? Yes → Show "Next →"
-                //     100 < 479 - 1 = 478？是 → 显示"Next →"
+ // 100 < 479 - 1 = 478 → "Next →"
                 //
                 // ============================================================
                 nextBtn.textContent = currentGeneratedIndex < allQuestions.length - 1 ? 'Next →' : 'Finish ✓';
@@ -3087,93 +3009,110 @@ Author: AI for Education (Wenchao Qin)
             
             // ============================================================
             // Update Jump-to-Question Input Field
-            // 更新跳转到题目输入框
+ //
             // ============================================================
             // 
             // This section updates the jump-to-question input field whenever
             // the current question changes (via Previous/Next buttons or direct jump).
-            // 此部分在题目改变时（通过Previous/Next按钮或直接跳转）更新跳转输入框。
+ // Previous/Next
             //
             // Updates:
-            //   更新内容：
+ //
             //   1. Placeholder: Shows valid range (e.g., "1-477")
-            //      占位符：显示有效范围（例如："1-477"）
+ // "1-477"
             //   2. Max attribute: Sets maximum allowed value for number input
-            //      max属性：设置数字输入框的最大允许值
+ // max
             //   3. Value: Updates to current question number (1-based)
-            //      值：更新为当前题目编号（从1开始）
+ // 1
             //
             // Purpose:
-            //   目的：
+ //
             //   - Provides visual feedback of current position
-            //     提供当前位置的视觉反馈
+ //
             //   - Helps user understand valid input range
-            //     帮助用户理解有效输入范围
+ //
             //   - Keeps input field synchronized with navigation
-            //     保持输入框与导航同步
+ //
             //
             // ============================================================
             const jumpInputEl = document.getElementById('jump-to-input');
             if (jumpInputEl && allQuestions.length > 0) {
                 // Update placeholder to show valid range
-                // 更新占位符以显示有效范围
+ //
                 // Example: If 479 questions, placeholder becomes "1-479"
-                // 示例：如果有479题，占位符变为"1-479"
+ // 479"1-479"
                 jumpInputEl.placeholder = `1-${allQuestions.length}`;
                 
                 // Set maximum value for HTML5 number input validation
-                // 设置HTML5数字输入框的最大值以进行验证
+ // HTML5
                 // This prevents user from entering numbers greater than total questions
-                // 这防止用户输入大于总题目数的数字
+ //
                 jumpInputEl.max = allQuestions.length;
                 
                 // Update value to current question number (1-based, user-friendly)
-                // 更新值为当前题目编号（从1开始，用户友好）
+ // 1
                 // currentGeneratedIndex is 0-based, so add 1 to convert to 1-based
-                // currentGeneratedIndex是基于0的，所以加1转换为基于1的
+ // currentGeneratedIndex011
                 // Example: currentGeneratedIndex = 99 → value = 100 (question 100)
-                // 示例：currentGeneratedIndex = 99 → value = 100（第100题）
+ // currentGeneratedIndex = 99 → value = 100100
                 jumpInputEl.value = currentGeneratedIndex + 1;
             }
         }
 
         // ====================================================================
         // Part 5: RAG (Retrieval-Augmented Generation)
-        // 第五部分：RAG（检索增强生成）
+ // RAG
         // ====================================================================
         // 
         // When students ask ChatGPT questions, RAG provides relevant context from medical guidelines.
         // This improves answer quality and supports source citations.
-        // 当学生向ChatGPT提问时，RAG从医学指南中提供相关上下文。
-        // 这提高了答案质量并支持来源引用。
+ // ChatGPTRAG
+ //
         //
         // Two retrieval methods:
-        //   两种检索方法：
+ //
         //   1. FAISS Server (Preferred): Semantic search using vectors
-        //     FAISS服务器（首选）：使用向量的语义搜索
+ // FAISS
         //      - Requires rag_server.py to be running
-        //        需要运行rag_server.py
+ // rag_server.py
         //      - Uses OpenAI vectors for similarity calculation
-        //        使用OpenAI向量进行相似度计算
+ // OpenAI
         //      - ColBERTv2 reranking improves accuracy
-        //        ColBERTv2重排序提高准确性
+ // ColBERTv2
         //
         //   2. Keyword Fallback: Simple TF-IDF-like matching
-        //     关键词回退：简单的类TF-IDF匹配
+ // TF-IDF
         //      - Used when FAISS server is unavailable
-        //        当FAISS服务器不可用时使用
+ // FAISS
         //      - Searches source_chunk field in questions.json
-        //        在questions.json中搜索source_chunk字段
+ // questions.jsonsource_chunk
         //      - Lower accuracy but works offline
-        //        准确性较低但可离线工作
+ //
         //
         // ====================================================================
         
         const RAG_SERVER_URL = 'http://' + (window.location.hostname || '127.0.0.1') + ':5000';
         let ragServerAvailable = false;
 
-        // ========== 每用户每小时成本限制相关 ==========
-        // 获取或生成会话 ID，用于后端按用户统计费用
+        /** Show in-page alert with English title and OK button (avoids browser 确定 / localhost title). */
+        function showAppAlert(message, title) {
+            title = title || 'Notice';
+            const overlay = document.getElementById('app-alert-overlay');
+            const titleEl = document.getElementById('app-alert-title');
+            const msgEl = document.getElementById('app-alert-message');
+            const btn = document.getElementById('app-alert-ok');
+            if (overlay && titleEl && msgEl && btn) {
+                titleEl.textContent = title;
+                msgEl.textContent = message;
+                overlay.classList.add('show');
+                const close = () => overlay.classList.remove('show');
+                btn.onclick = close;
+                overlay.onclick = (e) => { if (e.target === overlay) close(); };
+            } else {
+                alert(message);
+            }
+        }
+
         function getSessionId() {
             let sid = sessionStorage.getItem('cost_limit_session_id');
             if (!sid) {
@@ -3182,7 +3121,7 @@ Author: AI for Education (Wenchao Qin)
             }
             return sid;
         }
-        // 返回带 X-Session-Id 的请求头，供后端识别用户
+ // X-Session-Id
         function getSessionHeaders() {
             const h = { 'Content-Type': 'application/json', 'X-Session-Id': getSessionId() };
             const uid = sessionStorage.getItem('quiz_user');
@@ -3208,9 +3147,9 @@ Author: AI for Education (Wenchao Qin)
             if (banner) banner.remove();
             if (costLimitCountdownTimer) { clearInterval(costLimitCountdownTimer); costLimitCountdownTimer = null; }
         }
-        // 在页面顶部显示红色横幅，并显示倒计时
+ //
         async function showCostLimitBanner() {
-            if (document.getElementById('cost-limit-banner')) return; // 避免重复显示
+ if (document.getElementById('cost-limit-banner')) return; //
             costLimitExceeded = true;
             const inp = document.getElementById('message-input');
             const btn = document.getElementById('message-send-btn');
@@ -3249,16 +3188,16 @@ Author: AI for Education (Wenchao Qin)
             if (costLimitCountdownTimer) clearInterval(costLimitCountdownTimer);
             costLimitCountdownTimer = setInterval(tick, 1000);
         }
-        // 响应头含 X-Cost-Limit-Exceeded 时显示超限提示（本次请求已超限，下次将被拒绝）
+ // X-Cost-Limit-Exceeded
         function checkCostLimitHeader(response) {
             if (response && response.headers && response.headers.get('X-Cost-Limit-Exceeded') === 'true') {
                 showCostLimitBanner();
-                alert('Cost limit exceeded. Please try again later.');
+                showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded');
             }
         }
         
         // Check if RAG server is available
-        // 检查RAG服务器是否可用
+ // RAG
         let ragServerInfo = null;
         
         async function checkRagServer() {
@@ -3291,19 +3230,19 @@ Author: AI for Education (Wenchao Qin)
         /**
          * Retrieve relevant chunks using FAISS + OpenAI Embeddings
          * Falls back to keyword matching if server unavailable
-         * 使用FAISS + OpenAI嵌入检索相关文本块
-         * 如果服务器不可用，回退到关键词匹配
+ * FAISS + OpenAI
+ *
          * 
          * @param {string} query - The student's question
-         *   参数：学生的问题
+ *
          * @param {number} topK - Number of chunks to retrieve
-         *   参数：要检索的文本块数量
+ *
          * @returns {Array} - Array of {text, source, score} objects
-         *   返回：{text, source, score}对象数组
+ * {text, source, score}
          */
         async function retrieveRelevantChunksAsync(query, topK = 5) {
             // Try FAISS server first
-            // 首先尝试FAISS服务器
+ // FAISS
             if (ragServerAvailable) {
                 try {
                     const response = await fetch(`${RAG_SERVER_URL}/search`, {
@@ -3311,7 +3250,7 @@ Author: AI for Education (Wenchao Qin)
                         headers: getSessionHeaders(),
                         body: JSON.stringify({ query, top_k: topK })
                     });
-                    if (response.status === 429) { showCostLimitBanner(); alert('Cost limit exceeded. Please try again later.'); throw new Error('Cost limit exceeded'); }
+                    if (response.status === 429) { showCostLimitBanner(); showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded'); throw new Error('Cost limit exceeded'); }
                     if (response.ok) {
                         const data = await response.json();
                         console.log(`✓ RAG: Retrieved ${data.results.length} chunks via FAISS`);
@@ -3323,13 +3262,13 @@ Author: AI for Education (Wenchao Qin)
             }
             
             // Fallback to keyword matching
-            // 回退到关键词匹配
+ //
             return retrieveRelevantChunksKeyword(query, topK);
         }
         
         /**
          * Fallback: Simple keyword-based retrieval
-         * 回退：基于关键词的简单检索
+ *
          */
         function retrieveRelevantChunksKeyword(query, topK = 5) {
             if (!allQuestions || allQuestions.length === 0) return [];
@@ -3379,67 +3318,67 @@ Author: AI for Education (Wenchao Qin)
         }
         
         // Sync wrapper for backward compatibility
-        // 同步包装器以保持向后兼容性
+ //
         function retrieveRelevantChunks(query, topK = 5) {
             // For sync calls, use keyword fallback
-            // 对于同步调用，使用关键词回退
+ //
             return retrieveRelevantChunksKeyword(query, topK);
         }
 
         // ============================================================
         // API Key Initialization
-        // API密钥初始化
+ // API
         // ============================================================
         //
         // Key Sources (by priority):
-        //   密钥来源（按优先级）：
+ //
         //   1. OPENAI_API_KEY global variable from api-key.js (recommended)
-        //     来自api-key.js的OPENAI_API_KEY全局变量（推荐）
+ // api-key.jsOPENAI_API_KEY
         //   2. 'openai_api_key' in browser localStorage
-        //     浏览器localStorage中的'openai_api_key'
+ // localStorage'openai_api_key'
         //
         // Key Validation Rules:
-        //   密钥验证规则：
+ //
         //   - Must start with 'sk-'
-        //     必须以'sk-'开头
+ // 'sk-'
         //   - Length must be greater than 40 characters
-        //     长度必须大于40个字符
+ // 40
         //   - Only contains ASCII characters (filter invisible characters)
-        //     仅包含ASCII字符（过滤不可见字符）
+ // ASCII
         //
         // cleanApiKey Function:
-        //   cleanApiKey函数：
+ // cleanApiKey
         //   Cleans non-ASCII characters from API key to prevent API call failures due to encoding issues
-        //   从API密钥中清理非ASCII字符，以防止因编码问题导致的API调用失败
+ // APIASCIIAPI
         //
         // ============================================================
         
         /**
          * Clean API key, remove non-ASCII characters
-         * 清理API密钥，移除非ASCII字符
+ * APIASCII
          * @param {string} key - Original API key
-         *   参数：原始API密钥
+ * API
          * @returns {string} - Cleaned API key
-         *   返回：清理后的API密钥
+ * API
          */
         function cleanApiKey(key) {
             if (!key) return '';
             // Filter out all non-ASCII characters (charCode > 127)
-            // 过滤所有非ASCII字符（charCode > 127）
+ // ASCIIcharCode > 127
             return String(key).split('').filter(c => c.charCodeAt(0) <= 127).join('').trim();
         }
         
         /**
          * Immediately Invoked Function: Initialize API key
          * Automatically executed on page load
-         * 立即执行函数：初始化API密钥
-         * 页面加载时自动执行
+ * API
+ *
          */
         (function initApiKey() {
             // Priority: Read from global variable in api-key.js
             // This is the recommended method, api-key.js is loaded in <script src="api-key.js">
-            // 优先级：从api-key.js中的全局变量读取
-            // 这是推荐的方法，api-key.js在<script src="api-key.js">中加载
+ // api-key.js
+ // api-key.js<script src="api-key.js">
             if (typeof OPENAI_API_KEY !== 'undefined' && OPENAI_API_KEY && (OPENAI_API_KEY.startsWith('sk-') || OPENAI_API_KEY.startsWith('LLM|'))) {
                 openAIApiKey = cleanApiKey(OPENAI_API_KEY);
                 console.log('✅ API Key loaded from api-key.js');
@@ -3449,8 +3388,8 @@ Author: AI for Education (Wenchao Qin)
             // Fallback: Read from localStorage
             // Users can manually set in browser developer tools:
             // localStorage.setItem('openai_api_key', 'sk-...')
-            // 回退：从localStorage读取
-            // 用户可以在浏览器开发者工具中手动设置：
+ // localStorage
+ //
             // localStorage.setItem('openai_api_key', 'sk-...')
             const stored = cleanApiKey(localStorage.getItem('openai_api_key'));
             if (stored && (/^sk-/.test(stored) || stored.startsWith('LLM|')) && stored.length > 10) {
@@ -3458,7 +3397,7 @@ Author: AI for Education (Wenchao Qin)
                 console.log('✅ API Key loaded from localStorage');
             } else {
                 // Clean invalid localStorage entry
-                // 清理无效的localStorage条目
+ // localStorage
                 if (stored) {
                     try { localStorage.removeItem('openai_api_key'); } catch (_) {}
                 }
@@ -3469,21 +3408,21 @@ Author: AI for Education (Wenchao Qin)
 
         // ============================================================
         // Setup Event Listeners
-        // 设置事件监听器
+ //
         // ============================================================
         //
         // Bound Events:
-        //   绑定的事件：
+ //
         //   - Submit button click → handleSubmit()
-        //     提交按钮点击 → handleSubmit()
+ // → handleSubmit()
         //   - Message input Enter key → handleMessageSubmit()
-        //     消息输入框Enter键 → handleMessageSubmit()
+ // Enter → handleMessageSubmit()
         //   - Send button click → handleMessageSubmit()
-        //     发送按钮点击 → handleMessageSubmit()
+ // → handleMessageSubmit()
         //
         // ============================================================
         function setupEventListeners() {
-            // 退出登录：清除会话并刷新，回到登录屏
+ //
             const logoutLink = document.getElementById('logout-link');
             if (logoutLink) {
                 logoutLink.addEventListener('click', function(e) {
@@ -3494,11 +3433,11 @@ Author: AI for Education (Wenchao Qin)
                 });
             }
             // Question submit button
-            // 问题提交按钮
+ //
             document.getElementById('submit-btn').addEventListener('click', handleSubmit);
             
             // ChatGPT message area
-            // ChatGPT消息区域
+ // ChatGPT
             const messageInput = document.getElementById('message-input');
             const messageSendBtn = document.getElementById('message-send-btn');
             
@@ -3526,117 +3465,117 @@ Author: AI for Education (Wenchao Qin)
             
             // ============================================================
             // Jump to Question Functionality - Event Listeners Setup
-            // 跳转到指定题目功能 - 事件监听器设置
+ // -
             // ============================================================
             //
             // This section sets up event listeners for the jump-to-question feature.
-            // 此部分为跳转功能设置事件监听器。
+ //
             //
             // Event Listeners:
-            //   事件监听器：
-            //   1. Button click event: When user clicks "跳转" button
-            //      按钮点击事件：用户点击"跳转"按钮时
+ //
+ // 1. Button click event: When user clicks "" button
+ // ""
             //   2. Enter key event: When user presses Enter in the input field
-            //      Enter键事件：用户在输入框中按Enter键时
+ // EnterEnter
             //
             // Validation:
-            //   验证：
+ //
             //   - Checks if input is a valid positive number
-            //     检查输入是否为有效的正数
+ //
             //   - Calls jumpToQuestion() function if valid
-            //     如果有效则调用jumpToQuestion()函数
+ // jumpToQuestion()
             //   - Shows error alert if invalid
-            //     如果无效则显示错误提示
+ //
             //
             // ============================================================
             
             // Get jump-to-question UI elements
-            // 获取跳转功能的UI元素
+ // UI
             const jumpToBtn = document.getElementById('jump-to-btn');      // Jump button element
-                                                                           // 跳转按钮元素
+ //
             const jumpInput = document.getElementById('jump-to-input');   // Input field element
-                                                                           // 输入框元素
+ //
             
             // Only set up listeners if both elements exist
-            // 只有当两个元素都存在时才设置监听器
+ //
             if (jumpToBtn && jumpInput) {
                 // ============================================================
                 // Button Click Event Handler
-                // 按钮点击事件处理器
+ //
                 // ============================================================
                 // 
-                // Triggered when user clicks the "跳转" button
-                // 当用户点击"跳转"按钮时触发
+ // Triggered when user clicks the "" button
+ // ""
                 //
                 // Process:
-                //   处理流程：
+ //
                 //   1. Get the value from input field
-                //      从输入框获取值
+ //
                 //   2. Parse to integer (question number, 1-based)
-                //      解析为整数（题目编号，从1开始）
+ // 1
                 //   3. Validate: must be a positive number
-                //      验证：必须是正数
+ //
                 //   4. Call jumpToQuestion() if valid, show alert if invalid
-                //      如果有效则调用jumpToQuestion()，如果无效则显示提示
+ // jumpToQuestion()
                 //
                 // ============================================================
                 jumpToBtn.addEventListener('click', () => {
                     // Parse input value to integer
-                    // 将输入值解析为整数
+ //
                     const questionNumber = parseInt(jumpInput.value);
                     
                     // Validate: check if it's a valid positive number
-                    // 验证：检查是否为有效的正数
+ //
                     if (!isNaN(questionNumber) && questionNumber > 0) {
                         // Valid input: jump to the question
-                        // 有效输入：跳转到该题目
+ //
                         jumpToQuestion(questionNumber);
                     } else {
                         // Invalid input: show error message
-                        // 无效输入：显示错误消息
+ //
                         alert('Please enter a valid question number');
                     }
                 });
                 
                 // ============================================================
                 // Enter Key Event Handler
-                // Enter键事件处理器
+ // Enter
                 // ============================================================
                 // 
                 // Triggered when user presses Enter key in the input field
-                // 当用户在输入框中按Enter键时触发
+ // Enter
                 //
                 // This provides keyboard shortcut for better UX
-                // 这提供了键盘快捷键以改善用户体验
+ //
                 //
                 // Process: Same as button click handler
-                // 处理流程：与按钮点击处理器相同
+ //
                 //
                 // ============================================================
                 jumpInput.addEventListener('keypress', (e) => {
                     // Check if Enter key was pressed
-                    // 检查是否按下了Enter键
+ // Enter
                     if (e.key === 'Enter') {
                         // Parse input value to integer
-                        // 将输入值解析为整数
+ //
                         const questionNumber = parseInt(e.target.value);
                         
                         // Validate: check if it's a valid positive number
-                        // 验证：检查是否为有效的正数
+ //
                         if (!isNaN(questionNumber) && questionNumber > 0) {
                             // Valid input: jump to the question
-                            // 有效输入：跳转到该题目
+ //
                             jumpToQuestion(questionNumber);
                         } else {
                             // Invalid input: show error message
-                            // 无效输入：显示错误消息
+ //
                             alert('Please enter a valid question number');
                         }
                     }
                 });
             } else {
                 // Debug: Log if elements are not found (should not happen in normal operation)
-                // 调试：如果找不到元素则记录日志（正常操作中不应发生）
+ //
                 console.warn('Jump-to-question elements not found:', {
                     jumpToBtn: !!jumpToBtn,
                     jumpInput: !!jumpInput
@@ -3646,33 +3585,33 @@ Author: AI for Education (Wenchao Qin)
 
         // ============================================================
         // Load Data to UI
-        // 将数据加载到UI
+ // UI
         // ============================================================
         //
         // @param {Object} data - Question data object
-        //   参数：问题数据对象
+ //
         //   - data.QA: Question and options
-        //     问题和选项
+ //
         //   - data.feedback: Feedback information
-        //     反馈信息
+ //
         //   - data.conversation: Conversation history
-        //     对话历史
+ //
         //
         // Calls three rendering functions to update UI
-        // 调用三个渲染函数以更新UI
+ // UI
         //
         // ============================================================
         function loadData(data) {
             currentData = data;
             renderQuestion(data);     // Render question and options
-                                    // 渲染问题和选项
+ //
             renderFeedback(data);     // Render feedback area
-                                    // 渲染反馈区域
+ //
             renderConversation(data); // Render conversation area
-                                    // 渲染对话区域
+ //
             // Show thinking prompt when loading new question
-            // 加载新问题时显示思考提示
-            triggerHintAfterWrongAnswer(false); // false表示不是答错后触发
+ //
+ triggerHintAfterWrongAnswer(false); // false
         }
 
         // ============================================================
@@ -3931,13 +3870,13 @@ Author: AI for Education (Wenchao Qin)
             } else {
                 // No laboratory data, display text directly
                 // Check if question contains domain/topic/subtopic info (from generated_surgery_domain_questions.json)
-                // 检查问题是否包含domain/topic/subtopic信息（来自generated_surgery_domain_questions.json）
+ // domain/topic/subtopicgenerated_surgery_domain_questions.json
                 const questionText = qa.question;
                 const domainTopicMatch = questionText.match(/^(.*?)\s*\(Domain:\s*(.+?),\s*Topic:\s*(.+?),\s*Subtopic:\s*(.+?)\)$/);
                 
                 if (domainTopicMatch) {
                     // Has domain/topic/subtopic info - display with different styling + Trigger Tutor button
-                    // 有domain/topic/subtopic信息 - 用不同样式显示，右侧加「请教导师」按钮
+ // domain/topic/subtopic -
                     const mainQuestion = domainTopicMatch[1];
                     const domain = domainTopicMatch[2];
                     const topic = domainTopicMatch[3];
@@ -3970,7 +3909,7 @@ Author: AI for Education (Wenchao Qin)
                     });
                 } else {
                     // No domain/topic/subtopic info - display normally
-                    // 没有domain/topic/subtopic信息 - 正常显示
+ // domain/topic/subtopic -
                     questionTextEl.textContent = questionText;
                 }
             }
@@ -4296,22 +4235,22 @@ Author: AI for Education (Wenchao Qin)
                 currentData.feedback = feedback;
                 
                 // Update knowledge tracking (if profile is initialized)
-                // 更新知识追踪（如果档案已初始化）
+ //
                 if (studentProfile && allQuestions && currentGeneratedIndex >= 0 && currentGeneratedIndex < allQuestions.length) {
                     const currentQuestion = allQuestions[currentGeneratedIndex];
                     
                     // Debug: Log which question we're tracking
-                    // 调试：记录我们正在追踪的题目
+ //
                     console.log(`📝 Tracking knowledge for question at index ${currentGeneratedIndex}`);
                     console.log(`   Question text: ${(currentQuestion.question || '').substring(0, 50)}...`);
                     console.log(`   Is correct: ${isCorrect}`);
                     
                     // Pass currentGeneratedIndex directly as questionIndexHint to ensure correct tracking
-                    // 直接传递currentGeneratedIndex作为questionIndexHint以确保正确追踪
+ // currentGeneratedIndexquestionIndexHint
                     updateKnowledgeStatus(currentQuestion, isCorrect, currentGeneratedIndex);
                     
                     // Update knowledge display after status update
-                    // 状态更新后更新知识显示
+ //
                     updateKnowledgeDisplay();
                 } else {
                     console.warn(`⚠️ Cannot track knowledge:`, {
@@ -4328,7 +4267,7 @@ Author: AI for Education (Wenchao Qin)
                 
                 // Trigger hint offer in message area if answer is wrong
                 if (!isCorrect) {
-                    triggerHintAfterWrongAnswer(true); // true表示答错后触发
+ triggerHintAfterWrongAnswer(true); // true
                 }
                 
                 // Show source
@@ -4464,11 +4403,11 @@ Author: AI for Education (Wenchao Qin)
             
             // ============================================================
             // CHECK: Are we in Iterative Guidance mode? (Continuous learning loop)
-            // 检查：我们是否在迭代指导模式？（持续学习循环）
+ //
             // ============================================================
             if (guidanceDialogueActive) {
                 // Route to guidance response handler
-                // 路由到指导响应处理器
+ //
                 input.disabled = true;
                 document.getElementById('message-send-btn').disabled = true;
                 
@@ -4545,13 +4484,12 @@ Author: AI for Education (Wenchao Qin)
 
         /**
          * Format understanding_level for display in UI
-         * 格式化 understanding_level 以便在UI中显示
+ * understanding_level UI
          * Only displays if ChatGPT/LLM provided understanding_level
-         * 只有在 ChatGPT/LLM 提供了 understanding_level 时才显示
+ * ChatGPT/LLM understanding_level
          */
         function formatUnderstandingLevel(level) {
             // Only display if level exists and is a valid string
-            // 只有在 level 存在且是有效字符串时才显示
             if (!level || typeof level !== 'string' || level.trim() === '') {
                 return '';
             }
@@ -4565,7 +4503,7 @@ Author: AI for Education (Wenchao Qin)
             
             const config = levelConfig[level.toLowerCase()];
             // Only display if it's a recognized level
-            // 只有在是已识别的级别时才显示
+ //
             if (!config) {
                 return '';
             }
@@ -4581,14 +4519,14 @@ Author: AI for Education (Wenchao Qin)
             const conversationList = document.getElementById('conversation-list');
             
             // Create message wrapper (like chat apps)
-            // 创建消息包装器（类似聊天应用）
+ //
             const messageWrapper = document.createElement('div');
             const messageId = 'msg-' + Date.now() + '-' + Math.random();
             messageWrapper.id = messageId;
             messageWrapper.className = 'message-wrapper ' + role;
             
             // Add sender name above message bubble (like chat apps)
-            // 在消息气泡上方添加发送者名称（类似聊天应用）
+ //
             if (role === 'assistant') {
                 const senderName = document.createElement('div');
                 senderName.className = 'message-sender';
@@ -4597,12 +4535,12 @@ Author: AI for Education (Wenchao Qin)
             }
             
             // Create message bubble
-            // 创建消息气泡
+ //
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message ' + role;
             
             // Support both plain text and HTML content
-            // 支持纯文本和HTML内容
+ // HTML
             if (typeof content === 'string' && content.includes('<')) {
                 messageDiv.innerHTML = content;
             } else {
@@ -4803,7 +4741,7 @@ Author: AI for Education (Wenchao Qin)
             socraticContext = null;
             
             // Reset iterative guidance state
-            // 重置迭代指导状态
+ //
             guidanceDialogueActive = false;
             guidanceContext = null;
             
@@ -4816,37 +4754,30 @@ Author: AI for Education (Wenchao Qin)
 
         /**
          * Trigger thinking prompt - shows prompt in message area for student to explain their reasoning.
-         * 触发思考提示 - 在消息区域显示提示，让学生解释他们的推理过程。
+ * -
          * 
          * This function displays a prompt asking the student to explain their reasoning.
          * Based on tau-bench educational agent policy, we need to understand the student's
          * thinking before deciding whether to DECOMPOSE (break into sub-questions) or
          * CLARIFY (provide direct explanation).
-         * 
-         * 此函数显示一个提示，要求学生解释他们的推理过程。
-         * 基于tau-bench教育助手策略，我们需要在决定是进行DECOMPOSE（分解为子问题）
-         * 还是CLARIFY（提供直接解释）之前了解学生的思考。
-         * 
          * @param {boolean} isAfterWrongAnswer - Whether this is triggered after wrong answer (default: false)
-         *   参数：是否在答错后触发（默认：false）
          */
         function triggerHintAfterWrongAnswer(isAfterWrongAnswer = false) {
             // Validate that we have question data
-            // 验证我们有问题数据
             if (!currentQuestionMeta || !currentData) return;
             
             // Get conversation list container
-            // 获取对话列表容器
+ //
             const conversationList = document.getElementById('conversation-list');
             if (!conversationList) return;
             
             // Check if thinking prompt already exists
-            // 检查思考提示是否已存在
+ //
             const existingPrompt = document.getElementById('thinking-prompt-message');
             if (existingPrompt) return; // Don't show duplicate prompts
             
             // Determine message text based on context
-            // 根据上下文确定消息文本
+ //
             let messageText = '';
             if (isAfterWrongAnswer) {
                 messageText = 'Your answer wasn\'t correct, but that\'s okay! Can you explain your reasoning? What made you choose that answer? This will help me guide you better.';
@@ -4878,38 +4809,36 @@ Author: AI for Education (Wenchao Qin)
         
         /**
          * Submit student's thinking and get guidance (decompose or clarify).
-         * 提交学生的思考并获取指导（分解或澄清）。
+ *
          * 
          * This function:
-         * 此函数：
+ *
          * 1. Collects student's explanation of their reasoning
-         *    收集学生对推理过程的解释
+ *
          * 2. Sends it to backend /evaluate_student_thinking endpoint
-         *    将其发送到后端 /evaluate_student_thinking 端点
          * 3. Backend uses LLM to analyze understanding level and decide action:
-         *    后端使用LLM分析理解程度并决定行动：
+ * LLM
          *    - If understanding_level is "none" or "partial" → action_type = "decompose"
-         *      如果理解程度是"none"或"partial" → 行动类型 = "decompose"
+ * "none""partial" → = "decompose"
          *    - If understanding_level is "close" → action_type = "clarify"
-         *      如果理解程度是"close" → 行动类型 = "clarify"
+ * "close" → = "clarify"
          * 4. Displays appropriate guidance based on action_type:
-         *    根据行动类型显示相应的指导：
+ *
          *    - "decompose": Shows 1-3 simpler sub-questions to guide step-by-step
-         *      "decompose": 显示1-3个更简单的子问题，逐步引导
          *    - "clarify": Shows direct clarification/explanation
-         *      "clarify": 显示直接的澄清/解释
+ * "clarify": /
          * 
          * Error Handling:
-         * 错误处理：
+ *
          * - If backend is unavailable → Shows fallback decomposition questions
-         *   如果后端不可用 → 显示回退的分解问题
+ * →
          * - If API call fails → Shows helpful default questions
-         *   如果API调用失败 → 显示有用的默认问题
+ * API →
          */
         async function submitStudentThinking(optionalStudentThinking) {
             if (costLimitExceeded) return;
             // Get student's thinking: from argument (passed from Send button when in thinking mode) or from main input
-            // 获取学生思考：来自参数（思考模式下由发送按钮传入）或来自主输入框
+ //
             const mainInput = document.getElementById('message-input');
             const inThinkingMode = !!document.getElementById('thinking-prompt-message');
             const studentThinking = optionalStudentThinking !== undefined
@@ -4929,7 +4858,7 @@ Author: AI for Education (Wenchao Qin)
             if (sendBtn) sendBtn.disabled = true;
             
             // Get conversation list and show loading indicator
-            // 获取对话列表并显示加载指示器
+ //
             const conversationList = document.getElementById('conversation-list');
             if (!conversationList) return;
             
@@ -4938,52 +4867,52 @@ Author: AI for Education (Wenchao Qin)
             
             try {
                 // Prepare question data for API call
-                // 准备API调用的问题数据
+ // API
                 const question = currentQuestionMeta.question || currentData.QA.question;
                 
                 // Convert options/choices to choices dictionary (A, B, C, D)
-                // 将选项/选择转换为选择字典（A, B, C, D）
+ // /A, B, C, D
                 let choices = {};
                 
                 // Try multiple data formats to handle different question structures
-                // 尝试多种数据格式以处理不同的题目结构
+ //
                 let optionsArray = null;
                 
                 // Format 1: currentData.QA.choices (array format: ['A. ...', 'B. ...', ...])
-                // 格式1：currentData.QA.choices（数组格式：['A. ...', 'B. ...', ...]）
+ // 1currentData.QA.choices['A. ...', 'B. ...', ...]
                 if (currentData.QA && currentData.QA.choices && Array.isArray(currentData.QA.choices)) {
                     optionsArray = currentData.QA.choices;
                 }
                 // Format 2: Get from original question (allQuestions) if available
-                // 格式2：如果可用，从原始问题（allQuestions）获取
+ // 2allQuestions
                 else if (currentGeneratedIndex >= 0 && currentGeneratedIndex < allQuestions.length) {
                     const originalQ = allQuestions[currentGeneratedIndex];
                     if (originalQ.options && typeof originalQ.options === 'object' && !Array.isArray(originalQ.options)) {
                         // options is an object: {A: "...", B: "...", ...}
-                        // options是对象：{A: "...", B: "...", ...}
+ // options{A: "...", B: "...", ...}
                         choices = { ...originalQ.options };
                         optionsArray = null; // Already converted to choices dict
                     } else if (originalQ.choices && Array.isArray(originalQ.choices)) {
                         // choices is an array: ['A. ...', 'B. ...', ...]
-                        // choices是数组：['A. ...', 'B. ...', ...]
+ // choices['A. ...', 'B. ...', ...]
                         optionsArray = originalQ.choices;
                     }
                 }
                 
                 // Convert array to choices dictionary if needed
-                // 如果需要，将数组转换为选择字典
+ //
                 if (optionsArray && optionsArray.length > 0) {
                     optionsArray.forEach((opt, idx) => {
                         const letter = String.fromCharCode(65 + idx);  // 65 = 'A' in ASCII
                         // Remove prefix "A. " if present
-                        // 如果存在，移除前缀"A. "
+ // "A. "
                         const cleanOpt = typeof opt === 'string' ? opt.replace(/^[A-Z]\.\s*/, '') : opt;
                         choices[letter] = cleanOpt;
                     });
                 }
                 
                 // Fallback: If still empty, use empty object (will cause error but at least won't crash)
-                // 回退：如果仍然为空，使用空对象（会导致错误但至少不会崩溃）
+ //
                 if (Object.keys(choices).length === 0) {
                     console.error('Cannot find options/choices in question data:', {
                         currentData: currentData.QA,
@@ -5000,8 +4929,8 @@ Author: AI for Education (Wenchao Qin)
                 
                 // Call backend API to evaluate student thinking
                 // This endpoint uses LLM to analyze understanding and decide action
-                // 调用后端API评估学生思考
-                // 此端点使用LLM分析理解程度并决定行动
+ // API
+ // LLM
                 let response;
                 try {
                     response = await fetch(RAG_SERVER_URL + '/evaluate_student_thinking', {
@@ -5017,21 +4946,21 @@ Author: AI for Education (Wenchao Qin)
                     });
                 } catch (fetchError) {
                     // Network error - backend might not be running
-                    // 网络错误 - 后端可能未运行
+ // -
                     console.error('Fetch error (backend may not be running):', fetchError);
                     throw new Error('Cannot connect to backend server. Please make sure the Flask server is running on port 5000.');
                 }
                 
-                // 超限时显示横幅和弹窗
+ //
                 if (response.status === 429) {
                     showCostLimitBanner();
-                    alert('Cost limit exceeded. Please try again later.');
+                    showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded');
                     throw new Error('Cost limit exceeded');
                 }
                 if (response.ok) checkCostLimitHeader(response);
                 
                 // Check HTTP response status
-                // 检查HTTP响应状态
+ // HTTP
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Backend error:', response.status, errorText);
@@ -5044,17 +4973,17 @@ Author: AI for Education (Wenchao Qin)
                 }
                 
                 // Parse JSON response
-                // 解析JSON响应
+ // JSON
                 const result = await response.json();
                 
                 // Validate response structure
-                // 验证响应结构
+ //
                 if (!result || result.success === false) {
                     throw new Error(result?.error || 'Backend returned unsuccessful response');
                 }
                 
                 // Remove loading indicator
-                // 移除加载指示器
+ //
                 removeMessageFromConversation(thinkingId);
                 
                 // Remove the thinking prompt box and restore single input for chat
@@ -5070,14 +4999,14 @@ Author: AI for Education (Wenchao Qin)
                     mainInputRestore.focus();
                 }
                 
-                // 仅在有内容且非 Ask Tutor 默认文案时添加用户消息（点 Ask Tutor 时只显示解析，不显示该提示语）
+ // Ask Tutor Ask Tutor
                 const isDefaultAskTutor = /^\s*please explain this question and help me understand\.?\s*$/i.test(studentThinking || '');
                 if (studentThinking && !isDefaultAskTutor) {
                     addMessageToConversation('user', studentThinking);
                 }
                 
                 // Initialize iterative guidance system
-                // 初始化迭代指导系统
+ //
                 guidanceDialogueActive = true;
                 guidanceContext = {
                     originalQuestion: question,
@@ -5096,13 +5025,13 @@ Author: AI for Education (Wenchao Qin)
                 };
                 
                 // Handle response based on action_type from backend
-                // 根据后端返回的action_type处理响应
+ // action_type
                 if (result.success) {
                     // FLOW TERMINATION: Check if student understands (from their thinking)
-                    // 流程中止：检查学生是否理解（从他们的思考中）
+ //
                     if (result.understood || result.understanding_level === 'understood' || result.flow_terminated) {
                         // Student understands - confirm and end guidance immediately
-                        // 学生理解了 - 确认并立即结束指导
+ // -
                         const successHtml = `
                             <div style="color: #374151; font-size: 14px; line-height: 1.7;">
                                 ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
@@ -5118,7 +5047,7 @@ Author: AI for Education (Wenchao Qin)
                         addMessageToConversation('assistant', successHtml, true);
                         
                         // End guidance dialogue
-                        // 结束指导对话
+ //
                         guidanceDialogueActive = false;
                         guidanceContext = null;
                         
@@ -5137,8 +5066,8 @@ Author: AI for Education (Wenchao Qin)
                     if (result.action_type === 'clarify') {
                         // Action: CLARIFY - Student is close but needs minor correction
                         // Show direct clarification/explanation
-                        // 行动：澄清 - 学生接近但需要小幅纠正
-                        // 显示直接的澄清/解释
+ // -
+ // /
                         const clarificationHtml = `
                             <div style="color: #374151; font-size: 14px; line-height: 1.7;">
                                 ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
@@ -5151,9 +5080,9 @@ Author: AI for Education (Wenchao Qin)
                         addMessageToConversation('assistant', clarificationHtml, true);
                     } else if (result.action_type === 'decompose') {
                         // Action: DECOMPOSE - Show sub-questions (no Partial Understanding / template)
-                        // 检测分析失败：模板兜底 或 拆解生成异常
+                        // Decomposition fallback or generation anomaly detection
                         const isTemplateFallback = result.sub_questions && result.sub_questions.length > 0 &&
-                            result.sub_questions.every(q => /key concept|main concept|basic concept|关键概念|key clinical features|relate to the different answer options/i.test(q));
+                            result.sub_questions.every(q => /key concept|main concept|basic concept|key clinical features|relate to the different answer options/i.test(q));
                         const decompositionFailed = result.decomposition_failed || isTemplateFallback;
                         const errDetail = (result.decomposition_error || '').trim();
                         if (decompositionFailed || (result.sub_questions && result.sub_questions.length === 0)) {
@@ -5239,38 +5168,36 @@ Author: AI for Education (Wenchao Qin)
 
         /**
          * Process student's response during iterative guidance loop.
-         * 处理学生在迭代指导循环中的回答。
+ *
          * 
          * This function:
-         * 此函数：
+ *
          * 1. Evaluates student's response to sub-questions or clarifications
-         *    评估学生对子问题或澄清的回答
+ *
          * 2. Determines if student understands
-         *    确定学生是否理解
+ *
          * 3. If not understood: Continue with decompose/clarify
-         *    如果不理解：继续分解/澄清
          * 4. If understood: Confirm and end guidance
-         *    如果理解：确认并结束指导
+ *
          * 5. Loops until student truly understands
-         *    循环直到学生真正理解
+ *
          */
         async function processGuidanceResponse(studentResponse) {
             if (costLimitExceeded) return false;
             if (!guidanceDialogueActive || !guidanceContext) return false;
             
             // Add student's response to conversation
-            // 将学生的回答添加到对话
             addMessageToConversation('user', studentResponse);
             guidanceContext.conversationHistory.push({ role: 'user', content: studentResponse });
             
             // Show thinking indicator
-            // 显示思考指示器
+ //
             const thinkingId = addMessageToConversation('assistant', 
                 '<span style="color: #6b7280;">🤔 Evaluating your response...</span>', true);
             
             try {
                 // Call backend to evaluate student's response
-                // 调用后端评估学生的回答
+ //
                 const response = await fetch(RAG_SERVER_URL + '/evaluate_guidance_response', {
                     method: 'POST',
                     headers: getSessionHeaders(),
@@ -5289,7 +5216,7 @@ Author: AI for Education (Wenchao Qin)
                     })
                 });
                 
-                if (response.status === 429) { showCostLimitBanner(); alert('Cost limit exceeded. Please try again later.'); throw new Error('Cost limit exceeded'); }
+                if (response.status === 429) { showCostLimitBanner(); showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded'); throw new Error('Cost limit exceeded'); }
                 if (response.ok) checkCostLimitHeader(response);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -5303,7 +5230,7 @@ Author: AI for Education (Wenchao Qin)
                 }
                 
                 // Update guidance context
-                // 更新指导上下文
+ //
                 guidanceContext.roundNumber++;
                 guidanceContext.understandingLevel = result.understanding_level;
                 guidanceContext.currentAction = result.next_action_type;
@@ -5315,15 +5242,15 @@ Author: AI for Education (Wenchao Qin)
                 });
                 
                 // CRITICAL: Check if flow should terminate (only one evaluation, then exit)
-                // 关键：检查流程是否应该终止（只执行一次评估，然后退出）
+ //
                 if (result.flow_terminated || result.understood || !result.next_action_type) {
                     // Flow should terminate - show final message and end guidance
-                    // 流程应该终止 - 显示最终消息并结束指导
+ // -
                     let finalHtml = '';
                     
                     if (result.understood) {
                         // Student understands - confirm
-                        // 学生理解了 - 确认
+ // -
                         finalHtml = `
                             <div style="color: #374151; font-size: 14px; line-height: 1.7;">
                                 ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
@@ -5338,7 +5265,7 @@ Author: AI for Education (Wenchao Qin)
                         `;
                     } else {
                         // Flow terminated for other reasons (cannot decompose further, clarification already exists, etc.)
-                        // 流程因其他原因终止（无法继续分解、clarification已存在等）
+ // clarification
                         finalHtml = `
                             <div style="color: #374151; font-size: 14px; line-height: 1.7;">
                                 ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
@@ -5356,7 +5283,7 @@ Author: AI for Education (Wenchao Qin)
                     addMessageToConversation('assistant', finalHtml, true);
                     
                     // End guidance dialogue - no more input expected
-                    // 结束指导对话 - 不再期望输入
+ // -
                     guidanceDialogueActive = false;
                     guidanceContext = null;
                     
@@ -5364,10 +5291,10 @@ Author: AI for Education (Wenchao Qin)
                 }
                 
                 // Student doesn't understand yet - continue guidance (but this should rarely happen now)
-                // 学生还不理解 - 继续指导（但现在这应该很少发生）
+ // -
                 if (result.next_action_type === 'clarify') {
                     // Provide clarification
-                    // 提供澄清
+ //
                     const clarificationHtml = `
                         <div style="color: #374151; font-size: 14px; line-height: 1.7;">
                             ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
@@ -5380,7 +5307,7 @@ Author: AI for Education (Wenchao Qin)
                     addMessageToConversation('assistant', clarificationHtml, true);
                 } else if (result.next_action_type === 'decompose') {
                     // Decompose further
-                    // 进一步分解
+ //
                     let questionsHtml = `
                         <div style="color: #374151; font-size: 14px; line-height: 1.7;">
                             ${result.understanding_level ? formatUnderstandingLevel(result.understanding_level) : ''}
@@ -5447,7 +5374,7 @@ Author: AI for Education (Wenchao Qin)
             }
             
             // Note: No hard limit on hint rounds - system will intelligently decide when to end
-            // 注意：提示轮次无硬性限制 - 系统将智能决定何时结束
+ // -
             
             // Add user's hint request to chat history (for ChatGPT context)
             const userHintRequest = currentHintRound === 0 
@@ -5499,7 +5426,7 @@ Author: AI for Education (Wenchao Qin)
                     headers: getSessionHeaders(),
                     body: JSON.stringify(requestData)
                 });
-                if (response.status === 429) { showCostLimitBanner(); alert('Cost limit exceeded. Please try again later.'); throw new Error('Cost limit exceeded'); }
+                if (response.status === 429) { showCostLimitBanner(); showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded'); throw new Error('Cost limit exceeded'); }
                 if (response.ok) checkCostLimitHeader(response);
                 const result = await response.json();
                 
@@ -5540,14 +5467,14 @@ Author: AI for Education (Wenchao Qin)
         
         // ============================================================
         // Iterative Guidance System - Continuous Learning Loop
-        // 迭代指导系统 - 持续学习循环
+ // -
         // ============================================================
         // This system guides students through multiple rounds until they understand
-        // 此系统通过多轮指导直到学生理解
+ //
         let guidanceDialogueActive = false;   // Are we in iterative guidance mode?
         let guidanceContext = null;           // Current guidance state tracking
         // Structure of guidanceContext:
-        // guidanceContext结构：
+ // guidanceContext
         // {
         //     originalQuestion: string,           // Original medical question
         //     choices: object,                    // Answer options
@@ -5591,11 +5518,11 @@ Author: AI for Education (Wenchao Qin)
             
             
             // Ask first question(s) based on complexity
-            // 根据复杂度提问（无数量限制）
+ //
             // Simpler questions: 1 question at a time
-            // 简单问题：一次一个
+ //
             // Complex questions: can show multiple initial questions
-            // 复杂问题：可以显示多个初始问题
+ //
             setTimeout(() => {
                 let questionHtml = "";
                 
@@ -5604,7 +5531,7 @@ Author: AI for Education (Wenchao Qin)
                 
                 if (initialCount >= 2) {
                     // Show multiple initial questions for complex topics
-                    // 为复杂主题显示多个初始问题
+ //
                     questionHtml = `<div style="color: #374151; font-size: 14px; line-height: 1.7;">`;
                     
                     for (let i = 0; i < initialCount; i++) {
@@ -5679,7 +5606,7 @@ Author: AI for Education (Wenchao Qin)
                 addMessageToConversation('assistant', responseHtml, true);
                 
                 // Check if we should end the dialogue
-                // 检查是否应该结束对话（仅基于LLM的智能判断，无硬性限制）
+ // LLM
                 if (socraticContext.shouldEnd) {
                     endSocraticDialogue();
                 }
@@ -5797,7 +5724,7 @@ ${(() => {
                 max_tokens: 400,
                 response_format: { type: "json_object" }
             };
-            // RAG 可用时走代理（统计费用并限制），否则直连 OpenAI
+ // RAG OpenAI
             const response = ragServerAvailable
                 ? await fetch(RAG_SERVER_URL + '/chat_completion', {
                     method: 'POST',
@@ -5811,7 +5738,7 @@ ${(() => {
                 });
             if (response.status === 429) {
                 showCostLimitBanner();
-                alert('Cost limit exceeded. Please try again later.');  // 超出每小时成本限额
+                showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded');
                 throw new Error('Cost limit exceeded');
             }
             if (ragServerAvailable && response.ok) checkCostLimitHeader(response);
@@ -5843,12 +5770,12 @@ ${(() => {
             }
             
             // Track decomposition rounds (for reference only, no hard limit)
-            // 跟踪分解轮次（仅用于参考，无硬性限制）
+ //
             if (result.next_action === "decompose") {
                 socraticContext.decompositionRounds++;
                 
                 // Make decomposition more obvious
-                // 使分解更加明显
+ //
                 if (result.questions && result.questions.length > 1) {
                     reply += "**🔍 Let me break this down into simpler questions:**\n\n";
                 } else if (result.questions && result.questions.length === 1) {
@@ -5919,27 +5846,27 @@ ${(() => {
         
         /**
          * End Socratic dialogue with synthesis (without revealing answer)
-         * 结束苏格拉底式对话，并将对话历史合并到ChatGPT历史中
+ * ChatGPT
          */
         function endSocraticDialogue() {
             socraticDialogueActive = false;
             
             // Merge Socratic dialogue history into ChatGPT conversation history
-            // 将苏格拉底式对话历史合并到ChatGPT对话历史中
+ // ChatGPT
             // This allows ChatGPT to have context about the previous Socratic questions and answers
-            // 这样ChatGPT就能获得之前苏格拉底式问题和回答的上下文
+ // ChatGPT
             if (hintConversationHistory.length > 0) {
                 // Convert hint conversation history to a format ChatGPT can understand
-                // 将提示对话历史转换为ChatGPT可以理解的格式
+ // ChatGPT
                 const socraticSummary = hintConversationHistory.map(msg => {
                     // Format the content for ChatGPT context
-                    // 格式化内容以供ChatGPT上下文使用
+ // ChatGPT
                     if (msg.role === 'assistant') {
                         // Extract questions from assistant messages
-                        // 从助手消息中提取问题
+ //
                         const content = msg.content || '';
                         // Try to extract meaningful questions/statements
-                        // 尝试提取有意义的问题/陈述
+ // /
                         if (content.includes('Question:') || content.includes('Questions:')) {
                             return {
                                 role: 'assistant',
@@ -5957,7 +5884,7 @@ ${(() => {
                         };
                     } else {
                         // User responses in Socratic dialogue
-                        // 苏格拉底式对话中的用户回答
+ //
                         return {
                             role: 'user',
                             content: `[Student Response to Socratic Question] ${msg.content}`
@@ -5966,7 +5893,7 @@ ${(() => {
                 });
                 
                 // Add to messageChatHistory so ChatGPT can access it
-                // 添加到messageChatHistory，以便ChatGPT可以访问
+ // messageChatHistoryChatGPT
                 messageChatHistory.push(...socraticSummary);
             }
             
@@ -6084,11 +6011,11 @@ ${(() => {
             const exactPhrases = [
                 'give me a hint', 'give me hint', 'need a hint', 'need hint',
                 'more hints', 'another hint', 'get hint', 'want hint',
-                '给我提示', '需要提示', '给个提示', '来点提示'
+ '', '', '', ''
             ];
             
             // Check if message is very short and contains hint-related word
-            const shortHintWords = ['hint', 'hints', '提示'];
+ const shortHintWords = ['hint', 'hints', ''];
             
             const messageLower = message.toLowerCase().trim();
             
@@ -6126,312 +6053,295 @@ ${(() => {
 
         // ============================================================
         // Next Question Button Event Handler
-        // "下一个"按钮事件处理器
+ // ""
         // ============================================================
         //
         // Function: Handle clicks on the "Next" / "Finish" button
-        // 功能：处理"Next" / "Finish"按钮的点击事件
+ // "Next" / "Finish"
         //
         // Behavior:
-        //   行为：
+ //
         //   1. If NOT on last question: Load next question
-        //      如果不在最后一题：加载下一题
+ //
         //   2. If on last question: Show completion message and ask if restart
-        //      如果在最后一题：显示完成消息并询问是否重新开始
+ //
         //
         // Completion Flow (when all questions are done):
-        //   完成流程（当所有题目都完成时）：
+ //
         //   1. User clicks "Finish ✓" button (shown on last question)
-        //      用户点击"Finish ✓"按钮（在最后一题时显示）
+ // "Finish ✓"
         //   2. System detects: next index >= total questions
-        //      系统检测：下一个索引 >= 总题目数
+ // >=
         //   3. Show congratulation alert with total question count
-        //      显示包含总题目数的祝贺提示
+ //
         //   4. Ask user if they want to restart from beginning
-        //      询问用户是否想从头重新开始
+ //
         //   5. If yes: Load first question (index 0)
-        //      如果是：加载第一题（索引0）
+ // 0
         //   6. If no: Stay on last question
-        //      如果否：停留在最后一题
+ //
         //
         // ============================================================
         document.getElementById('next-q')?.addEventListener('click', () => {
             // Guard: Check if questions are loaded
-            // 保护：检查题目是否已加载
+ //
             if (!allQuestions.length) return;
             
             // Calculate next question index
-            // 计算下一题的索引
+ //
             const next = currentGeneratedIndex + 1;
             
             // ============================================================
             // Case 1: There is a next question
-            // 情况1：还有下一题
+ // 1
             // ============================================================
             // 
             // Condition: next < allQuestions.length
-            // 条件：next < allQuestions.length
+ // next < allQuestions.length
             // 
             // Example:
-            //   示例：
+ //
             //   - Current: question 100 (index 99)
-            //     当前：第100题（索引99）
+ // 10099
             //   - Next: question 101 (index 100)
-            //     下一题：第101题（索引100）
+ // 101100
             //   - 100 < 479? Yes → Load next question
-            //     100 < 479？是 → 加载下一题
+ // 100 < 479 →
             //
             if (next < allQuestions.length) {
                 // Load the next question
-                // 加载下一题
+ //
                 loadQuestionByIndex(next);
             } 
             // ============================================================
             // Case 2: All questions completed (on last question)
-            // 情况2：所有题目已完成（在最后一题）
+ // 2
             // ============================================================
             // 
             // Condition: next >= allQuestions.length
-            // 条件：next >= allQuestions.length
+ // next >= allQuestions.length
             // 
             // This means:
-            //   这意味着：
+ //
             //   - Current index is the last question (allQuestions.length - 1)
-            //     当前索引是最后一题（allQuestions.length - 1）
+ // allQuestions.length - 1
             //   - Next index would be >= total questions (out of bounds)
-            //     下一个索引将 >= 总题目数（超出范围）
+ // >=
             //   - User has completed all questions
-            //     用户已完成所有题目
+ //
             //
             // Example:
-            //   示例：
+ //
             //   - Total: 479 questions (indices 0-478)
-            //     总共：479题（索引0-478）
+ // 4790-478
             //   - Current: question 479 (index 478, last question)
-            //     当前：第479题（索引478，最后一题）
+ // 479478
             //   - Next: index 479
-            //     下一题：索引479
+ // 479
             //   - 479 >= 479? Yes → All questions completed!
-            //     479 >= 479？是 → 所有题目已完成！
+ // 479 >= 479 →
             //
             else {
                 // ============================================================
                 // Step 1: Show Completion Congratulations Alert
-                // 步骤1：显示完成祝贺提示
+ // 1
                 // ============================================================
                 // 
                 // Display a congratulatory message to celebrate completion
-                // 显示祝贺消息以庆祝完成
+ //
                 // 
                 // Alert Content:
-                //   提示内容：
+ //
                 //   - Emoji: 🎉 (celebration)
-                //     表情符号：🎉（庆祝）
+ // 🎉
                 //   - Message: "Congratulations! You have completed all X questions."
-                //     消息："Congratulations! You have completed all X questions."
+ // "Congratulations! You have completed all X questions."
                 //   - X: Total number of questions (e.g., 479)
-                //     X：总题目数（例如：479）
+ // X479
                 //
                 // This is a blocking alert (user must click OK to continue)
-                // 这是一个阻塞式提示（用户必须点击OK才能继续）
+ // OK
                 //
                 alert(`🎉 Congratulations! You have completed all ${allQuestions.length} questions.`);
                 
                 // ============================================================
                 // Step 2: Ask if User Wants to Restart
-                // 步骤2：询问用户是否想重新开始
+ // 2
                 // ============================================================
                 // 
                 // After showing congratulations, ask if user wants to restart
-                // 显示祝贺后，询问用户是否想重新开始
+ //
                 //
                 // Confirm Dialog:
-                //   确认对话框：
+ //
                 //   - Shows: "Would you like to restart from the beginning?"
-                //     显示："Would you like to restart from the beginning?"
+ // "Would you like to restart from the beginning?"
                 //   - Two buttons: OK (true) and Cancel (false)
-                //     两个按钮：OK（true）和Cancel（false）
+ // OKtrueCancelfalse
                 //
                 // User Choices:
-                //   用户选择：
+ //
                 //   - Click OK (true): Restart from question 1
-                //     点击OK（true）：从第1题重新开始
+ // OKtrue1
                 //   - Click Cancel (false): Stay on last question
-                //     点击Cancel（false）：停留在最后一题
+ // Cancelfalse
                 //
                 if (confirm('Would you like to restart from the beginning?')) {
                     // User chose to restart: Load first question (index 0)
-                    // 用户选择重新开始：加载第一题（索引0）
+ // 0
                     loadQuestionByIndex(0);
                 }
                 // If user chose Cancel, do nothing (stay on last question)
-                // 如果用户选择Cancel，不执行任何操作（停留在最后一题）
+ // Cancel
             }
         });
 
         // ============================================================
         // Jump to Question Functionality - Core Function
-        // 跳转到指定题目功能 - 核心函数
+ // -
         // ============================================================
         //
         // This function implements the core logic for jumping to a specific question.
-        // 此函数实现跳转到指定题目的核心逻辑。
+ //
         //
         // Overview:
-        //   概述：
+ //
         //   - Takes a question number (1-based, user-friendly)
-        //     接收题目编号（从1开始，用户友好）
+ // 1
         //   - Converts to 0-based array index (internal representation)
-        //     转换为从0开始的数组索引（内部表示）
+ // 0
         //   - Validates the range
-        //     验证范围
+ //
         //   - Loads and displays the target question
-        //     加载并显示目标题目
+ //
         //   - Updates the input field to reflect current position
-        //     更新输入框以反映当前位置
+ //
         //
         // ============================================================
         
         /**
          * Jump to a specific question by number (1-based)
-         * 跳转到指定题目编号（从1开始）
+ * 1
          * 
          * @param {number} questionNumber - Question number (1-based, user-friendly)
-         *   参数：题目编号（从1开始，用户友好）
+ * 1
          *   Example: questionNumber = 100 means "jump to question 100"
-         *   示例：questionNumber = 100 表示"跳转到第100题"
+ * questionNumber = 100 "100"
          * 
          * @returns {void}
-         *   返回：无返回值
+ *
          * 
          * Side Effects:
-         *   副作用：
+ *
          *   - Updates currentGeneratedIndex global variable
-         *     更新全局变量currentGeneratedIndex
          *   - Calls loadQuestionByIndex() to load and display the question
-         *     调用loadQuestionByIndex()加载并显示题目
          *   - Updates jump-to-input field value
-         *     更新跳转输入框的值
          *   - May show alert messages for validation errors
-         *     可能显示验证错误提示
-         * 
          * Error Handling:
-         *   错误处理：
          *   - If questions not loaded: Shows alert and returns early
-         *     如果题目未加载：显示提示并提前返回
          *   - If number out of range: Shows alert with valid range and returns early
-         *     如果数字超出范围：显示包含有效范围的提示并提前返回
-         * 
          * Example Usage:
-         *   使用示例：
          *   jumpToQuestion(1);   // Jump to first question
-         *                        // 跳转到第一题
          *   jumpToQuestion(100); // Jump to 100th question
-         *                        // 跳转到第100题
          *   jumpToQuestion(479); // Jump to last question (if 479 questions total)
-         *                        // 跳转到最后一题（如果总共479题）
          */
         function jumpToQuestion(questionNumber) {
             // ============================================================
             // Step 1: Check if questions are loaded
-            // 步骤1：检查题目是否已加载
             // ============================================================
-            // 
-            // This validation ensures that allQuestions array exists and has content
-            // 此验证确保allQuestions数组存在且有内容
-            // Without this check, the function would fail when called before questions are loaded
-            // 没有此检查，在题目加载前调用函数会失败
+            // This validation ensures that allQuestions array exists and has content.
+            // Without this check, the function would fail when called before questions are loaded.
             //
             if (!allQuestions || allQuestions.length === 0) {
                 alert('Please load questions first');
                 return;  // Early return: cannot proceed without questions
-                         // 提前返回：没有题目无法继续
+ //
             }
             
             // ============================================================
             // Step 2: Convert 1-based question number to 0-based array index
-            // 步骤2：将基于1的题目编号转换为基于0的数组索引
+ // 210
             // ============================================================
             // 
             // User input is 1-based (question 1, 2, 3, ...) for user-friendliness
-            // 用户输入是基于1的（题目1、2、3...）以便用户友好
+ // 1123...
             // But JavaScript arrays are 0-based (index 0, 1, 2, ...)
-            // 但JavaScript数组是基于0的（索引0、1、2...）
+ // JavaScript0012...
             // So we need to convert: index = questionNumber - 1
-            // 所以需要转换：索引 = 题目编号 - 1
+ // = - 1
             //
             // Example:
-            //   示例：
+ //
             //   - User enters: 100 (wants question 100)
-            //     用户输入：100（想要第100题）
+ // 100100
             //   - Convert to: index = 100 - 1 = 99 (array index for question 100)
-            //     转换为：索引 = 100 - 1 = 99（第100题的数组索引）
+ // = 100 - 1 = 99100
             //
             const index = questionNumber - 1;
             
             // ============================================================
             // Step 3: Validate the index is within valid range
-            // 步骤3：验证索引在有效范围内
+ // 3
             // ============================================================
             // 
             // Check if the calculated index is valid:
-            // 检查计算出的索引是否有效：
+ //
             // - index < 0: User entered 0 or negative number (invalid)
-            //   index < 0：用户输入了0或负数（无效）
+ // index < 00
             // - index >= allQuestions.length: User entered number greater than total questions (invalid)
-            //   index >= allQuestions.length：用户输入的数字大于总题目数（无效）
+ // index >= allQuestions.length
             //
             // Valid range: 0 <= index < allQuestions.length
-            // 有效范围：0 <= index < allQuestions.length
+ // 0 <= index < allQuestions.length
             //
             if (index < 0 || index >= allQuestions.length) {
                 // Invalid range: show error message with valid range
-                // 无效范围：显示包含有效范围的错误消息
+ //
                 alert(
                     `Invalid question number.\n` +
                     `Please enter a number between 1 and ${allQuestions.length}`
                 );
                 return;  // Early return: cannot proceed with invalid index
-                         // 提前返回：无效索引无法继续
+ //
             }
             
             // ============================================================
             // Step 4: Jump to the question
-            // 步骤4：跳转到该题目
+ // 4
             // ============================================================
             // 
             // Call loadQuestionByIndex() which:
-            // 调用loadQuestionByIndex()，它会：
+ // loadQuestionByIndex()
             // - Updates currentGeneratedIndex global variable
-            //   更新全局变量currentGeneratedIndex
+ // currentGeneratedIndex
             // - Loads question data from allQuestions array
-            //   从allQuestions数组加载题目数据
+ // allQuestions
             // - Renders question text, options, and resets answer selection
-            //   渲染题目文本、选项，并重置答案选择
+ //
             // - Updates progress display
-            //   更新进度显示
+ //
             //
             loadQuestionByIndex(index);
             
             // ============================================================
             // Step 5: Update input field to reflect current position
-            // 步骤5：更新输入框以反映当前位置
+ // 5
             // ============================================================
             // 
             // After jumping, update the input field value to show the current question number
-            // 跳转后，更新输入框的值以显示当前题目编号
+ //
             // This provides visual feedback that the jump was successful
-            // 这提供了视觉反馈，表明跳转成功
+ //
             //
             const jumpInput = document.getElementById('jump-to-input');
             if (jumpInput) {
                 jumpInput.value = questionNumber;  // Set to the question number we just jumped to
-                                                     // 设置为刚刚跳转到的题目编号
+ //
             }
         }
         
         // Note: Jump to question button event listeners are set up in setupEventListeners()
-        // 注意：跳转按钮的事件监听器在setupEventListeners()函数中设置
+ // setupEventListeners()
 
         // -------- Generate 5 Questions from current case --------
         document.getElementById('gen-5-btn')?.addEventListener('click', async () => {
@@ -6577,7 +6487,7 @@ ${(() => {
 
 ### Citation Rules:
 1. **Every fact, claim, or piece of information** you provide MUST be followed by a citation
-2. **Citation format is MANDATORY**: **[Source: PDF名称, Page X]** or **[来源: PDF名称, 第X页]**
+2. **Citation format is MANDATORY**: **[Source: PDF, Page X]** or **[: PDF, X]**
 3. **Every chunk** you use MUST be cited with its exact PDF name and page number
 4. **Multiple sources**: If you use information from multiple chunks, cite ALL of them
 5. **Inline citations**: Place citations immediately after the relevant information, not at the end
@@ -6596,7 +6506,7 @@ ${(() => {
 ### Response Structure:
 Your response MUST follow this structure:
 1. Answer the student's question
-2. **For EVERY piece of information**, immediately cite the source: **[Source: PDF名称, Page X]**
+2. **For EVERY piece of information**, immediately cite the source: **[Source: PDF, Page X]**
 3. If using multiple chunks, cite each one separately where relevant
 
 **REMEMBER: A response without citations is INCOMPLETE and UNACCEPTABLE.**`;
@@ -6650,7 +6560,7 @@ Your response MUST follow this structure:
             // RAG: Add source chunks with full citation info
             // ========================================
             let ragContext = '\n\n## SOURCE CHUNKS FROM MEDICAL GUIDELINES\n';
-            ragContext += '(Use these sources to answer questions. ALWAYS cite with [Source: PDF名称, Page X])\n';
+ ragContext += '(Use these sources to answer questions. ALWAYS cite with [Source: PDF, Page X])\n';
             
             // Track all sources for summary
             const allSources = [];
@@ -6714,7 +6624,7 @@ Your response MUST follow this structure:
             ragContext += '\n';
             ragContext += '⚠️ **MANDATORY CITATION REQUIREMENT**:\n';
             ragContext += '- You MUST cite EVERY chunk you use in your answer\n';
-            ragContext += '- Use format: **[Source: PDF名称, Page X]** immediately after each fact\n';
+ ragContext += '- Use format: **[Source: PDF, Page X]** immediately after each fact\n';
             ragContext += '- Do NOT provide information without citations\n';
             ragContext += '- If you use information from Chunk 0, cite it: **[Source: ' + (allSources[0]?.pdf || 'Unknown') + ', Page ' + (allSources[0]?.page || 'N/A') + ']**\n';
             if (allSources.length > 1) {
@@ -6746,7 +6656,7 @@ Your response MUST follow this structure:
             // Build full context for user message
             // This includes: current question, feedback, source chunks, and student's question
             // Add MANDATORY citation requirement at the end
-            const citationRequirement = `\n\n---\n## ⚠️ MANDATORY REQUIREMENT\n\nYou MUST include citations in your answer. For EVERY piece of information you provide:\n1. Immediately cite the source using: **[Source: PDF名称, Page X]**\n2. Use the exact PDF name and page number from the chunks above\n3. Do NOT provide any information without a citation\n4. If you use multiple chunks, cite each one separately\n\nExample: "The treatment protocol **[Source: ${allSources[0]?.pdf || 'Guidelines.pdf'}, Page ${allSources[0]?.page || 'X'}]** recommends..."\n\nYour answer MUST include citations. A response without citations is incomplete.`;
+ const citationRequirement = `\n\n---\n## ⚠️ MANDATORY REQUIREMENT\n\nYou MUST include citations in your answer. For EVERY piece of information you provide:\n1. Immediately cite the source using: **[Source: PDF, Page X]**\n2. Use the exact PDF name and page number from the chunks above\n3. Do NOT provide any information without a citation\n4. If you use multiple chunks, cite each one separately\n\nExample: "The treatment protocol **[Source: ${allSources[0]?.pdf || 'Guidelines.pdf'}, Page ${allSources[0]?.page || 'X'}]** recommends..."\n\nYour answer MUST include citations. A response without citations is incomplete.`;
             
             const fullContext = questionContext + `\n\nStudent Question: ${message}` + citationRequirement;
 
@@ -6775,7 +6685,7 @@ Your response MUST follow this structure:
             };
 
             let assistantResponse;
-            // RAG 可用时走代理（统计费用并限制），否则直连 OpenAI
+ // RAG OpenAI
             if (ragServerAvailable) {
                 const resp = await fetch(RAG_SERVER_URL + '/chat_completion', {
                     method: 'POST',
@@ -6784,7 +6694,7 @@ Your response MUST follow this structure:
                 });
                 if (resp.status === 429) {
                     showCostLimitBanner();
-                    alert('Cost limit exceeded. Please try again later.');  // 超出每小时成本限额
+                    showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded');
                     throw new Error('Cost limit exceeded');
                 }
                 if (resp.ok) checkCostLimitHeader(resp);

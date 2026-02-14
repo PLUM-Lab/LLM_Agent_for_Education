@@ -197,7 +197,7 @@ def start_http_server(port=8000):
             print(f"Please try a different port or stop the process using this port")
             return False
         else:
-            print(f"✗ HTTP server startup failed: {e}")
+            print(f"[FAIL] HTTP server startup failed: {e}")
             return False
     except KeyboardInterrupt:
         print("\n[HTTP Server] Shutting down...")
@@ -275,7 +275,7 @@ def start_evaluator_server(port=8001):
             print(f"Please try a different port: python start.py --evaluator --port {port + 1}")
             return False
         else:
-            print(f"✗ Server startup failed: {e}")
+            print(f"[FAIL] Server startup failed: {e}")
             return False
     except KeyboardInterrupt:
         print("\n[Evaluator Interface Server] Shutting down...")

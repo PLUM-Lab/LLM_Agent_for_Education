@@ -808,24 +808,24 @@ def get_api_key() -> str:
 
 
 def _categorize_error(err_msg: str) -> str:
-    """将异常信息转为用户可理解的失败原因"""
+    """Convert exception message to a user-friendly error reason (English)."""
     s = (err_msg or "").lower()
     if "api" in s and ("key" in s or "invalid" in s or "incorrect" in s):
-        return "API 密钥无效或未配置"
+        return "API key invalid or not configured."
     if "billing" in s or "account" in s and "not active" in s:
-        return "OpenAI 账户未激活，请到 platform.openai.com 完成账单设置"
-    if "quota" in s or "insufficient" in s or "exceeded" in s:
-        return "API 额度不足或超出限制"
+        return "OpenAI account not activated. Complete billing at platform.openai.com."
+    if "quota" in s or "insufficient" in s or "exceeded" in s or "429" in s or "cost limit" in s:
+        return "Cost limit exceeded. Please try again later."
     if "rate" in s and "limit" in s:
-        return "请求过于频繁，请稍后重试"
+        return "Too many requests. Please try again later."
     if "timeout" in s or "timed out" in s:
-        return "网络超时"
+        return "Request timed out."
     if "connection" in s or "refused" in s or "unreachable" in s:
-        return "网络连接失败"
+        return "Network connection failed."
     if "json" in s or "parse" in s:
-        return "LLM 返回格式异常"
+        return "LLM returned invalid format."
     if "context" in s and "length" in s:
-        return "问题或上下文过长"
+        return "Question or context too long."
     if len(err_msg) > 80:
         return err_msg[:80] + "..."
     return err_msg
@@ -1010,7 +1010,7 @@ Follow the format in my instructions exactly.
                     expected_understanding=step_data.get("expected_understanding", "")
                 ))
             if not steps:
-                raise RuntimeError("LLM 返回的问题均为通用模板，无法生成针对本题的引导。请重试。")
+                raise RuntimeError("LLM returned only generic template questions. Please try again.")
             
             decomposition = ProblemDecomposition(
                 original_question=request.question,
@@ -1028,7 +1028,7 @@ Follow the format in my instructions exactly.
             
         except Exception as e:
             # 不再返回无意义的模板问题，直接抛出以便前端显示具体错误
-            raise RuntimeError(f"问题拆解失败。{_categorize_error(str(e))}") from e
+            raise RuntimeError(f"Decomposition failed. {_categorize_error(str(e))}") from e
     
     def evaluate_student_thinking(
         self,
@@ -1204,7 +1204,7 @@ Respond with valid JSON only.
                             print(f"[DEBUG] No valid sub-questions after validation (all {len(raw_sub_questions)} filtered as generic/invalid)")
                             result["sub_questions"] = []
                             result["decomposition_failed"] = True
-                            result["decomposition_error"] = "LLM 返回了通用模板问题，未能生成针对本题的子问题。请检查 API 或重试。"
+                            result["decomposition_error"] = "LLM returned generic template questions. Please check API or try again."
                         else:
                             result["sub_questions"] = sub_questions  # Prompt asks ChatGPT for at most 2; show whatever is returned
                     except Exception as e:
@@ -1237,7 +1237,7 @@ Respond with valid JSON only.
             except Exception as e2:
                 print(f"Fallback generate_sub_questions also failed: {e2}")
             err_hint = _categorize_error(str(e))
-            raise RuntimeError(f"Tutor 无法生成引导问题。{err_hint}") from e
+            raise RuntimeError(f"Tutor could not generate guidance. {err_hint}") from e
     
     def _validate_question(self, question: str) -> bool:
         """验证问题 - 确保不为空、不只是符号、不只是单个字符、非通用模板
