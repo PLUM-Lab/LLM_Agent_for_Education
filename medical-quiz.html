@@ -156,8 +156,8 @@ Author: AI for Education (Wenchao Qin)
 
         .right-panel {
             width: 25vw;
-            min-width: 320px;
-            max-width: 480px;
+            min-width: 200px;
+            max-width: 90vw;
             background: #fafafa;
             display: flex;
             flex-direction: column;
@@ -697,6 +697,11 @@ Author: AI for Education (Wenchao Qin)
         var valid = users.some(function(x) { return x.username === username && x.password === password; });
         if (!valid) { err.textContent = 'Invalid username or password. Please try again.'; return; }
         sessionStorage.setItem('quiz_auth', '1'); sessionStorage.setItem('quiz_user', username);
+        try {
+          var profile = null;
+          try { var p = localStorage.getItem('student_profile_' + username); if (p) profile = JSON.parse(p); } catch(e) {}
+          if (window.logActivity) window.logActivity('login', username, profile);
+        } catch(e) {}
         err.textContent = ''; ls.classList.add('hidden'); qa.classList.remove('hidden');
         if (typeof window.initQuiz === 'function') { window.initQuiz(); } else { location.reload(); }
       }
@@ -892,7 +897,10 @@ Author: AI for Education (Wenchao Qin)
              - After submission: Display complete feedback information
              ============================================================ -->
         <div class="section">
-            <div class="section-title">Feedback</div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px;">
+                <div class="section-title" style="margin: 0;">Feedback</div>
+                <button type="button" id="get-hints-btn" class="submit-btn" style="padding: 8px 16px; font-size: 14px;">Get Hints</button>
+            </div>
             <div class="feedback-container empty" id="feedback-container">
                 No feedback yet
             </div>
@@ -2387,10 +2395,10 @@ Author: AI for Education (Wenchao Qin)
             document.addEventListener('mousemove', (e) => {
                 if (!isResizing) return;
                 
-                const diff = startX - e.clientX; // Inverted because we're resizing from right
+                const diff = startX - e.clientX;
                 const newWidth = startWidth + diff;
-                const minWidth = 300;
-                const maxWidth = 800;
+                const minWidth = 200;
+                const maxWidth = Math.floor(window.innerWidth * 0.9);
                 
                 if (newWidth >= minWidth && newWidth <= maxWidth) {
                     rightPanel.style.width = newWidth + 'px';
@@ -2436,6 +2444,7 @@ Author: AI for Education (Wenchao Qin)
             const selector = document.getElementById('qbank-selector');
             const source = (selector && selector.value) ? selector.value : 'generated_surgery_domain_questions.json';
             await loadQuestionsFromFile(source);
+            resetInactivityTimer();
         }
         window.initQuiz = initQuiz;
 
@@ -2466,6 +2475,11 @@ Author: AI for Education (Wenchao Qin)
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', async function() {
+            // Activity listeners for 15-min inactivity logout (only reset when logged in and quiz visible)
+            ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(function(ev) {
+                document.addEventListener(ev, resetInactivityTimer);
+            });
+
             const loginScreen = document.getElementById('login-screen');
             const quizApp = document.getElementById('quiz-app');
             const loginCard = document.getElementById('login-card');
@@ -2510,15 +2524,20 @@ Author: AI for Education (Wenchao Qin)
             } catch (err) { console.warn('Login UI setup:', err); }
 
             if (!sessionStorage.getItem('quiz_auth')) {
- // initQuiz
                 loginScreen.classList.remove('hidden');
                 quizApp.classList.add('hidden');
                 return;
             }
- //
             loginScreen.classList.add('hidden');
             quizApp.classList.remove('hidden');
+            try {
+                var user = sessionStorage.getItem('quiz_user');
+                var profile = null;
+                try { var p = localStorage.getItem('student_profile_' + (user || '')); if (p) profile = JSON.parse(p); } catch(e) {}
+                if (window.logActivity) window.logActivity('login', user || 'unknown', profile);
+            } catch(e) {}
             await initQuiz();
+            resetInactivityTimer();
         });
 
         // Setup question bank selector
@@ -3094,6 +3113,21 @@ Author: AI for Education (Wenchao Qin)
         const RAG_SERVER_URL = 'http://' + (window.location.hostname || '127.0.0.1') + ':5000';
         let ragServerAvailable = false;
 
+        /** Log login/logout to backend (user_activity_log.json). Silently ignore if server unavailable. */
+        window.logActivity = function(event, user, profile) {
+            var url = RAG_SERVER_URL + '/activity_log';
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event: event || 'login',
+                    user: user || 'unknown',
+                    timestamp: new Date().toISOString(),
+                    profile: profile || undefined
+                })
+            }).catch(function() {});
+        };
+
         /** Show in-page alert with English title and OK button (avoids browser 确定 / localhost title). */
         function showAppAlert(message, title) {
             title = title || 'Notice';
@@ -3194,6 +3228,29 @@ Author: AI for Education (Wenchao Qin)
                 showCostLimitBanner();
                 showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded');
             }
+        }
+
+        // Auto logout after 15 minutes of inactivity (900000 ms)
+        const INACTIVITY_MS = 15 * 60 * 1000;  // 15 min
+        let inactivityTimeoutId = null;
+        function doLogoutDueToInactivity() {
+            inactivityTimeoutId = null;
+            var user = sessionStorage.getItem('quiz_user');
+            if (window.logActivity) window.logActivity('logout', user || 'unknown');
+            sessionStorage.removeItem('quiz_auth');
+            sessionStorage.removeItem('quiz_user');
+            const ls = document.getElementById('login-screen');
+            const qa = document.getElementById('quiz-app');
+            if (ls) ls.classList.remove('hidden');
+            if (qa) qa.classList.add('hidden');
+            showAppAlert('You were logged out due to 15 minutes of inactivity.', 'Session expired');
+        }
+        function resetInactivityTimer() {
+            if (!sessionStorage.getItem('quiz_auth')) return;
+            const qa = document.getElementById('quiz-app');
+            if (!qa || qa.classList.contains('hidden')) return;
+            clearTimeout(inactivityTimeoutId);
+            inactivityTimeoutId = setTimeout(doLogoutDueToInactivity, INACTIVITY_MS);
         }
         
         // Check if RAG server is available
@@ -3427,6 +3484,8 @@ Author: AI for Education (Wenchao Qin)
             if (logoutLink) {
                 logoutLink.addEventListener('click', function(e) {
                     e.preventDefault();
+                    var user = sessionStorage.getItem('quiz_user');
+                    if (window.logActivity) window.logActivity('logout', user || 'unknown');
                     sessionStorage.removeItem('quiz_auth');
                     sessionStorage.removeItem('quiz_user');
                     location.reload();
@@ -3435,6 +3494,10 @@ Author: AI for Education (Wenchao Qin)
             // Question submit button
  //
             document.getElementById('submit-btn').addEventListener('click', handleSubmit);
+            
+            // Get Hints button (next to Feedback)
+            const getHintsBtn = document.getElementById('get-hints-btn');
+            if (getHintsBtn) getHintsBtn.addEventListener('click', function() { requestHintsInChat(); });
             
             // ChatGPT message area
  // ChatGPT
@@ -3893,7 +3956,7 @@ Author: AI for Education (Wenchao Qin)
                                 padding: 6px 14px; font-size: 12px; border-radius: 6px; border: 1px solid #667eea;
                                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;
                                 cursor: pointer; white-space: nowrap; font-weight: 500;
-                            ">Ask Tutor</button>
+                            ">Break Down Question</button>
                         </div>
                         <span style="font-size: 16px; line-height: 1.6;">${mainQuestion}</span>
                     `;
@@ -4999,7 +5062,7 @@ Author: AI for Education (Wenchao Qin)
                     mainInputRestore.focus();
                 }
                 
- // Ask Tutor Ask Tutor
+ // Break Down Question
                 const isDefaultAskTutor = /^\s*please explain this question and help me understand\.?\s*$/i.test(studentThinking || '');
                 if (studentThinking && !isDefaultAskTutor) {
                     addMessageToConversation('user', studentThinking);
@@ -5143,25 +5206,7 @@ Author: AI for Education (Wenchao Qin)
                 const isDefaultAskTutorErr = /^\s*please explain this question and help me understand\.?\s*$/i.test(studentThinking || '');
                 if (studentThinking && !isDefaultAskTutorErr) addMessageToConversation('user', studentThinking);
                 
-                const errMsg = (error && error.message) ? error.message : String(error);
-                const isNetwork = /fetch|network|failed|refused|timeout/i.test(errMsg);
-                const isBackend500 = /backend error \(500\)|500/i.test(errMsg);
-                const errDetail = errMsg ? errMsg.replace(/^Backend error \(\d+\):\s*/i, '').substring(0, 200) : '';
-                const fallbackHtml = `
-                    <div style="color: #374151; font-size: 14px; line-height: 1.7;">
-                        <div style="padding: 12px; background: #fee2e2; border-left: 4px solid #dc2626; border-radius: 4px; margin-bottom: 10px;">
-                            <strong>⚠️ Tutor service temporarily unavailable.</strong><br>
-                            Request to <code>${RAG_SERVER_URL}/evaluate_student_thinking</code> failed.
-                            ${errDetail ? `<br><small>Reason: ${errDetail}</small>` : ''}
-                        </div>
-                        <div style="padding: 10px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; font-size: 13px;">
-                            💡 <strong>Troubleshooting:</strong><br>
-                            ${isNetwork ? '• <b>Cannot reach port 5000</b>: Ensure RAG/Tutor is running; if using WSL, run <code>wsl/setup_port_forward.bat</code> as Administrator on Windows for port forwarding.<br>' : ''}
-                            ${isBackend500 ? '• <b>Analysis failed</b>: Invalid API key, quota exceeded, rate limit, or network issue. Check OPENAI_API_KEY in api-key.js.<br>' : ''}
-                            • Or run <code>python start.py --no-wsl-rag</code> in the project directory to run Tutor locally, then retry.
-                        </div>
-                    </div>
-                `;
+                const fallbackHtml = `<div style="color: #374151; font-size: 14px;">Tutor is temporarily unavailable. Please try again later.</div>`;
                 addMessageToConversation('assistant', fallbackHtml, true);
             }
         }
@@ -5360,18 +5405,39 @@ Author: AI for Education (Wenchao Qin)
         /**
          * Request hints and display in the chat/message area
          */
+        var requestHintsInProgress = false;
         async function requestHintsInChat() {
             if (costLimitExceeded) return;
+            if (requestHintsInProgress) return;
             if (!currentQuestionMeta || !currentData) {
-                addMessageToConversation('assistant', 'Please answer a question first before requesting hints.');
+                const msg = 'Please answer a question first before requesting hints.';
+                const list = document.getElementById('conversation-list');
+                const assistants = list ? list.querySelectorAll('.message-wrapper.assistant') : [];
+                const lastWrapper = assistants.length ? assistants[assistants.length - 1] : null;
+                const lastText = lastWrapper && lastWrapper.querySelector('.message') ? lastWrapper.querySelector('.message').textContent.trim() : '';
+                if (lastText !== msg) {
+                    addMessageToConversation('assistant', msg);
+                }
                 return;
             }
             
             // Check if student has submitted an answer
             if (selectedAnswer === null) {
-                addMessageToConversation('assistant', 'Please submit an answer first, then I can help guide you!');
+                const msg = 'Please submit an answer first, then I can help guide you!';
+                const list = document.getElementById('conversation-list');
+                const assistants = list ? list.querySelectorAll('.message-wrapper.assistant') : [];
+                const lastWrapper = assistants.length ? assistants[assistants.length - 1] : null;
+                const lastMsgEl = lastWrapper ? lastWrapper.querySelector('.message') : null;
+                const lastText = lastMsgEl ? lastMsgEl.textContent.trim() : '';
+                if (lastText !== msg) {
+                    addMessageToConversation('assistant', msg);
+                }
                 return;
             }
+            
+            requestHintsInProgress = true;
+            var hintBtn = document.getElementById('get-hints-btn');
+            if (hintBtn) { hintBtn.disabled = true; hintBtn.textContent = 'Loading...'; }
             
             // Note: No hard limit on hint rounds - system will intelligently decide when to end
  // -
@@ -5455,6 +5521,10 @@ Author: AI for Education (Wenchao Qin)
                 
                 // Fall back to local hint generation
                 displayFallbackHintsInChat();
+            } finally {
+                requestHintsInProgress = false;
+                hintBtn = document.getElementById('get-hints-btn');
+                if (hintBtn) { hintBtn.disabled = false; hintBtn.textContent = 'Get Hints'; }
             }
         }
 
@@ -5504,71 +5574,63 @@ Author: AI for Education (Wenchao Qin)
                 studentAnswer: selectedAnswer,
                 correctAnswer: currentQuestionMeta?.correct || "",
                 conversationTurns: 0,
-                decompositionRounds: 0,  // Track decomposition rounds (for reference only, no hard limit)
+                decompositionRounds: 0,
                 shouldEnd: false
             };
             
-            // Get decomposition
             const decomp = hintData.decomposition;
             const steps = decomp?.reasoning_steps || [];
-            const numSteps = steps.length;
-            
-            // Store for context
             socraticContext.synthesis = decomp?.synthesis_step || "";
             
+            // Single message only: one block with key questions (numbered) + synthesis, no multiple sections
+            let oneMessageHtml = "";
+            const keyQuestions = steps.map(function(step) { return step && step.key_question ? step.key_question : ''; }).filter(Boolean);
+            const synthesis = (decomp && decomp.synthesis_step) ? String(decomp.synthesis_step).trim() : '';
+            if (keyQuestions.length || synthesis) {
+                const listHtml = keyQuestions.length
+                    ? '<p style="margin:0 0 10px 0;"><strong>Work through these steps:</strong></p><p style="margin:0 0 10px 0;">' + keyQuestions.map(function(q, i) { return (i + 1) + '. ' + q; }).join('<br>') + '</p>'
+                    : '';
+                const synHtml = synthesis ? '<p style="margin:0;"><strong>Goal:</strong> ' + synthesis.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\n/g, ' ') + '</p>' : '';
+                oneMessageHtml = '<div style="color:#374151;font-size:14px;line-height:1.7;">' + listHtml + synHtml + '</div>';
+            } else if (hintData.formatted_display && typeof hintData.formatted_display === 'string') {
+                var s = hintData.formatted_display.replace(/^#+\s*/gm, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                oneMessageHtml = '<div style="color:#374151;font-size:14px;line-height:1.7;">' + s + '</div>';
+            } else {
+                oneMessageHtml = '<div style="color:#374151;font-size:14px;line-height:1.7;">No hints available.</div>';
+            }
             
-            // Ask first question(s) based on complexity
- //
-            // Simpler questions: 1 question at a time
- //
-            // Complex questions: can show multiple initial questions
- //
-            setTimeout(() => {
-                let questionHtml = "";
-                
-                // Determine how many questions to show initially
-                const initialCount = numSteps;
-                
-                if (initialCount >= 2) {
-                    // Show multiple initial questions for complex topics
- //
-                    questionHtml = `<div style="color: #374151; font-size: 14px; line-height: 1.7;">`;
-                    
-                    for (let i = 0; i < initialCount; i++) {
-                        if (steps[i]) {
-                            questionHtml += `<strong>${i + 1}.</strong> 🤔 ${steps[i].key_question}<br><br>`;
-                        }
+            hintConversationHistory.push({
+                role: 'assistant',
+                content: steps.map(s => s && s.key_question).filter(Boolean).join(' ') || (hintData.formatted_display || '').substring(0, 200)
+            });
+            
+            // Remove any previous Get Hints messages so only one Tutor hint block is shown.
+            // When removing, hide list during update to avoid flicker (multiple boxes -> one).
+            var list = document.getElementById('conversation-list');
+            var toRemove = [];
+            if (list) {
+                var assistants = list.querySelectorAll('.message-wrapper.assistant');
+                for (var i = 0; i < assistants.length; i++) {
+                    var msgEl = assistants[i].querySelector('.message');
+                    var text = msgEl ? (msgEl.textContent || msgEl.innerText || '') : '';
+                    if (text.indexOf('Work through these steps') !== -1 || text.indexOf('Goal:') !== -1) {
+                        toRemove.push(assistants[i].id);
                     }
-                    
-                    questionHtml += `</div>`;
-                    
-                    // Store for context
-                    hintConversationHistory.push({
-                        role: 'assistant',
-                        content: `Questions: ${steps.slice(0, initialCount).map((s, i) => `${i+1}. ${s.key_question}`).join(' ')}`
-                    });
-                } else {
-                    // Simple question - just ask one
-                    questionHtml = `
-                        <div style="color: #374151; font-size: 14px; line-height: 1.6;">
-                            🤔 <strong>${steps[0]?.key_question || ""}</strong>
-                        </div>
-                    `;
-                    hintConversationHistory.push({
-                        role: 'assistant',
-                        content: `Question: ${steps[0]?.key_question}`
-                    });
                 }
-                
-                addMessageToConversation('assistant', questionHtml, true);
-                
-                // Update input placeholder
-                const messageInput = document.getElementById('message-input');
-                if (messageInput) {
-                    messageInput.focus();
-                    messageInput.placeholder = 'Type your answer...';
-                }
-            }, 800);
+                if (toRemove.length > 0) list.style.visibility = 'hidden';
+                for (var j = 0; j < toRemove.length; j++) removeMessageFromConversation(toRemove[j]);
+            }
+            addMessageToConversation('assistant', oneMessageHtml, true);
+            if (list && toRemove.length > 0) {
+                list.style.visibility = '';
+                list.scrollTop = list.scrollHeight;
+            }
+            
+            const messageInput = document.getElementById('message-input');
+            if (messageInput) {
+                messageInput.focus();
+                messageInput.placeholder = 'Type your answer...';
+            }
         }
         
         /**
@@ -6970,6 +7032,11 @@ Your response MUST follow this structure:
         var valid = users.some(function(x) { return x.username === username && x.password === password; });
         if (!valid) { err.textContent = 'Invalid username or password. Please try again.'; return; }
         sessionStorage.setItem('quiz_auth', '1'); sessionStorage.setItem('quiz_user', username);
+        try {
+          var profile = null;
+          try { var p = localStorage.getItem('student_profile_' + username); if (p) profile = JSON.parse(p); } catch(e) {}
+          if (window.logActivity) window.logActivity('login', username, profile);
+        } catch(e) {}
         err.textContent = ''; ls.classList.add('hidden'); qa.classList.remove('hidden');
         if (typeof window.initQuiz === 'function') { window.initQuiz(); } else { location.reload(); }
       }

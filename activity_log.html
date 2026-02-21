@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usage Stats - Token & Cost Monitor</title>
+    <title>Activity Log - Login / Logout</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -35,13 +35,6 @@
             flex-wrap: wrap;
             gap: 12px;
         }
-        .limit-badge {
-            background: #334155;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.875rem;
-        }
-        .limit-badge span { color: #38bdf8; font-weight: 600; }
         .refresh-btn {
             background: #3b82f6;
             color: white;
@@ -73,10 +66,9 @@
         }
         tr:nth-child(even) { background: #1e293b; }
         tr:hover { background: #334155; }
-        .cost { font-weight: 600; color: #22c55e; }
-        .cost.warn { color: #f59e0b; }
-        .cost.limit { color: #ef4444; }
-        .num { font-variant-numeric: tabular-nums; text-align: right; }
+        .event-login { color: #22c55e; }
+        .event-logout { color: #f59e0b; }
+        .profile-cell { font-size: 0.875rem; max-width: 320px; word-break: break-word; }
         .empty {
             text-align: center;
             padding: 48px 24px;
@@ -89,17 +81,16 @@
             border-radius: 8px;
             margin-bottom: 20px;
         }
+        a { color: #38bdf8; text-decoration: none; }
+        a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <h1>Usage Stats</h1>
-    <p class="subtitle">Token usage and cost per user (total since server start)</p>
+    <h1>Activity Log</h1>
+    <p class="subtitle">Login and logout events with student profile snapshot</p>
 
     <div class="bar">
-        <div>
-            <span class="limit-badge">Limit: $3 per hour per user</span><span id="limit-val" style="display:none">3</span>
-            <div class="auto-label">Auto-refresh every 30s</div>
-        </div>
+        <div class="auto-label">Data from RAG server (port 5000). Refresh to load latest.</div>
         <button class="refresh-btn" id="refresh">Refresh</button>
     </div>
 
@@ -107,19 +98,18 @@
     <table>
         <thead>
             <tr>
-                <th>User ID</th>
-                <th class="num">Cost (3m)</th>
-                <th class="num">Cost (Total)</th>
-                <th class="num">Prompt Tokens</th>
-                <th class="num">Completion Tokens</th>
-                <th class="num">Total Tokens</th>
-                <th class="num">Requests</th>
+                <th>Timestamp</th>
+                <th>Event</th>
+                <th>User</th>
+                <th>Profile</th>
             </tr>
         </thead>
         <tbody id="tbody">
-            <tr><td colspan="6" class="empty">Loading...</td></tr>
+            <tr><td colspan="4" class="empty">Loading...</td></tr>
         </tbody>
     </table>
+
+    <p style="margin-top: 20px;"><a href="medical-quiz.html">Back to Medical Quiz</a></p>
 
     <script>
         const RAG_URL = 'http://' + (window.location.hostname || '127.0.0.1') + ':5000';
@@ -130,59 +120,69 @@
             el.style.display = msg ? 'block' : 'none';
         }
 
+        function formatProfile(profile) {
+            if (!profile || typeof profile !== 'object') return '—';
+            const parts = [];
+            if (typeof profile.questionsAnswered === 'number') parts.push('Answered: ' + profile.questionsAnswered);
+            if (profile.knowledgeMap && typeof profile.knowledgeMap === 'object') {
+                const kcCount = Object.keys(profile.knowledgeMap).length;
+                parts.push('KCs: ' + kcCount);
+            }
+            return parts.length ? parts.join(', ') : JSON.stringify(profile).slice(0, 80) + (JSON.stringify(profile).length > 80 ? '…' : '');
+        }
+
+        function escapeHtml(s) {
+            if (s == null) return '';
+            const div = document.createElement('div');
+            div.textContent = String(s);
+            return div.innerHTML;
+        }
+
         async function load() {
             showError('');
             try {
-                const r = await fetch(RAG_URL + '/usage_stats', { mode: 'cors' });
+                const r = await fetch(RAG_URL + '/activity_log', { mode: 'cors' });
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 const data = await r.json();
-                document.getElementById('limit-val').textContent = (data.limit_per_hour ?? 3);
-                render(data.users || []);
+                const list = Array.isArray(data) ? data : [];
+                render(list);
             } catch (e) {
-                showError('Cannot reach RAG server. Make sure it is running on port 5000. ' + e.message);
+                var msg = e.message || String(e);
+                if (msg.indexOf('404') !== -1) {
+                    showError('Activity log endpoint not found (404). Restart the RAG server so it loads the latest version with /activity_log support.');
+                } else {
+                    showError('Cannot reach RAG server. Make sure it is running on port 5000. ' + msg);
+                }
                 render([]);
             }
         }
 
-        function render(users) {
+        function render(list) {
             const tbody = document.getElementById('tbody');
-            const limit = parseFloat(document.getElementById('limit-val').textContent) || 3;
-            if (!users.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="empty">No usage yet</td></tr>';
+            if (!list.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty">No activity yet</td></tr>';
                 return;
             }
-            tbody.innerHTML = users.map(u => {
-                const cost3m = u.cost_last_hour || 0;
-                const costTotal = u.cost_total ?? 0;
-                let costClass = 'cost';
-                if (cost3m >= limit) costClass += ' limit';
-                else if (cost3m >= limit * 0.8) costClass += ' warn';
-                return `<tr>
-                    <td>${escapeHtml(u.user_id)}</td>
-                    <td class="num"><span class="${costClass}">$${cost3m.toFixed(6)}</span></td>
-                    <td class="num"><span class="cost">$${costTotal.toFixed(6)}</span></td>
-                    <td class="num">${formatNum(u.prompt_tokens)}</td>
-                    <td class="num">${formatNum(u.completion_tokens)}</td>
-                    <td class="num">${formatNum(u.total_tokens)}</td>
-                    <td class="num">${u.request_count || 0}</td>
-                </tr>`;
+            // Newest first
+            const sorted = list.slice().sort(function(a, b) {
+                const ta = (a.timestamp || '').toString();
+                const tb = (b.timestamp || '').toString();
+                return tb.localeCompare(ta);
+            });
+            tbody.innerHTML = sorted.map(function(entry) {
+                const event = (entry.event || 'login').toLowerCase();
+                const eventClass = event === 'logout' ? 'event-logout' : 'event-login';
+                return '<tr>' +
+                    '<td>' + escapeHtml(entry.timestamp || '—') + '</td>' +
+                    '<td><span class="' + eventClass + '">' + escapeHtml(entry.event || 'login') + '</span></td>' +
+                    '<td>' + escapeHtml(entry.user || '—') + '</td>' +
+                    '<td class="profile-cell">' + escapeHtml(formatProfile(entry.profile)) + '</td>' +
+                    '</tr>';
             }).join('');
-        }
-
-        function formatNum(n) {
-            if (n == null) return '0';
-            return Number(n).toLocaleString();
-        }
-
-        function escapeHtml(s) {
-            const div = document.createElement('div');
-            div.textContent = s;
-            return div.innerHTML;
         }
 
         document.getElementById('refresh').addEventListener('click', load);
         load();
-        setInterval(load, 30000);
     </script>
 </body>
 </html>

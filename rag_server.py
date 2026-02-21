@@ -113,7 +113,7 @@ import time
 import types
 from typing import Dict, List, Optional
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import langchain
 import numpy as np
@@ -292,15 +292,12 @@ def get_api_key() -> str:
 
 
 # =============================================================================
-# 每用户每小时成本限制（5 美分/小时）
-# Per-user hourly cost limit ($0.05/hour)
+# Per-user hourly cost limit ($3/hour)
 # =============================================================================
 
-
-
-# Per-user cost limit: $0.05 per 3 minutes (rolling window)
-COST_LIMIT_WINDOW_SECONDS = 180  # 3 minutes
-COST_LIMIT = 0.05  # $0.05 (5 cents) per user per window
+# Per-user cost limit: $3 per hour (rolling window)
+COST_LIMIT_WINDOW_SECONDS = 3600  # 1 hour
+COST_LIMIT = 3.0  # $3 per user per hour
 _user_costs: Dict[str, List[tuple]] = defaultdict(list)  # 用户ID -> [(时间戳, 费用), ...]，用于限额检查
 _user_tokens: Dict[str, List[tuple]] = defaultdict(list)  # 用户ID -> [(时间戳, pt, ct), ...]，用于限额
 _user_totals: Dict[str, Dict] = defaultdict(lambda: {"cost": 0.0, "prompt_tokens": 0, "completion_tokens": 0, "request_count": 0})  # 累计总量（不清理）
@@ -319,7 +316,7 @@ def _get_user_id() -> str:
     """
     从请求中获取用户标识，用于按用户统计费用、执行每小时限额。
     优先级：X-User-Id（登录用户名）> X-Session-Id（会话）> IP
-    这样 $0.05/小时 限制按每个登录用户独立计算，同一用户名换设备/换标签仍共用限额。
+    Cost limit is per logged-in user; same username across devices/tabs shares the limit.
     """
     if request:
         uid = request.headers.get("X-User-Id")
@@ -369,7 +366,7 @@ def token_add(user_id: str, prompt_tokens: int, completion_tokens: int) -> None:
 
 
 def usage_get_all() -> List[Dict]:
-    """返回所有用户的累计用量统计（总量 + 过去3分钟费用用于限额提示）。"""
+    """Return usage for all users (totals + past-hour cost for limit display)."""
     cutoff = time.time() - COST_LIMIT_WINDOW_SECONDS
     with _cost_lock:
         users = set(_user_costs.keys()) | set(_user_tokens.keys()) | set(_user_totals.keys())
@@ -390,7 +387,7 @@ def usage_get_all() -> List[Dict]:
 
 
 def cost_get_hourly(user_id: str) -> float:
-    """返回用户过去 3 分钟内的总费用（美元）。"""
+    """Return user's total cost (USD) in the past hour (rolling window)."""
     cutoff = time.time() - COST_LIMIT_WINDOW_SECONDS
     with _cost_lock:
         return sum(c for t, c in _user_costs[user_id] if t > cutoff)
@@ -404,8 +401,8 @@ def _cost_limit_exceeded_after_add() -> bool:
 
 def cost_check_limit() -> Optional[tuple]:
     """
-    检查用户是否超出限额（每3分钟 $0.05）。
-    若未超限返回 None；超限则返回 (响应字典, 状态码)。
+    Check if user exceeds hourly cost limit ($3/hour).
+    Returns None if under limit; otherwise (response dict, status_code).
     """
     uid = _get_user_id()
     if cost_get_hourly(uid) >= COST_LIMIT:
@@ -422,8 +419,8 @@ def cost_check_limit() -> Optional[tuple]:
 
 def cost_get_retry_after_seconds(user_id: str) -> int:
     """
-    返回用户超限后需等待的秒数，才能再次使用。
-    基于滚动3分钟窗口：找到最早可使费用降至限额以下的时刻。
+    Return seconds until user can retry after exceeding the hourly cost limit.
+    Based on rolling 1-hour window.
     """
     now = time.time()
     cutoff = now - COST_LIMIT_WINDOW_SECONDS
@@ -1128,7 +1125,7 @@ def _search_impl():
 @app.route('/chat_completion', methods=['POST'])
 def chat_completion():
     """
-    OpenAI chat 代理：转发请求、统计费用、强制 $0.05/小时 限制。
+    OpenAI chat proxy: forward request, track cost, enforce $3/hour per-user limit.
     超限时返回 429。
     """
     blocked = cost_check_limit()
@@ -1239,6 +1236,71 @@ def cost_limit_status():
     limited = cost_get_hourly(uid) >= COST_LIMIT
     retry = cost_get_retry_after_seconds(uid) if limited else 0
     return jsonify({"limited": limited, "retry_after_seconds": retry})
+
+
+# -----------------------------------------------------------------------------
+# User activity log (login / logout + student profile) - JSON file
+# -----------------------------------------------------------------------------
+ACTIVITY_LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "user_activity_log.json")
+_activity_log_lock = Lock()
+
+
+def _append_activity_log(entry: dict) -> None:
+    """Append one entry to user_activity_log.json (thread-safe)."""
+    with _activity_log_lock:
+        data = []
+        if os.path.exists(ACTIVITY_LOG_FILE):
+            try:
+                with open(ACTIVITY_LOG_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                data = []
+        if not isinstance(data, list):
+            data = []
+        data.append(entry)
+        try:
+            with open(ACTIVITY_LOG_FILE, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except IOError:
+            pass
+
+
+@app.route('/activity_log', methods=['GET', 'POST'])
+def activity_log():
+    """GET: return all log entries. POST: append one entry (event, user, timestamp, profile?)."""
+    if request.method == 'POST':
+        try:
+            body = request.get_json() or {}
+            event = body.get("event") or "login"
+            user = body.get("user") or "unknown"
+            ts = body.get("timestamp") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            profile = body.get("profile")
+            entry = {"event": event, "user": user, "timestamp": ts}
+            if profile is not None:
+                profile_copy = dict(profile)
+                profile_copy["_scope"] = "cumulative"
+                profile_copy["_scope_description"] = "questionsAnswered and knowledgeMap.* (questionsAttempted, questionsCorrect) are totals across all login sessions for this user, not per-session."
+                entry["profile"] = profile_copy
+            _append_activity_log(entry)
+            return jsonify({"ok": True})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+    # GET
+    if not os.path.exists(ACTIVITY_LOG_FILE):
+        return jsonify([])
+    try:
+        with open(ACTIVITY_LOG_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return jsonify(data if isinstance(data, list) else [])
+    except (json.JSONDecodeError, IOError):
+        return jsonify([])
+
+
+@app.route('/activity_log.html', methods=['GET'])
+def serve_activity_log_page():
+    """Serve the activity log UI so it can be opened at http://localhost:5000/activity_log.html when only RAG is running."""
+    _dir = os.path.dirname(os.path.abspath(__file__))
+    return send_from_directory(_dir, "activity_log.html")
 
 
 @app.route('/rebuild', methods=['POST'])
@@ -1974,6 +2036,7 @@ if __name__ == '__main__':
         print("       Body: {question, choices, student_answer, correct_answer}")
         print("  POST /check_hint_trigger - 检查是否触发提示")
         print("  GET  /health          - 健康检查")
+        print("  GET/POST /activity_log - 用户活动日志（登录/登出）")
         print("  POST /rebuild         - 从 PDF 重建索引")
         print("\n按 Ctrl+C 停止服务器\n")
         

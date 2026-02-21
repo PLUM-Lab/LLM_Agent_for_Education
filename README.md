@@ -22,16 +22,26 @@ An AI-powered medical education platform that automatically generates multiple-c
 - Automatic source citations with page numbers
 - Falls back to keyword search when server is unavailable
 
+### 📋 User Activity Log
+- Logs every login and logout with timestamp and username
+- Saves a snapshot of student profile on login (e.g. questions answered, knowledge components)
+- All users in one JSON file (`user_activity_log.json`), each record has a `user` field
+- Auto-updates when users sign in or sign out in the quiz UI
+- Web UI to view logs: Activity Log page (see [User Activity Log](#user-activity-log) below)
+
 ## Project Structure
 
 ```
 LLM_Agent_for_Education/
 ├── medical-quiz.html      # Main UI (single-page application)
+├── activity_log.html      # Activity log UI (login/logout + profile)
+├── usage_stats.html       # Token & cost per user
 ├── rag_server.py          # RAG backend (FAISS + ColBERTv2)
 ├── proactive_question_generator.py  # Tutor / Socratic hints
 ├── start.py               # Unified startup script (recommended)
 ├── start.bat              # Windows quick launch
 ├── api-key.js             # Your OpenAI API key (not in Git)
+├── user_activity_log.json # User activity log (auto-generated, in .gitignore)
 ├── *.json                 # Generated questions, qbanks, chunks (root)
 ├── Clinical Guidelines/   # Medical PDF files
 ├── Qbanks and Practice Exams/  # Question bank PDFs
@@ -112,6 +122,7 @@ python start.py --restart-rag
 
 **After startup:**
 - Main UI: http://localhost:8000/medical-quiz.html
+- Activity Log (login/logout + profile): http://localhost:8000/activity_log.html (or http://localhost:5000/activity_log.html if only RAG is running)
 - Usage Stats (token/cost per user): http://localhost:8000/usage_stats.html
 - RAG Server: http://localhost:5000/health (ColBERTv2 when using WSL)
 - Evaluator Interface: http://localhost:8001/question_evaluator.html (if started)
@@ -168,7 +179,8 @@ python3 -m http.server 8000
 | Service | Port | Description | Access URL | Required |
 |---------|------|-------------|------------|----------|
 | Main UI | 8000 | Medical quiz system main interface | http://localhost:8000/medical-quiz.html | ✅ Required |
-| RAG Server | 5000 | Semantic search API | http://localhost:5000/health | ⚠️ Optional (Recommended) |
+| RAG Server | 5000 | Semantic search API + activity log API | http://localhost:5000/health | ⚠️ Optional (Recommended) |
+| Activity Log UI | 8000 or 5000 | View login/logout and student profile log | http://localhost:8000/activity_log.html or :5000/activity_log.html | ⚠️ Optional |
 | Evaluator Interface | 8001 | Question quality evaluation tool | http://localhost:8001/question_evaluator.html | ⚠️ Optional |
 
 **When RAG server is unavailable:**
@@ -202,6 +214,42 @@ curl http://localhost:8000/medical-quiz.html
    - "Explain the pathophysiology"
    - "What are the differential diagnoses?"
 3. ChatGPT will return answers with citations
+
+### Get Hints vs Break Down Question
+
+Two tutor-style features in the message area work differently:
+
+| | **Get Hints** | **Break Down Question** |
+|--|----------------|--------------------------|
+| **Where** | Button next to Feedback | Button next to question (when domain/topic is shown) |
+| **Requires** | You must **submit an answer first** | No answer required |
+| **Input** | One click (no text); means “I need hints” | Sends a fixed line: “Please explain this question and help me understand.” |
+| **Backend** | `POST /generate_hints` | `POST /evaluate_student_thinking` |
+| **Backend logic** | Uses **question + your (wrong) answer** only; generates Socratic **reasoning steps + goal** (MedTutor-R1). Does **not** analyze your written reasoning. | Sends your “thinking” (default or typed) and **evaluates understanding level**; then returns **decompose** (sub-questions), **clarify** (explanation), or “understood”. |
+| **Display** | One Tutor block: “Work through these steps:” + numbered sub-questions + “Goal:”. Only the latest hint block is shown. | Sub-questions, or a clarification paragraph, or a success message, depending on the backend decision. |
+| **Afterwards** | You can click Get Hints again for a new set of hints (previous block is replaced). No multi-turn chat. | **Starts a multi-turn guidance dialogue**: you keep typing in the same input and get more sub-questions or clarification until the flow ends. |
+
+- **Get Hints**: “I’ve answered; give me guiding steps (sub-questions + goal) for this question.”
+- **Break Down Question**: “Trigger the ‘explain/help me understand’ flow; evaluate my (default) reasoning and start an interactive guidance session.”
+
+### Session and limits
+
+- **Auto-logout:** If there is no activity (mouse, keyboard, scroll, touch) for **15 minutes**, the user is logged out and the session expired message is shown.
+- **Cost limit:** Each user is limited to **$3 per hour** (rolling window). When exceeded, the RAG server returns 429 and the UI shows a cost-limit message until the window resets.
+
+### User Activity Log
+
+Login and logout events (with optional student profile snapshot) are recorded automatically.
+
+- **When it updates:** Each time a user signs in or signs out in the Medical Quiz (including auto-logout after 15 minutes of inactivity), the frontend sends an event to the RAG server and the log file is updated immediately.
+- **Where it is stored:** In the project root: `user_activity_log.json` (same directory as `rag_server.py`). This file is in `.gitignore` and is not committed.
+- **Format:** JSON array. Each entry has:
+  - `event`: `"login"` or `"logout"`
+  - `user`: username
+  - `timestamp`: ISO 8601 time
+  - `profile`: (optional) object with e.g. `questionsAnswered`, `knowledgeMap` — only on login when profile exists
+- **All users in one file:** Every user’s events are appended to the same file; use the `user` field to filter by username.
+- **View in browser:** Open the Activity Log page (see URLs above). If you see "Activity log endpoint not found (404)", restart the RAG server so it loads the version with `GET/POST /activity_log` support. Full field descriptions and examples are in the section [User Activity Log — Detailed Format](#user-activity-log--detailed-format) below.
 
 ### Parsing Question Bank PDFs
 
@@ -563,6 +611,186 @@ If you encounter `pip` installation errors:
 ### Compiling ragatouille is Slow
 - This is normal, first compilation may take 5-10 minutes
 - Please be patient
+
+---
+
+## UI User Guide (Medical Quiz – How to Use)
+
+This section explains how to use the Medical Quiz app for practicing medical questions and getting help from the AI Tutor.
+
+### Getting Started
+
+**1. Sign In**
+- Enter your **username** and **password**, then click **Sign in**
+- First time? Click **Create account** to register, then sign in
+- Demo accounts: admin / admin or student / student
+
+**2. Understand the Screen**
+
+After signing in, the page has two main areas:
+
+**Left panel (top to bottom):**
+- **Header:** "Logged in as: [username]", **Sign out** link, **Questions Answered**, **Knowledge Coverage** (e.g. 0% (0/193 subtopics))
+- **By domain (accuracy %):** A list of knowledge domains with your accuracy for each
+- **Question Bank:** Dropdown to select a question set
+- **Question:** The current question with Domain, Topic, and Subtopic info
+- **Choices:** Answer options (A, B, C, D, etc.)
+- **Buttons:** Submit, Previous, Next, Jump to, Jump
+- **Feedback:** Shows correct/wrong and explanations after you submit
+
+**Right panel – Tutor:** AI Tutor, input box, and **Send** button. You can drag the divider between the panels to resize.
+
+### Practicing Questions
+
+1. **Choose a Question Bank** – Use the dropdown to pick a set (e.g. Surgery Domain Questions).
+2. **Read and Answer** – Read the question, click one option (A–D), click **Submit**.
+3. **View Feedback** – Feedback shows correct/wrong, explanations, and source references.
+4. **Navigate** – **Previous** / **Next**; or use **Jump to** + number + **Jump** (or Enter).
+
+### Using the Tutor
+
+- **Explain your reasoning:** Type in the right panel and click **Send**. The Tutor may **Clarify** or **Decompose** (sub-questions) without giving the answer.
+- **Break Down Question (Ask Tutor):** For some banks, an **Break Down Question** button appears next to the question; click it for one-click help.
+- **Free chat:** You can type any medical question or comment and **Send**; the Tutor has context and can cite sources.
+
+### Your Progress
+
+- **Questions Answered** – Shown in the header.
+- **Knowledge Coverage** – Percentage of subtopics mastered (e.g. 0% (0/193 subtopics)). **By domain (accuracy %)** shows per-domain accuracy. Progress is saved between sessions.
+
+### Usage Limit
+
+If you see “Cost limit exceeded” with a countdown, wait until it finishes; the Tutor will work again when the timer reaches zero.
+
+### Quick Tips
+
+| What you want to do       | How                                  |
+|----------------------------|--------------------------------------|
+| Switch question banks      | Question Bank menu                   |
+| Submit an answer           | **Submit**                           |
+| Get quick help (some banks)| **Break Down Question** next to question |
+| Explain your reasoning     | Type in right panel, **Send**        |
+| Jump to a question         | Enter number, **Jump**               |
+| Sign out                   | **Sign out** (top left)              |
+
+---
+
+## User Activity Log — Detailed Format
+
+The file `user_activity_log.json` (in the project root) records **login** and **logout** events, and on **login** it can attach a snapshot of the **student profile** from the browser.
+
+### 文件整体结构（为什么有好几段）
+
+这个 JSON 文件是**一个数组** `[ ... ]`，里面有很多**段**（很多个对象）。
+
+- **每一段 = 一条记录 = 发生了一次「登录」或「登出」**。
+- 用户每**登录一次**，就往数组里**追加一段**（一个对象，`event: "login"`，并带当时的 profile 快照）。
+- 用户每**登出一次**，也往数组里**追加一段**（一个对象，`event: "logout"`，没有 profile）。
+
+所以你会看到：第 1 段是某次登录，第 2 段是某次登出，第 3 段又是登录……**段数会越来越多**，因为每次登录/登出都会多一段。不是“一个用户一段”，而是“一次事件一段”。
+
+**简单示意：**
+
+```
+user_activity_log.json
+└── [ 数组，按时间顺序 ]
+    ├── 第 1 段：{ "event": "login",  "user": "9", "timestamp": "...", "profile": {...} }
+    ├── 第 2 段：{ "event": "logout", "user": "9", "timestamp": "..." }
+    ├── 第 3 段：{ "event": "login",  "user": "9", "timestamp": "...", "profile": {...} }
+    └── … 更多段，每次登录或登出就多一段
+```
+
+### 一条记录（一段）里面是什么结构？
+
+**一次登入**只产生**一条记录**，**一次登出**也只产生**一条记录**。所以「一次登入登出」= 两条记录：先一条 login，再一条 logout。
+
+- **登出记录**只有 3 个字段：`event`（"logout"）, `user`, `timestamp`（UTC）.
+- **登录记录**有 4 块：`event`（"login"）, `user`, `timestamp`, `profile`（见下）。
+
+**一条「登录」记录结构示意：**
+
+```
+├── event        "login"
+├── user         "9"
+├── timestamp    "2026-02-21T06:48:24.643Z"   （UTC）
+└── profile
+    ├── userName, questionsAnswered, knowledgeMap, createdAt, lastUpdated
+    ├── _scope              "cumulative"
+    └── _scope_description  （说明为累计，不是当次 session）
+```
+
+**Timezone:** All `timestamp` values are in **UTC**. Example: `2026-02-21T06:48:24.643Z` = 6:48 AM UTC; for Beijing (UTC+8) that is 2:48 PM the same day.
+
+### When is a record written?
+
+| Event   | When it is recorded |
+|---------|----------------------|
+| **login**  | When the user signs in, or when the page loads with an existing session. |
+| **logout** | When the user clicks "Sign out", or when auto-logged out after **15 minutes** of inactivity. |
+
+### Top-level fields (every record)
+
+| Field        | Type   | Description |
+|-------------|--------|-------------|
+| **event**   | string | `"login"` or `"logout"`. |
+| **user**    | string | Username. |
+| **timestamp** | string | Time in **UTC** (ISO 8601), e.g. `"2026-02-21T06:48:24.643Z"`. |
+| **profile** | object | **Only on `login`.** Snapshot of student profile from browser. Omitted on `logout`. |
+
+### The `profile` object (login only)
+
+Read from browser `localStorage` key `student_profile_{username}`. When present, it includes:
+
+| Field                 | Type   | Description |
+|-----------------------|--------|-------------|
+| **userName**          | string | Same as logged-in username. |
+| **questionsAnswered** | number | **Cumulative** total (all sessions). |
+| **knowledgeMap**      | object | Map of knowledge components; all counts **cumulative**. |
+| **createdAt**, **lastUpdated** | string | ISO timestamps. |
+| **_scope**            | string | `"cumulative"`. |
+| **_scope_description** | string | Explains that numbers are totals across all sessions. |
+
+### Structure of `knowledgeMap`
+
+Each key is `"Domain->Topic->Subtopic"`. Each value has: **status** ("unknown" / "known"), **lastUpdated**, **questionsAttempted**, **questionsCorrect**, **totalQuestionsForSubtopic**, **correctQuestionIds**, **domain**, **topic**, **subtopic**.
+
+### What is not recorded
+
+- Individual question content or answers (only aggregates).
+- Chat messages, Get Hints, or Break Down Question usage.
+- Per-click activity — only **login** and **logout** events.
+
+---
+
+## Demo Instructions (Decompose & Clarify)
+
+### Quick Start
+
+**Method 1: Using the Dropdown (Easiest)**
+
+1. Open `medical-quiz.html` (e.g. http://localhost:8000/medical-quiz.html)
+2. In the question bank selector, select **"Demo Questions (Decompose & Clarify)"**
+3. Follow the steps below for each demo
+
+**Method 2: Direct File Access** – The file is `demo_questions.json` (2 questions for the UI).
+
+### Demo 1: Decompose (Question 1 – Appendicitis)
+
+1. Select answer **B** (wrong), click "Submit"
+2. In the thinking prompt box, paste the suggested text (e.g. uncertainty about infection vs surgery)
+3. Click "Submit My Thinking"
+4. **Expected:** System shows sub-questions to guide step-by-step reasoning
+
+### Demo 2: Clarify (Question 2 – STEMI)
+
+1. Select answer **A** (wrong), click "Submit"
+2. In the thinking prompt, paste the suggested text (e.g. understanding STEMI but preferring medical management first)
+3. Click "Submit My Thinking"
+4. **Expected:** System provides targeted clarification without revealing the answer
+
+**Notes:** Each question in `demo_questions.json` can include a `demo_info` field with `student_thinking` text. The system calls `/evaluate_student_thinking`. Ensure the RAG server is running on port 5000.
+
+---
 
 ## Security Notes
 

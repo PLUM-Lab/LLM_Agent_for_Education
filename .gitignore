@@ -47,6 +47,9 @@ student_profile_*.json
 knowledge_tracking_report_*.txt
 analysis_report_*.txt
 
+# User activity log (login/logout) - may contain PII
+user_activity_log.json
+
 # Ensure API key is never committed
 api-key.js
 *.key

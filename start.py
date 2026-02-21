@@ -219,8 +219,9 @@ def start_rag_server():
             print("\n[RAG Server] Server started at http://localhost:5000")
             print("\nAPI Endpoints:")
             print("  POST /search     - Search relevant chunks")
-            print("  GET  /health     - Health check")
-            print("  POST /rebuild    - Rebuild index from PDFs")
+            print("  GET  /health        - Health check")
+            print("  GET/POST /activity_log - User activity log (login/logout)")
+            print("  POST /rebuild       - Rebuild index from PDFs")
             print()
             try:
                 from waitress import serve
