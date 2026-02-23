@@ -950,6 +950,8 @@ Author: AI for Education (Wenchao Qin)
 
     <!-- Load API key from api-key.js (ignored by Git) -->
     <script src="api-key.js"></script>
+    <!-- Load RAG port config (written by start.py, defaults to 5001) -->
+    <script src="rag-config.js"></script>
 
     <!-- ====================================================================
          JAVASCRIPT - Quiz Logic and ChatGPT Integration
@@ -3110,7 +3112,7 @@ Author: AI for Education (Wenchao Qin)
         //
         // ====================================================================
         
-        const RAG_SERVER_URL = 'http://' + (window.location.hostname || '127.0.0.1') + ':5000';
+        const RAG_SERVER_URL = 'http://' + (window.location.hostname || '127.0.0.1') + ':' + (window.RAG_PORT || 5001);
         let ragServerAvailable = false;
 
         /** Log login/logout to backend (user_activity_log.json). Silently ignore if server unavailable. */
@@ -4991,58 +4993,50 @@ Author: AI for Education (Wenchao Qin)
                 const correctAnswer = String.fromCharCode(65 + currentQuestionMeta.correctIndex);
                 
                 // Call backend API to evaluate student thinking
-                // This endpoint uses LLM to analyze understanding and decide action
- // API
- // LLM
-                let response;
+                // Falls back to direct OpenAI call if RAG server is unavailable
+                let result;
+                let ragFetchResponse;
                 try {
-                    response = await fetch(RAG_SERVER_URL + '/evaluate_student_thinking', {
+                    ragFetchResponse = await fetch(RAG_SERVER_URL + '/evaluate_student_thinking', {
                         method: 'POST',
                         headers: getSessionHeaders(),
                         body: JSON.stringify({
-                            question: question,  // Original medical question
-                            choices: choices,  // Answer options dictionary
-                            student_answer: studentAnswer,  // Student's wrong answer (e.g., "B")
-                            correct_answer: correctAnswer,  // Correct answer (e.g., "A")
-                            student_thinking: studentThinking  // Student's explanation of reasoning
+                            question: question,
+                            choices: choices,
+                            student_answer: studentAnswer,
+                            correct_answer: correctAnswer,
+                            student_thinking: studentThinking
                         })
                     });
                 } catch (fetchError) {
-                    // Network error - backend might not be running
- // -
-                    console.error('Fetch error (backend may not be running):', fetchError);
-                    throw new Error('Cannot connect to backend server. Please make sure the Flask server is running on port 5000.');
+                    console.warn('RAG server unavailable, falling back to direct OpenAI call:', fetchError.message);
                 }
-                
- //
-                if (response.status === 429) {
-                    showCostLimitBanner();
-                    showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded');
-                    throw new Error('Cost limit exceeded');
-                }
-                if (response.ok) checkCostLimitHeader(response);
-                
-                // Check HTTP response status
- // HTTP
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Backend error:', response.status, errorText);
-                    let errDetail = errorText;
-                    try {
-                        const j = JSON.parse(errorText);
-                        if (j && j.error) errDetail = j.error;
-                    } catch (_) {}
-                    throw new Error(`Backend error (${response.status}): ${errDetail.substring(0, 200)}`);
-                }
-                
-                // Parse JSON response
- // JSON
-                const result = await response.json();
-                
-                // Validate response structure
- //
-                if (!result || result.success === false) {
-                    throw new Error(result?.error || 'Backend returned unsuccessful response');
+
+                if (ragFetchResponse) {
+                    if (ragFetchResponse.status === 429) {
+                        showCostLimitBanner();
+                        showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded');
+                        throw new Error('Cost limit exceeded');
+                    }
+                    if (ragFetchResponse.ok) checkCostLimitHeader(ragFetchResponse);
+                    if (!ragFetchResponse.ok) {
+                        const errorText = await ragFetchResponse.text();
+                        let errDetail = errorText;
+                        try { const j = JSON.parse(errorText); if (j && j.error) errDetail = j.error; } catch (_) {}
+                        throw new Error(`Backend error (${ragFetchResponse.status}): ${errDetail.substring(0, 200)}`);
+                    }
+                    result = await ragFetchResponse.json();
+                    if (!result || result.success === false) {
+                        throw new Error(result?.error || 'Backend returned unsuccessful response');
+                    }
+                } else {
+                    // Direct OpenAI fallback
+                    result = await evaluateStudentThinkingDirect({
+                        question, choices,
+                        student_answer: studentAnswer,
+                        correct_answer: correctAnswer,
+                        student_thinking: studentThinking
+                    });
                 }
                 
                 // Remove loading indicator
@@ -5242,37 +5236,42 @@ Author: AI for Education (Wenchao Qin)
             
             try {
                 // Call backend to evaluate student's response
- //
-                const response = await fetch(RAG_SERVER_URL + '/evaluate_guidance_response', {
-                    method: 'POST',
-                    headers: getSessionHeaders(),
-                    body: JSON.stringify({
-                        original_question: guidanceContext.originalQuestion,
-                        choices: guidanceContext.choices,
-                        student_answer: guidanceContext.studentAnswer,
-                        correct_answer: guidanceContext.correctAnswer,
-                        current_action: guidanceContext.currentAction,
-                        current_sub_questions: guidanceContext.currentSubQuestions,
-                        current_clarification: guidanceContext.currentClarification,
-                        student_response: studentResponse,
-                        conversation_history: guidanceContext.conversationHistory,
-                        understanding_level: guidanceContext.understandingLevel,
-                        round_number: guidanceContext.roundNumber
-                    })
-                });
-                
-                if (response.status === 429) { showCostLimitBanner(); showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded'); throw new Error('Cost limit exceeded'); }
-                if (response.ok) checkCostLimitHeader(response);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                // Falls back to direct OpenAI call if RAG server is unavailable
+                const requestPayload = {
+                    original_question: guidanceContext.originalQuestion,
+                    choices: guidanceContext.choices,
+                    student_answer: guidanceContext.studentAnswer,
+                    correct_answer: guidanceContext.correctAnswer,
+                    current_action: guidanceContext.currentAction,
+                    current_sub_questions: guidanceContext.currentSubQuestions,
+                    current_clarification: guidanceContext.currentClarification,
+                    student_response: studentResponse,
+                    conversation_history: guidanceContext.conversationHistory,
+                    understanding_level: guidanceContext.understandingLevel,
+                    round_number: guidanceContext.roundNumber
+                };
+                let result;
+                let ragGuidanceResponse;
+                try {
+                    ragGuidanceResponse = await fetch(RAG_SERVER_URL + '/evaluate_guidance_response', {
+                        method: 'POST',
+                        headers: getSessionHeaders(),
+                        body: JSON.stringify(requestPayload)
+                    });
+                } catch (fetchError) {
+                    console.warn('RAG server unavailable, falling back to direct OpenAI call:', fetchError.message);
                 }
-                
-                const result = await response.json();
+
+                if (ragGuidanceResponse) {
+                    if (ragGuidanceResponse.status === 429) { showCostLimitBanner(); showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded'); throw new Error('Cost limit exceeded'); }
+                    if (ragGuidanceResponse.ok) checkCostLimitHeader(ragGuidanceResponse);
+                    if (!ragGuidanceResponse.ok) { throw new Error(`HTTP error! status: ${ragGuidanceResponse.status}`); }
+                    result = await ragGuidanceResponse.json();
+                    if (!result.success) { throw new Error(result.error || 'Backend returned unsuccessful response'); }
+                } else {
+                    result = await evaluateGuidanceResponseDirect(requestPayload);
+                }
                 removeMessageFromConversation(thinkingId);
-                
-                if (!result.success) {
-                    throw new Error(result.error || 'Backend returned unsuccessful response');
-                }
                 
                 // Update guidance context
  //
@@ -6516,6 +6515,128 @@ ${(() => {
          * @returns {Promise<string>} - ChatGPT's response
          * @throws {Error} - If API key is missing or API call fails
          */
+
+        // ============================================================
+        // Direct OpenAI Tutor Fallbacks (used when RAG server is down)
+        // ============================================================
+
+        const TUTOR_EVALUATION_SYSTEM_PROMPT = `You are an educational agent evaluating a student's thinking process after they answered a medical question incorrectly.
+
+## Context
+The student answered a medical question incorrectly. You asked them to explain their thinking, and they provided their reasoning.
+
+## Your Task
+Follow the Educational Agent Policy to:
+1. Assess the student's understanding level ("none" | "partial" | "close" | "understood")
+2. Determine which action to take: DECOMPOSE or CLARIFY
+3. Provide appropriate guidance based on your decision
+
+## Understanding Level Classification
+- "none": Student has no understanding. Action: DECOMPOSE
+- "partial": Some understanding but missing key pieces. Action: Usually DECOMPOSE
+- "close": Minor misconceptions only. Action: CLARIFY
+- "understood": Full understanding. Action: Confirm and TERMINATE flow
+
+## CRITICAL RULE - NEVER REVEAL THE ANSWER
+NEVER directly or indirectly reveal the correct answer in any field.
+
+## Response Format (JSON only)
+{
+    "action_type": "decompose" | "clarify" | null,
+    "understanding_level": "none" | "partial" | "close" | "understood",
+    "reasoning": "Why you chose this action",
+    "feedback": "Encouraging feedback (NEVER reveal the answer)",
+    "missing_concept": "What concept they need to understand",
+    "clarification": "If clarify: targeted explanation WITHOUT revealing the answer. Otherwise empty string. Must be at least 20 characters.",
+    "sub_questions": ["question1", "question2"],
+    "understood": false,
+    "summary": ""
+}
+Note: sub_questions - if action_type is "decompose", provide 1-2 simpler guiding questions (each at least 20 chars). Empty array otherwise.`;
+
+        async function _callOpenAIForTutorEval(userPrompt) {
+            const apiKey = cleanApiKey(openAIApiKey);
+            if (!apiKey) throw new Error('API key not configured');
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+                body: JSON.stringify({
+                    model: 'gpt-4o',
+                    messages: [
+                        { role: 'system', content: TUTOR_EVALUATION_SYSTEM_PROMPT },
+                        { role: 'user', content: userPrompt }
+                    ],
+                    temperature: 0.5,
+                    max_tokens: 600,
+                    response_format: { type: 'json_object' }
+                })
+            });
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error?.message || 'OpenAI API error: ' + response.status);
+            }
+            const data = await response.json();
+            return JSON.parse(data.choices[0].message.content);
+        }
+
+        async function evaluateStudentThinkingDirect({ question, choices, student_answer, correct_answer, student_thinking }) {
+            const choicesText = Object.entries(choices).map(([k, v]) => `${k}: ${v}`).join('\n');
+            const userPrompt = `## Medical Question:\n${question}\n\n## Answer Choices:\n${choicesText}\n\n## Student's Wrong Answer:\n${student_answer}: ${choices[student_answer] || 'Unknown'}\n\n## Correct Answer:\n${correct_answer} (DO NOT reveal this to the student - this is for your reference only)\n\n## Student's Thinking Process:\n${student_thinking}\n\n## Your Task:\nAnalyze the student's thinking to assess their understanding level, then decide which action to take:\n- **DECOMPOSE**: If they have fundamental gaps or need step-by-step reasoning\n- **CLARIFY**: If they're close but have minor misconceptions\n\nFollow the Educational Agent Policy. Respond with valid JSON only.`;
+            const result = await _callOpenAIForTutorEval(userPrompt);
+            result.success = true;
+            if (result.understanding_level === 'understood' || result.understood === true) {
+                result.understood = true;
+                result.action_type = null;
+                result.sub_questions = [];
+                result.clarification = '';
+                result.flow_terminated = true;
+            } else {
+                result.understood = false;
+                result.flow_terminated = false;
+            }
+            return result;
+        }
+
+        async function evaluateGuidanceResponseDirect({ original_question, choices, student_answer, correct_answer, current_action, current_sub_questions, current_clarification, student_response, conversation_history, understanding_level, round_number }) {
+            const choicesText = Object.entries(choices).map(([k, v]) => `${k}: ${v}`).join('\n');
+            const historyText = (conversation_history || []).length
+                ? conversation_history.map((m, i) => `Round ${i+1} - ${(m.role||'').toUpperCase()}: ${m.content}`).join('\n')
+                : 'None - this is the first round';
+            const dontKnowPhrases = ["i don't know", "don't know", "no idea", "not sure", "have no idea"];
+            const prevDontKnow = (conversation_history || []).filter(m => m.role === 'user' && dontKnowPhrases.some(p => (m.content || '').toLowerCase().includes(p))).length;
+            const currIsDontKnow = dontKnowPhrases.some(p => student_response.toLowerCase().includes(p));
+            const totalDontKnow = prevDontKnow + (currIsDontKnow ? 1 : 0);
+
+            const userPrompt = `## Original Medical Question:\n${original_question}\n\n## Answer Choices:\n${choicesText}\n\n## Student's Wrong Answer:\n${student_answer}: ${choices[student_answer] || 'Unknown'}\n\n## Correct Answer:\n${correct_answer} (DO NOT reveal this to the student)\n\n## Current Guidance Context:\n- Current Action: ${current_action}\n- Current Understanding Level: ${understanding_level}\n- Round Number: ${round_number}\n- Current Sub-Questions: ${(current_sub_questions||[]).length ? current_sub_questions.join('; ') : 'None'}\n- Current Clarification: ${current_clarification || 'None'}\n\n## Complete Conversation History:\n${historyText}\n\n## Student's Response to Current Question/Clarification:\n${student_response}\n\n## Note: Student has said "I don't know" ${totalDontKnow} time(s) total. If 2 or more times, prefer CLARIFY over DECOMPOSE.\n\n## Your Task:\n1. Evaluate if the student's current response shows understanding\n2. If understood: confirm and provide summary\n3. If not understood: decide next action (DECOMPOSE or CLARIFY)\n\nProvide sub_questions (1-2 items) if action_type is "decompose". Provide clarification text if action_type is "clarify".\nRespond with valid JSON only.`;
+
+            const result = await _callOpenAIForTutorEval(userPrompt);
+
+            // Force clarify if too many "I don't know" responses
+            let nextAction = result.action_type;
+            if (totalDontKnow >= 2 && nextAction === 'decompose') nextAction = 'clarify';
+
+            const understood = result.understanding_level === 'understood' || result.understood === true;
+            if (understood) {
+                return {
+                    success: true, understood: true, understanding_level: 'understood',
+                    feedback: result.feedback || "Excellent! You've demonstrated understanding of the key concepts.",
+                    next_action_type: null, next_sub_questions: [], next_clarification: '',
+                    summary: result.summary || result.missing_concept || 'the main concepts',
+                    flow_terminated: true
+                };
+            }
+            return {
+                success: true, understood: false,
+                understanding_level: result.understanding_level || 'partial',
+                feedback: result.feedback || '',
+                next_action_type: nextAction,
+                next_sub_questions: result.sub_questions || [],
+                next_clarification: result.clarification || '',
+                summary: '',
+                flow_terminated: !nextAction
+            };
+        }
+
         async function callOpenAIDirect(message) {
             if (!openAIApiKey) {
                 throw new Error('API key not configured');

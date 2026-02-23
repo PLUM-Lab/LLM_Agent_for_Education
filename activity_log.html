@@ -111,8 +111,9 @@
 
     <p style="margin-top: 20px;"><a href="medical-quiz.html">Back to Medical Quiz</a></p>
 
+    <script src="rag-config.js"></script>
     <script>
-        const RAG_URL = 'http://' + (window.location.hostname || '127.0.0.1') + ':5000';
+        const RAG_URL = 'http://' + (window.location.hostname || '127.0.0.1') + ':' + (window.RAG_PORT || 5001);
 
         function showError(msg) {
             const el = document.getElementById('error');

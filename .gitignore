@@ -55,3 +55,4 @@ api-key.js
 *.key
 *secret*
 
+user_activity_log copy.json

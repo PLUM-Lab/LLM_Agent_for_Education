@@ -114,7 +114,7 @@ python start.py --ui --rag
 python start.py --evaluator
 
 # Custom ports
-python start.py --ui --port 8000 --evaluator --evaluator-port 8002
+python start.py --ui --port 8001 --evaluator --evaluator-port 8002
 
 # Restart RAG server (stop existing process and restart)
 python start.py --restart-rag
