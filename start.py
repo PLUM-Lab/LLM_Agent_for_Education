@@ -220,7 +220,7 @@ def start_rag_server():
             print("\nAPI Endpoints:")
             print("  POST /search     - Search relevant chunks")
             print("  GET  /health        - Health check")
-            print("  GET/POST /activity_log - User activity log (login/logout)")
+            print("  GET /user_log, POST /user_log/event - Per-user log (user_logs/)")
             print("  POST /rebuild       - Rebuild index from PDFs")
             print()
             try:

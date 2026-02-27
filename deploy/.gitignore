@@ -1,0 +1,9 @@
+# Ignore API key file (contains sensitive information)
+api-key.js
+
+# Ignore user logs (if copied)
+user_logs/
+
+# Ignore OS files
+.DS_Store
+Thumbs.db

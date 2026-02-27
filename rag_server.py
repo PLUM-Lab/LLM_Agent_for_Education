@@ -1239,68 +1239,257 @@ def cost_limit_status():
 
 
 # -----------------------------------------------------------------------------
-# User activity log (login / logout + student profile) - JSON file
+# Per-user log files: button clicks, tutor conversations, knowledge profile, usage, events (login/logout)
 # -----------------------------------------------------------------------------
-ACTIVITY_LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "user_activity_log.json")
-_activity_log_lock = Lock()
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+USER_LOGS_DIR = os.path.join(_BASE_DIR, "user_logs")
+_user_log_lock = Lock()
 
 
-def _append_activity_log(entry: dict) -> None:
-    """Append one entry to user_activity_log.json (thread-safe)."""
-    with _activity_log_lock:
-        data = []
-        if os.path.exists(ACTIVITY_LOG_FILE):
-            try:
-                with open(ACTIVITY_LOG_FILE, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except (json.JSONDecodeError, IOError):
-                data = []
-        if not isinstance(data, list):
-            data = []
-        data.append(entry)
+def _safe_username(user: str) -> str:
+    """Safe filename from user id (strip user: prefix and path chars)."""
+    s = (user or "unknown").strip()
+    if s.startswith("user:"):
+        s = s[5:]
+    s = re.sub(r'[<>:"/\\|?*]', "_", s)[:64]
+    return s or "unknown"
+
+
+def _get_user_log_path(user: str) -> str:
+    safe = _safe_username(user)
+    os.makedirs(USER_LOGS_DIR, exist_ok=True)
+    return os.path.join(USER_LOGS_DIR, f"{safe}.json")
+
+
+def _read_user_log(user: str) -> dict:
+    path = _get_user_log_path(user)
+    with _user_log_lock:
+        if not os.path.exists(path):
+            return {"user": _safe_username(user), "button_clicks": [], "tutor_conversations": [], "knowledge_profile": None, "display_snapshot": None, "usage": {"cost_total": 0.0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "request_count": 0}, "events": []}
         try:
-            with open(ACTIVITY_LOG_FILE, "w", encoding="utf-8") as f:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            data = {}
+    if not isinstance(data, dict):
+        data = {}
+    for key in ["button_clicks", "tutor_conversations", "knowledge_profile", "display_snapshot", "usage", "events"]:
+        if key not in data:
+            if key == "usage":
+                data["usage"] = {"cost_total": 0.0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "request_count": 0}
+            elif key == "knowledge_profile":
+                data["knowledge_profile"] = None
+            elif key == "display_snapshot":
+                data["display_snapshot"] = None
+            elif key == "events":
+                data["events"] = []
+            else:
+                data[key] = []
+    return data
+
+
+def _write_user_log(user: str, data: dict) -> None:
+    path = _get_user_log_path(user)
+    with _user_log_lock:
+        try:
+            with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
         except IOError:
             pass
 
 
-@app.route('/activity_log', methods=['GET', 'POST'])
-def activity_log():
-    """GET: return all log entries. POST: append one entry (event, user, timestamp, profile?)."""
-    if request.method == 'POST':
-        try:
-            body = request.get_json() or {}
-            event = body.get("event") or "login"
-            user = body.get("user") or "unknown"
-            ts = body.get("timestamp") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-            profile = body.get("profile")
-            entry = {"event": event, "user": user, "timestamp": ts}
-            if profile is not None:
-                profile_copy = dict(profile)
-                profile_copy["_scope"] = "cumulative"
-                profile_copy["_scope_description"] = "questionsAnswered and knowledgeMap.* (questionsAttempted, questionsCorrect) are totals across all login sessions for this user, not per-session."
-                entry["profile"] = profile_copy
-            _append_activity_log(entry)
-            return jsonify({"ok": True})
-        except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 500
-    # GET
-    if not os.path.exists(ACTIVITY_LOG_FILE):
-        return jsonify([])
+def _append_button_click(user: str, timestamp: str, button: str, question_id: Optional[int] = None) -> None:
+    data = _read_user_log(user)
+    data["button_clicks"].append({"timestamp": timestamp, "button": button, "question_id": question_id})
+    _write_user_log(user, data)
+
+
+def _append_tutor_conversation(user: str, question_id: Optional[int], question_text: str, options: str, messages: List[dict]) -> None:
+    """Append or update one tutor conversation. messages = [{"user": "...", "assistant": "..."}, ...]"""
+    data = _read_user_log(user)
+    convos = data["tutor_conversations"]
+    found = None
+    for i, c in enumerate(convos):
+        if c.get("question_id") == question_id:
+            found = i
+            break
+    entry = {"question_id": question_id, "question_text": question_text or "", "options": options or "", "messages": list(messages)}
+    if found is not None:
+        convos[found] = entry
+    else:
+        convos.append(entry)
+    _write_user_log(user, data)
+
+
+def _update_user_log_knowledge_profile(user: str, profile: dict, display_snapshot: Optional[dict] = None) -> None:
+    data = _read_user_log(user)
+    data["knowledge_profile"] = profile
+    if display_snapshot is not None:
+        data["display_snapshot"] = display_snapshot
+    _write_user_log(user, data)
+
+
+def _append_user_log_event(user: str, event: str, timestamp: str, profile: Optional[dict] = None) -> None:
+    """Append login/logout event to this user's log file (no shared file)."""
+    data = _read_user_log(user)
+    if "events" not in data or not isinstance(data["events"], list):
+        data["events"] = []
+    entry = {"event": event, "timestamp": timestamp}
+    if profile is not None:
+        profile_copy = dict(profile)
+        profile_copy["_scope"] = "cumulative"
+        profile_copy["_scope_description"] = "questionsAnswered and knowledgeMap.* are totals across all sessions."
+        entry["profile"] = profile_copy
+    data["events"].append(entry)
+    _write_user_log(user, data)
+
+
+@app.route('/user_log/event', methods=['POST'])
+def user_log_event():
+    """Log login/logout to this user's own file. Body: { user, event, timestamp, profile? }."""
     try:
-        with open(ACTIVITY_LOG_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return jsonify(data if isinstance(data, list) else [])
-    except (json.JSONDecodeError, IOError):
-        return jsonify([])
+        body = request.get_json() or {}
+        user = (body.get("user") or request.headers.get("X-User-Id") or "unknown").strip()
+        event = body.get("event") or "login"
+        ts = body.get("timestamp") or time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+        profile = body.get("profile")
+        _append_user_log_event(user, event, ts, profile)
+        path = _get_user_log_path(user)
+        print(f"[user_log] {event} for user '{user}' -> {path}")
+        return jsonify({"ok": True})
+    except Exception as e:
+        print(f"[user_log] ERROR: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+def _sync_user_log_usage(user: str) -> None:
+    """Write in-memory _user_totals for this user into their log file."""
+    uid = ("user:" + user.strip())[:64] if user and not user.startswith("user:") else (user or "unknown")[:64]
+    with _cost_lock:
+        t = _user_totals.get(uid)
+        if not t:
+            return
+        usage = {
+            "cost_total": round(t["cost"], 6),
+            "prompt_tokens": t["prompt_tokens"],
+            "completion_tokens": t["completion_tokens"],
+            "total_tokens": t["prompt_tokens"] + t["completion_tokens"],
+            "request_count": t["request_count"],
+        }
+    data = _read_user_log(user)
+    data["usage"] = usage
+    _write_user_log(user, data)
+
+
+@app.route('/user_log/button', methods=['POST'])
+def user_log_button():
+    """Log a button click. Body: { user, timestamp, button, question_id? }."""
+    try:
+        body = request.get_json() or {}
+        user = (body.get("user") or request.headers.get("X-User-Id") or "unknown").strip()
+        ts = body.get("timestamp") or time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+        button = body.get("button") or "unknown"
+        question_id = body.get("question_id")
+        if question_id is not None and not isinstance(question_id, int):
+            try:
+                question_id = int(question_id)
+            except (TypeError, ValueError):
+                question_id = None
+        _append_button_click(user, ts, button, question_id)
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route('/user_log/conversation', methods=['POST'])
+def user_log_conversation():
+    """Log tutor conversation for a question. Body: { user, question_id, question_text?, options?, messages: [{user, assistant}, ...] }."""
+    try:
+        body = request.get_json() or {}
+        user = (body.get("user") or request.headers.get("X-User-Id") or "unknown").strip()
+        question_id = body.get("question_id")
+        if question_id is not None and not isinstance(question_id, int):
+            try:
+                question_id = int(question_id)
+            except (TypeError, ValueError):
+                question_id = None
+        question_text = body.get("question_text") or ""
+        options = body.get("options") or ""
+        messages = body.get("messages") or []
+        if not isinstance(messages, list):
+            messages = []
+        _append_tutor_conversation(user, question_id, question_text, options, messages)
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route('/user_log/knowledge_profile', methods=['POST'])
+def user_log_knowledge_profile():
+    """Save latest knowledge profile snapshot. Body: { user, profile, display_snapshot? }.
+    display_snapshot: { totalSubtopicsInBank, domainTotals: { "Domain A": 81, ... } } so the file contains full UI denominators."""
+    try:
+        body = request.get_json() or {}
+        user = (body.get("user") or request.headers.get("X-User-Id") or "unknown").strip()
+        profile = body.get("profile")
+        display_snapshot = body.get("display_snapshot")
+        _update_user_log_knowledge_profile(user, profile or {}, display_snapshot)
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route('/user_log/usage', methods=['GET'])
+def user_log_usage():
+    """Return usage (tokens, cost) for the given user. Persist in-memory totals to user log file."""
+    user = (request.args.get("user") or request.headers.get("X-User-Id") or "").strip()
+    if not user:
+        return jsonify({"error": "user required"}), 400
+    uid = ("user:" + user)[:64]
+    with _cost_lock:
+        t = _user_totals.get(uid, {"cost": 0.0, "prompt_tokens": 0, "completion_tokens": 0, "request_count": 0})
+        usage = {
+            "cost_total": round(t["cost"], 6),
+            "prompt_tokens": t["prompt_tokens"],
+            "completion_tokens": t["completion_tokens"],
+            "total_tokens": t["prompt_tokens"] + t["completion_tokens"],
+            "request_count": t["request_count"],
+        }
+    _sync_user_log_usage(user)
+    data = _read_user_log(user)
+    data["usage"] = usage
+    _write_user_log(user, data)
+    return jsonify(usage)
+
+
+@app.route('/user_log', methods=['GET'])
+def user_log_get():
+    """Return full log for user (button_clicks, tutor_conversations, knowledge_profile, usage)."""
+    user = (request.args.get("user") or request.headers.get("X-User-Id") or "").strip()
+    if not user:
+        return jsonify({"error": "user required"}), 400
+    _sync_user_log_usage(user)
+    data = _read_user_log(user)
+    return jsonify(data)
 
 
 @app.route('/activity_log.html', methods=['GET'])
 def serve_activity_log_page():
-    """Serve the activity log UI so it can be opened at http://localhost:5000/activity_log.html when only RAG is running."""
+    """Serve the activity log UI (can show per-user log via GET /user_log?user=)."""
     _dir = os.path.dirname(os.path.abspath(__file__))
     return send_from_directory(_dir, "activity_log.html")
+
+
+@app.route('/user_log/users', methods=['GET'])
+def user_log_list_users():
+    """Return list of usernames that have a log file (for activity_log.html dropdown)."""
+    if not os.path.isdir(USER_LOGS_DIR):
+        return jsonify({"users": []})
+    users = []
+    for name in os.listdir(USER_LOGS_DIR):
+        if name.endswith(".json"):
+            users.append(name[:-5])
+    return jsonify({"users": sorted(users)})
 
 
 @app.route('/rebuild', methods=['POST'])
@@ -2002,6 +2191,31 @@ def check_hint_trigger():
 # 主入口
 # =============================================================================
 
+def _load_user_totals_from_logs() -> None:
+    """On startup, load persisted usage from user_logs/*.json into _user_totals."""
+    if not os.path.isdir(USER_LOGS_DIR):
+        return
+    with _cost_lock:
+        for name in os.listdir(USER_LOGS_DIR):
+            if not name.endswith(".json"):
+                continue
+            path = os.path.join(USER_LOGS_DIR, name)
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                continue
+            usage = data.get("usage") if isinstance(data, dict) else None
+            if not usage or not isinstance(usage, dict):
+                continue
+            username = name[:-5]  # strip .json
+            uid = ("user:" + username)[:64]
+            _user_totals[uid]["cost"] = float(usage.get("cost_total") or 0)
+            _user_totals[uid]["prompt_tokens"] = int(usage.get("prompt_tokens") or 0)
+            _user_totals[uid]["completion_tokens"] = int(usage.get("completion_tokens") or 0)
+            _user_totals[uid]["request_count"] = int(usage.get("request_count") or 0)
+
+
 if __name__ == '__main__':
     """
     启动 RAG 服务器。
@@ -2023,6 +2237,7 @@ if __name__ == '__main__':
         - http://localhost:5000/health - 检查状态
         - http://localhost:5000/search - 搜索 API
     """
+    _load_user_totals_from_logs()
     if initialize_rag():
         # 初始化提示生成器
         initialize_hint_generator()
@@ -2036,7 +2251,12 @@ if __name__ == '__main__':
         print("       Body: {question, choices, student_answer, correct_answer}")
         print("  POST /check_hint_trigger - 检查是否触发提示")
         print("  GET  /health          - 健康检查")
-        print("  GET/POST /activity_log - 用户活动日志（登录/登出）")
+        print("  POST /user_log/event   - 登录/登出记入该用户自己的日志")
+        print("  POST /user_log/button - 记录按钮点击（user, timestamp, button, question_id?）")
+        print("  POST /user_log/conversation - 记录 Tutor 对话（question_id, question_text, options, messages）")
+        print("  POST /user_log/knowledge_profile - 记录知识画像")
+        print("  GET  /user_log/usage?user= - 当前用户 token/费用")
+        print("  GET  /user_log?user= - 当前用户完整日志")
         print("  POST /rebuild         - 从 PDF 重建索引")
         print("\n按 Ctrl+C 停止服务器\n")
         

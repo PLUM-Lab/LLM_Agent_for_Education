@@ -87,10 +87,14 @@
 </head>
 <body>
     <h1>Activity Log</h1>
-    <p class="subtitle">Login and logout events with student profile snapshot</p>
+    <p class="subtitle">Per-user login/logout events (from user_logs). Select a user to view.</p>
 
     <div class="bar">
-        <div class="auto-label">Data from RAG server (port 5000). Refresh to load latest.</div>
+        <label class="auto-label">User: </label>
+        <select id="user-select" style="padding: 6px 12px; border-radius: 6px; background: #334155; color: #e2e8f0; border: 1px solid #475569;">
+            <option value="">— Select user —</option>
+        </select>
+        <div class="auto-label">Data from RAG server (port 5000).</div>
         <button class="refresh-btn" id="refresh">Refresh</button>
     </div>
 
@@ -138,32 +142,50 @@
             return div.innerHTML;
         }
 
-        async function load() {
+        async function loadUsers() {
             showError('');
             try {
-                const r = await fetch(RAG_URL + '/activity_log', { mode: 'cors' });
+                const r = await fetch(RAG_URL + '/user_log/users', { mode: 'cors' });
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 const data = await r.json();
-                const list = Array.isArray(data) ? data : [];
-                render(list);
+                const users = Array.isArray(data.users) ? data.users : [];
+                const sel = document.getElementById('user-select');
+                sel.innerHTML = '<option value="">— Select user —</option>' + users.map(function(u) {
+                    return '<option value="' + escapeHtml(u) + '">' + escapeHtml(u) + '</option>';
+                }).join('');
+                if (users.length) sel.value = users[0];
+                loadUserLog();
             } catch (e) {
-                var msg = e.message || String(e);
-                if (msg.indexOf('404') !== -1) {
-                    showError('Activity log endpoint not found (404). Restart the RAG server so it loads the latest version with /activity_log support.');
-                } else {
-                    showError('Cannot reach RAG server. Make sure it is running on port 5000. ' + msg);
-                }
+                showError('Cannot reach RAG server (port 5000). ' + (e.message || String(e)));
                 render([]);
             }
         }
 
-        function render(list) {
-            const tbody = document.getElementById('tbody');
-            if (!list.length) {
-                tbody.innerHTML = '<tr><td colspan="4" class="empty">No activity yet</td></tr>';
+        async function loadUserLog() {
+            const user = document.getElementById('user-select').value;
+            if (!user) {
+                render([]);
                 return;
             }
-            // Newest first
+            showError('');
+            try {
+                const r = await fetch(RAG_URL + '/user_log?user=' + encodeURIComponent(user), { mode: 'cors' });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const data = await r.json();
+                const list = Array.isArray(data.events) ? data.events : [];
+                render(list, user);
+            } catch (e) {
+                showError('Failed to load log: ' + (e.message || String(e)));
+                render([]);
+            }
+        }
+
+        function render(list, currentUser) {
+            const tbody = document.getElementById('tbody');
+            if (!list.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty">No login/logout events for this user</td></tr>';
+                return;
+            }
             const sorted = list.slice().sort(function(a, b) {
                 const ta = (a.timestamp || '').toString();
                 const tb = (b.timestamp || '').toString();
@@ -175,14 +197,15 @@
                 return '<tr>' +
                     '<td>' + escapeHtml(entry.timestamp || '—') + '</td>' +
                     '<td><span class="' + eventClass + '">' + escapeHtml(entry.event || 'login') + '</span></td>' +
-                    '<td>' + escapeHtml(entry.user || '—') + '</td>' +
+                    '<td>' + escapeHtml(currentUser || entry.user || '—') + '</td>' +
                     '<td class="profile-cell">' + escapeHtml(formatProfile(entry.profile)) + '</td>' +
                     '</tr>';
             }).join('');
         }
 
-        document.getElementById('refresh').addEventListener('click', load);
-        load();
+        document.getElementById('user-select').addEventListener('change', loadUserLog);
+        document.getElementById('refresh').addEventListener('click', function() { loadUsers(); });
+        loadUsers();
     </script>
 </body>
 </html>

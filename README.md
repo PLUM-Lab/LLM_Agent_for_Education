@@ -22,26 +22,25 @@ An AI-powered medical education platform that automatically generates multiple-c
 - Automatic source citations with page numbers
 - Falls back to keyword search when server is unavailable
 
-### 📋 User Activity Log
-- Logs every login and logout with timestamp and username
-- Saves a snapshot of student profile on login (e.g. questions answered, knowledge components)
-- All users in one JSON file (`user_activity_log.json`), each record has a `user` field
-- Auto-updates when users sign in or sign out in the quiz UI
-- Web UI to view logs: Activity Log page (see [User Activity Log](#user-activity-log) below)
+### 📋 Per-user logs (user_logs/)
+- Each user has a separate file: `user_logs/{username}.json`
+- Logs login/logout events, button clicks, tutor conversations, knowledge profile, and token/cost usage
+- No shared “all users in one file”; everything is per user
+- Web UI to view: Activity Log page — select a user to see that user’s events (see [Per-user log](#user-activity-log) below)
 
 ## Project Structure
 
 ```
 LLM_Agent_for_Education/
 ├── medical-quiz.html      # Main UI (single-page application)
-├── activity_log.html      # Activity log UI (login/logout + profile)
+├── activity_log.html      # Per-user log viewer (select user to view their events)
 ├── usage_stats.html       # Token & cost per user
 ├── rag_server.py          # RAG backend (FAISS + ColBERTv2)
 ├── proactive_question_generator.py  # Tutor / Socratic hints
 ├── start.py               # Unified startup script (recommended)
 ├── start.bat              # Windows quick launch
 ├── api-key.js             # Your OpenAI API key (not in Git)
-├── user_activity_log.json # User activity log (auto-generated, in .gitignore)
+├── user_logs/             # Per-user logs (auto-generated, in .gitignore)
 ├── *.json                 # Generated questions, qbanks, chunks (root)
 ├── Clinical Guidelines/   # Medical PDF files
 ├── Qbanks and Practice Exams/  # Question bank PDFs
@@ -180,7 +179,7 @@ python3 -m http.server 8000
 |---------|------|-------------|------------|----------|
 | Main UI | 8000 | Medical quiz system main interface | http://localhost:8000/medical-quiz.html | ✅ Required |
 | RAG Server | 5000 | Semantic search API + activity log API | http://localhost:5000/health | ⚠️ Optional (Recommended) |
-| Activity Log UI | 8000 or 5000 | View login/logout and student profile log | http://localhost:8000/activity_log.html or :5000/activity_log.html | ⚠️ Optional |
+| Per-user log viewer | 8000 or 5000 | View a selected user’s login/logout and profile events | http://localhost:8000/activity_log.html or :5000/activity_log.html | ⚠️ Optional |
 | Evaluator Interface | 8001 | Question quality evaluation tool | http://localhost:8001/question_evaluator.html | ⚠️ Optional |
 
 **When RAG server is unavailable:**
@@ -237,19 +236,14 @@ Two tutor-style features in the message area work differently:
 - **Auto-logout:** If there is no activity (mouse, keyboard, scroll, touch) for **15 minutes**, the user is logged out and the session expired message is shown.
 - **Cost limit:** Each user is limited to **$3 per hour** (rolling window). When exceeded, the RAG server returns 429 and the UI shows a cost-limit message until the window resets.
 
-### User Activity Log
+### Per-user log (user_logs/)
 
-Login and logout events (with optional student profile snapshot) are recorded automatically.
+Login/logout, button clicks, tutor conversations, knowledge profile, and usage are recorded **per user** in separate files.
 
-- **When it updates:** Each time a user signs in or signs out in the Medical Quiz (including auto-logout after 15 minutes of inactivity), the frontend sends an event to the RAG server and the log file is updated immediately.
-- **Where it is stored:** In the project root: `user_activity_log.json` (same directory as `rag_server.py`). This file is in `.gitignore` and is not committed.
-- **Format:** JSON array. Each entry has:
-  - `event`: `"login"` or `"logout"`
-  - `user`: username
-  - `timestamp`: ISO 8601 time
-  - `profile`: (optional) object with e.g. `questionsAnswered`, `knowledgeMap` — only on login when profile exists
-- **All users in one file:** Every user’s events are appended to the same file; use the `user` field to filter by username.
-- **View in browser:** Open the Activity Log page (see URLs above). If you see "Activity log endpoint not found (404)", restart the RAG server so it loads the version with `GET/POST /activity_log` support. Full field descriptions and examples are in the section [User Activity Log — Detailed Format](#user-activity-log--detailed-format) below.
+- **Where it is stored:** `user_logs/{username}.json` (one file per user). The `user_logs/` directory is in `.gitignore`.
+- **When it updates:** On sign in/out (including auto-logout after 15 minutes), button clicks, tutor messages, profile saves, and when usage is read.
+- **Contents:** Each file has `button_clicks`, `tutor_conversations`, `knowledge_profile`, `usage`, and `events` (login/logout entries with optional profile).
+- **View in browser:** Open the Activity Log page (see URLs above), then select a user to view that user’s events. Full format is described in [Per-user log format](#user-activity-log--detailed-format) below.
 
 ### Parsing Question Bank PDFs
 
@@ -675,90 +669,56 @@ If you see “Cost limit exceeded” with a countdown, wait until it finishes; t
 
 ---
 
-## User Activity Log — Detailed Format
+## Per-user log format (user_logs/{username}.json)
 
-The file `user_activity_log.json` (in the project root) records **login** and **logout** events, and on **login** it can attach a snapshot of the **student profile** from the browser.
+Each user has one file: `user_logs/{username}.json`. There is **no shared file**; all data is per user.
 
-### 文件整体结构（为什么有好几段）
+### 文件整体结构（每个用户一个文件）
 
-这个 JSON 文件是**一个数组** `[ ... ]`，里面有很多**段**（很多个对象）。
-
-- **每一段 = 一条记录 = 发生了一次「登录」或「登出」**。
-- 用户每**登录一次**，就往数组里**追加一段**（一个对象，`event: "login"`，并带当时的 profile 快照）。
-- 用户每**登出一次**，也往数组里**追加一段**（一个对象，`event: "logout"`，没有 profile）。
-
-所以你会看到：第 1 段是某次登录，第 2 段是某次登出，第 3 段又是登录……**段数会越来越多**，因为每次登录/登出都会多一段。不是“一个用户一段”，而是“一次事件一段”。
+- **一个用户一个文件**，例如 `user_logs/student.json`。
+- 文件内包含：`events`（登录/登出）、`button_clicks`、`tutor_conversations`、`knowledge_profile`、`usage`。
 
 **简单示意：**
 
 ```
-user_activity_log.json
-└── [ 数组，按时间顺序 ]
-    ├── 第 1 段：{ "event": "login",  "user": "9", "timestamp": "...", "profile": {...} }
-    ├── 第 2 段：{ "event": "logout", "user": "9", "timestamp": "..." }
-    ├── 第 3 段：{ "event": "login",  "user": "9", "timestamp": "...", "profile": {...} }
-    └── … 更多段，每次登录或登出就多一段
+user_logs/
+├── student.json    # 该用户的所有记录
+├── admin.json
+└── ...
+每个文件结构：
+├── user              "student"
+├── events            [ { "event": "login", "timestamp": "...", "profile": {...} }, { "event": "logout", ... }, ... ]
+├── button_clicks     [ { "timestamp": "...", "button": "Submit", "question_id": 1 }, ... ]
+├── tutor_conversations  [ { "question_id": 1, "question_text": "...", "options": "...", "messages": [...] }, ... ]
+├── knowledge_profile  { ... }   # 最新一次快照
+└── usage             { "cost_total", "prompt_tokens", "completion_tokens", "total_tokens", "request_count" }
 ```
 
-### 一条记录（一段）里面是什么结构？
+### events 里的一条记录（登录/登出）
 
-**一次登入**只产生**一条记录**，**一次登出**也只产生**一条记录**。所以「一次登入登出」= 两条记录：先一条 login，再一条 logout。
-
-- **登出记录**只有 3 个字段：`event`（"logout"）, `user`, `timestamp`（UTC）.
-- **登录记录**有 4 块：`event`（"login"）, `user`, `timestamp`, `profile`（见下）。
-
-**一条「登录」记录结构示意：**
-
-```
-├── event        "login"
-├── user         "9"
-├── timestamp    "2026-02-21T06:48:24.643Z"   （UTC）
-└── profile
-    ├── userName, questionsAnswered, knowledgeMap, createdAt, lastUpdated
-    ├── _scope              "cumulative"
-    └── _scope_description  （说明为累计，不是当次 session）
-```
+- **登出记录**：`event`（"logout"）, `timestamp`（UTC）.
+- **登录记录**：`event`（"login"）, `timestamp`, `profile`（可选，含 userName, questionsAnswered, knowledgeMap 等）。
 
 **Timezone:** All `timestamp` values are in **UTC**. Example: `2026-02-21T06:48:24.643Z` = 6:48 AM UTC; for Beijing (UTC+8) that is 2:48 PM the same day.
 
-### When is a record written?
+### When is an event written (in `events`)?
 
 | Event   | When it is recorded |
 |---------|----------------------|
 | **login**  | When the user signs in, or when the page loads with an existing session. |
 | **logout** | When the user clicks "Sign out", or when auto-logged out after **15 minutes** of inactivity. |
 
-### Top-level fields (every record)
+### Fields in each `events` entry
 
 | Field        | Type   | Description |
 |-------------|--------|-------------|
 | **event**   | string | `"login"` or `"logout"`. |
-| **user**    | string | Username. |
-| **timestamp** | string | Time in **UTC** (ISO 8601), e.g. `"2026-02-21T06:48:24.643Z"`. |
+| **timestamp** | string | Time in **UTC** (ISO 8601). |
 | **profile** | object | **Only on `login`.** Snapshot of student profile from browser. Omitted on `logout`. |
 
-### The `profile` object (login only)
+The **profile** object (on login) includes **userName**, **questionsAnswered**, **knowledgeMap** (cumulative), **createdAt**, **lastUpdated**. **knowledgeMap** keys are `"Domain->Topic->Subtopic"` with **status**, **questionsAttempted**, **questionsCorrect**, **correctQuestionIds**, etc.
 
-Read from browser `localStorage` key `student_profile_{username}`. When present, it includes:
-
-| Field                 | Type   | Description |
-|-----------------------|--------|-------------|
-| **userName**          | string | Same as logged-in username. |
-| **questionsAnswered** | number | **Cumulative** total (all sessions). |
-| **knowledgeMap**      | object | Map of knowledge components; all counts **cumulative**. |
-| **createdAt**, **lastUpdated** | string | ISO timestamps. |
-| **_scope**            | string | `"cumulative"`. |
-| **_scope_description** | string | Explains that numbers are totals across all sessions. |
-
-### Structure of `knowledgeMap`
-
-Each key is `"Domain->Topic->Subtopic"`. Each value has: **status** ("unknown" / "known"), **lastUpdated**, **questionsAttempted**, **questionsCorrect**, **totalQuestionsForSubtopic**, **correctQuestionIds**, **domain**, **topic**, **subtopic**.
-
-### What is not recorded
-
-- Individual question content or answers (only aggregates).
-- Chat messages, Get Hints, or Break Down Question usage.
-- Per-click activity — only **login** and **logout** events.
+The same per-user file also stores **button_clicks**, **tutor_conversations**, **knowledge_profile**, and **usage** (tokens/cost).
 
 ---
 

@@ -50,6 +50,9 @@ analysis_report_*.txt
 # User activity log (login/logout) - may contain PII
 user_activity_log.json
 
+# Per-user logs (button clicks, tutor conversations, usage) - may contain PII
+user_logs/
+
 # Ensure API key is never committed
 api-key.js
 *.key

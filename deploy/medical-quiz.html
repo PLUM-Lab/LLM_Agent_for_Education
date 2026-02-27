@@ -809,6 +809,9 @@ Author: AI for Education (Wenchao Qin)
                     <div id="knowledge-coverage">Knowledge Coverage: 0% (0/0 subtopics)</div>
                 </div>
             </div>
+            <div id="user-metrics" style="font-size: 12px; color: #555; margin-top: 8px; padding: 8px; background: #fff; border-radius: 4px; border: 1px solid #e0e0e0;">
+                <strong>Usage</strong>: Cost $0.00 · Tokens 0 · Requests 0 · Button clicks 0 · Tutor conversations 0
+            </div>
             <div id="knowledge-visualization" style="max-height: 200px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #e0e0e0;">
                 <div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">
                     Knowledge profile (based on your answers).
@@ -2401,6 +2404,32 @@ Author: AI for Education (Wenchao Qin)
                 html += '</div>';
                 vizEl.innerHTML = html;
             }
+            refreshUserMetrics();
+        }
+
+        function refreshUserMetrics() {
+            var el = document.getElementById('user-metrics');
+            if (!el) return;
+            var user = sessionStorage.getItem('quiz_user');
+            if (!user) {
+                el.innerHTML = '<strong>Usage</strong>: Sign in to see metrics.';
+                return;
+            }
+            var urlUsage = RAG_SERVER_URL + '/user_log/usage?user=' + encodeURIComponent(user);
+            var urlLog = RAG_SERVER_URL + '/user_log?user=' + encodeURIComponent(user);
+            Promise.all([
+                fetch(urlUsage, { headers: getSessionHeaders(), mode: 'cors' }).then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; }),
+                fetch(urlLog, { headers: getSessionHeaders(), mode: 'cors' }).then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; })
+            ]).then(function(results) {
+                var usage = results[0] || {};
+                var log = results[1] || {};
+                var cost = (usage.cost_total != null) ? Number(usage.cost_total).toFixed(4) : '0.00';
+                var tokens = usage.total_tokens != null ? usage.total_tokens : (usage.prompt_tokens || 0) + (usage.completion_tokens || 0);
+                var requests = usage.request_count != null ? usage.request_count : 0;
+                var clicks = Array.isArray(log.button_clicks) ? log.button_clicks.length : 0;
+                var convos = Array.isArray(log.tutor_conversations) ? log.tutor_conversations.length : 0;
+                el.innerHTML = '<strong>Usage</strong>: Cost $' + cost + ' &middot; Tokens ' + tokens + ' &middot; Requests ' + requests + ' &middot; Button clicks ' + clicks + ' &middot; Tutor conversations ' + convos;
+            });
         }
         
         /**
