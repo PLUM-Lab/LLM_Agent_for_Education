@@ -210,8 +210,8 @@ CHUNK_SIZE = 1024  # 从 512 增加到 1024，提供更完整的医学上下文
 CHUNK_OVERLAP = 100  # 块之间的重叠，保持上下文连贯性（从 50 增加到 100）
 
 # 索引文件保存路径
-INDEX_FILE = "faiss_index.bin"    # FAISS 向量索引
-CHUNKS_FILE = "all_chunks.json"   # 所有块的元数据（文本、来源、页码）
+INDEX_FILE = "data/indexes/faiss_index.bin"    # FAISS 向量索引
+CHUNKS_FILE = "data/indexes/all_chunks.json"   # 所有块的元数据（文本、来源、页码）
 
 # -----------------------------------------------------------------------------
 # RAG 检索配置

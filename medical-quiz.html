@@ -2483,7 +2483,7 @@ Author: AI for Education (Wenchao Qin)
             setupResizer();
             updateKnowledgeDisplay();
             const selector = document.getElementById('qbank-selector');
-            const source = (selector && selector.value) ? selector.value : 'generated_surgery_domain_questions.json';
+            const source = (selector && selector.value) ? selector.value : 'data/qbanks/generated_surgery_domain_questions.json';
             await loadQuestionsFromFile(source);
             resetInactivityTimer();
         }
@@ -2641,9 +2641,9 @@ Author: AI for Education (Wenchao Qin)
  //
                     const timestamp = new Date().getTime();
                     const [clinical, combined, surgery] = await Promise.all([
-                        fetch(`questions.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
-                        fetch(`qbank_combined.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
-                        fetch(`generated_surgery_domain_questions.json?t=${timestamp}`).then(r => r.json()).catch(() => [])
+                        fetch(`data/qbanks/questions.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
+                        fetch(`data/qbanks/qbank_combined.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
+                        fetch(`data/qbanks/generated_surgery_domain_questions.json?t=${timestamp}`).then(r => r.json()).catch(() => [])
                     ]);
                     // Merge all questions, deduplicate (based on question text)
  //
