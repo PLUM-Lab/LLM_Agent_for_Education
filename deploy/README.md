@@ -8,7 +8,7 @@ This folder contains all necessary resources for deploying the Medical Quiz appl
 - **medical-quiz.html** - Main application file (single-page web application)
 
 ### Configuration
-- **api-key.js** - OpenAI API key configuration (optional, can use localStorage instead)
+- **../api-key.js** - OpenAI API key configuration (optional, can use localStorage instead)
   - If this file doesn't exist, the application will prompt for API key on first use
   - You can create this file with: `const OPENAI_API_KEY = 'your-api-key-here';`
 
@@ -23,7 +23,7 @@ This folder contains all necessary resources for deploying the Medical Quiz appl
 
 1. Navigate to this folder:
    ```bash
-   cd deploy
+   cd LLM_Agent_for_Education
    ```
 
 2. Start a simple HTTP server:
@@ -56,7 +56,7 @@ This folder contains all necessary resources for deploying the Medical Quiz appl
 
 ### Option 3: Static Hosting (GitHub Pages, Netlify, Vercel, etc.)
 
-1. Upload all files in this folder to your static hosting service
+1. Upload all files in this folder (plus api-key.js in the parent folder) to your static hosting service
 
 2. Set `medical-quiz.html` as your entry point/index file
 
@@ -74,13 +74,13 @@ The application can work standalone, but for full functionality, you may want to
 
 ## Features
 
-- âœ… Standalone deployment (all resources in one folder)
-- âœ… No external dependencies (except optional API key)
-- âœ… Works offline (after initial load)
-- âœ… Responsive design (mobile and desktop)
-- âœ… Multiple question banks
-- âœ… Student progress tracking (localStorage)
-- âœ… AI tutor integration (OpenAI API)
+- âœ?Standalone deployment (all resources in one folder)
+- âœ?No external dependencies (except optional API key)
+- âœ?Works offline (after initial load)
+- âœ?Responsive design (mobile and desktop)
+- âœ?Multiple question banks
+- âœ?Student progress tracking (localStorage)
+- âœ?AI tutor integration (OpenAI API)
 
 ## Notes
 

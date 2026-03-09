@@ -401,6 +401,10 @@ Examples:
 
     args = parser.parse_args()
 
+    # Ensure we run from project root so HTTP server serves data/qbanks/ etc.
+    project_root = Path(__file__).resolve().parent
+    os.chdir(project_root)
+
     # If only restarting RAG server, execute and exit
     if args.restart_rag:
         restart_rag_server(args.rag_port)

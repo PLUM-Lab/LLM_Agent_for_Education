@@ -698,11 +698,8 @@ Author: AI for Education (Wenchao Qin)
         if (!valid) { err.textContent = 'Invalid username or password. Please try again.'; return; }
         sessionStorage.setItem('quiz_auth', '1'); sessionStorage.setItem('quiz_user', username);
         try {
-          var profile = null;
-          try { var p = localStorage.getItem('student_profile_' + username); if (p) profile = JSON.parse(p); } catch(e) {}
-          if (window.logActivity) window.logActivity('login', username, profile);
-          // Don't save display_snapshot here - wait for questions to load (in loadQuestionsFromFile)
-          // if (window.logKnowledgeProfile && profile) window.logKnowledgeProfile(profile);
+          // Login event: record basic login without profile; profile will be recorded on logout instead.
+          if (window.logActivity) window.logActivity('login', username);
         } catch(e) {}
         err.textContent = ''; ls.classList.add('hidden'); qa.classList.remove('hidden');
         if (typeof window.initQuiz === 'function') { window.initQuiz(); } else { location.reload(); }
@@ -820,7 +817,7 @@ Author: AI for Education (Wenchao Qin)
             <div style="display: flex; align-items: center; gap: 15px;">
                 <label style="font-weight: 600; color: #666;">Question Bank:</label>
                 <select id="qbank-selector" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #e0e0e0; font-size: 14px;">
-                    <option value="generated_surgery_domain_questions.json" selected>Surgery Domain Questions (579 questions)</option>
+                    <option value="data/qbanks/generated_surgery_domain_questions.json" selected>Surgery Domain Questions (579 questions)</option>
                 </select>
                 <span id="qbank-status" style="color: #666; font-size: 13px;"></span>
             </div>
@@ -2571,14 +2568,11 @@ Author: AI for Education (Wenchao Qin)
             }
             loginScreen.classList.add('hidden');
             quizApp.classList.remove('hidden');
-            try {
-                var user = sessionStorage.getItem('quiz_user');
-                var profile = null;
-                try { var p = localStorage.getItem('student_profile_' + (user || '')); if (p) profile = JSON.parse(p); } catch(e) {}
-                if (window.logActivity) window.logActivity('login', user || 'unknown', profile);
-                // Don't save display_snapshot here - wait for questions to load (in loadQuestionsFromFile)
-                // if (window.logKnowledgeProfile && profile) window.logKnowledgeProfile(profile);
-            } catch(e) {}
+        try {
+            var user = sessionStorage.getItem('quiz_user');
+            // Login event: record basic login without profile; profile will be recorded on logout instead.
+            if (window.logActivity) window.logActivity('login', user || 'unknown');
+        } catch(e) {}
             await initQuiz();
             resetInactivityTimer();
         });
@@ -2628,7 +2622,7 @@ Author: AI for Education (Wenchao Qin)
  //
         //
         // ============================================================
-        async function loadQuestionsFromFile(source = 'questions.json') {
+        async function loadQuestionsFromFile(source = 'data/qbanks/generated_surgery_domain_questions.json') {
             const statusEl = document.getElementById('qbank-status');
             
             try {
@@ -2637,14 +2631,16 @@ Author: AI for Education (Wenchao Qin)
                 if (source === 'all') {
                     // Load all question banks (including merged file and generated questions)
  //
-                    // Add timestamp parameter to force browser reload (avoid cache issues)
- //
                     const timestamp = new Date().getTime();
-                    const [clinical, combined, surgery] = await Promise.all([
-                        fetch(`data/qbanks/questions.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
-                        fetch(`data/qbanks/qbank_combined.json?t=${timestamp}`).then(r => r.json()).catch(() => []),
-                        fetch(`data/qbanks/generated_surgery_domain_questions.json?t=${timestamp}`).then(r => r.json()).catch(() => [])
-                    ]);
+                    const withTs = (p) => `${p}?t=${timestamp}`;
+                    let clinical = [], combined = [], surgery = [];
+                    const prefixed = ['data/qbanks/questions.json', 'data/qbanks/qbank_combined.json', 'data/qbanks/generated_surgery_domain_questions.json'];
+                    [clinical, combined, surgery] = await Promise.all(prefixed.map(p => fetch(withTs(p)).then(r => r.ok ? r.json() : []).catch(() => [])));
+                    const total = (clinical.length || 0) + (combined.length || 0) + (surgery.length || 0);
+                    if (total === 0) {
+                        const rootPaths = ['questions.json', 'qbank_combined.json', 'generated_surgery_domain_questions.json'];
+                        [clinical, combined, surgery] = await Promise.all(rootPaths.map(p => fetch(withTs(p)).then(r => r.ok ? r.json() : []).catch(() => [])));
+                    }
                     // Merge all questions, deduplicate (based on question text)
  //
                     const allQuestions = [...clinical, ...combined, ...surgery];
@@ -2660,8 +2656,14 @@ Author: AI for Education (Wenchao Qin)
                     // Add timestamp parameter to force browser reload (avoid cache issues)
  //
                     const timestamp = new Date().getTime();
-                    const url = source.includes('?') ? `${source}&t=${timestamp}` : `${source}?t=${timestamp}`;
-                    const response = await fetch(url);
+                    let url = source.includes('?') ? `${source}&t=${timestamp}` : `${source}?t=${timestamp}`;
+                    let response = await fetch(url);
+                    // Fallback: if path has data/qbanks/ and failed, try filename only (for deploy folder)
+                    if (!response.ok && source.startsWith('data/qbanks/')) {
+                        const baseName = source.replace('data/qbanks/', '');
+                        url = baseName.includes('?') ? `${baseName}&t=${timestamp}` : `${baseName}?t=${timestamp}`;
+                        response = await fetch(url);
+                    }
                     if (!response.ok) throw new Error('Failed to fetch');
                     
                     // Check if it's JSONL format (ends with .jsonl)
@@ -3338,7 +3340,7 @@ Author: AI for Education (Wenchao Qin)
             const banner = document.createElement('div');
             banner.id = 'cost-limit-banner';
             banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc3545;color:#fff;padding:12px 20px;text-align:center;font-weight:600;font-size:14px;';
-            banner.innerHTML = '⚠️ Cost limit exceeded. Try again in <span id="banner-countdown">' + formatCountdown(retrySec) + '</span>';
+            banner.innerHTML = '⚠️ Cost limit exceeded. Tutor will be disabled and be back after <span id="banner-countdown">' + formatCountdown(retrySec) + '</span>.';
             document.body.insertBefore(banner, document.body.firstChild);
             let remaining = retrySec;
             const tick = () => {
@@ -3355,8 +3357,8 @@ Author: AI for Education (Wenchao Qin)
  // X-Cost-Limit-Exceeded
         function checkCostLimitHeader(response) {
             if (response && response.headers && response.headers.get('X-Cost-Limit-Exceeded') === 'true') {
+                // Only show banner, no pop-up window when cost limit is exceeded
                 showCostLimitBanner();
-                showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded');
             }
         }
 
@@ -3366,7 +3368,9 @@ Author: AI for Education (Wenchao Qin)
         function doLogoutDueToInactivity() {
             inactivityTimeoutId = null;
             var user = sessionStorage.getItem('quiz_user');
-            if (window.logActivity) window.logActivity('logout', user || 'unknown');
+            // On logout (due to inactivity), record knowledge profile in the event log
+            var profileSnapshot = typeof studentProfile !== 'undefined' ? studentProfile : null;
+            if (window.logActivity) window.logActivity('logout', user || 'unknown', profileSnapshot);
             sessionStorage.removeItem('quiz_auth');
             sessionStorage.removeItem('quiz_user');
             const ls = document.getElementById('login-screen');
@@ -3437,7 +3441,7 @@ Author: AI for Education (Wenchao Qin)
                         headers: getSessionHeaders(),
                         body: JSON.stringify({ query, top_k: topK })
                     });
-                    if (response.status === 429) { showCostLimitBanner(); showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded'); throw new Error('Cost limit exceeded'); }
+                    if (response.status === 429) { showCostLimitBanner(); throw new Error('Cost limit exceeded'); }
                     if (response.ok) {
                         const data = await response.json();
                         console.log(`✓ RAG: Retrieved ${data.results.length} chunks via FAISS`);
@@ -3615,7 +3619,9 @@ Author: AI for Education (Wenchao Qin)
                 logoutLink.addEventListener('click', function(e) {
                     e.preventDefault();
                     var user = sessionStorage.getItem('quiz_user');
-                    if (window.logActivity) window.logActivity('logout', user || 'unknown');
+                    // On manual logout, record knowledge profile in the event log
+                    var profileSnapshot = typeof studentProfile !== 'undefined' ? studentProfile : null;
+                    if (window.logActivity) window.logActivity('logout', user || 'unknown', profileSnapshot);
                     sessionStorage.removeItem('quiz_auth');
                     sessionStorage.removeItem('quiz_user');
                     location.reload();
@@ -5340,8 +5346,8 @@ Keep it concise (2-3 paragraphs) but informative. Use citations if source chunks
 
                 if (ragFetchResponse) {
                     if (ragFetchResponse.status === 429) {
+                        // Show banner only; do not show pop-up window when cost limit is exceeded
                         showCostLimitBanner();
-                        showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded');
                         throw new Error('Cost limit exceeded');
                     }
                     if (ragFetchResponse.ok) checkCostLimitHeader(ragFetchResponse);
@@ -5615,7 +5621,7 @@ Keep it concise (2-3 paragraphs) but informative. Use citations if source chunks
                 }
 
                 if (ragGuidanceResponse) {
-                    if (ragGuidanceResponse.status === 429) { showCostLimitBanner(); showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded'); throw new Error('Cost limit exceeded'); }
+                    if (ragGuidanceResponse.status === 429) { showCostLimitBanner(); throw new Error('Cost limit exceeded'); }
                     if (ragGuidanceResponse.ok) checkCostLimitHeader(ragGuidanceResponse);
                     if (!ragGuidanceResponse.ok) { throw new Error(`HTTP error! status: ${ragGuidanceResponse.status}`); }
                     result = await ragGuidanceResponse.json();
@@ -5855,7 +5861,7 @@ Keep it concise (2-3 paragraphs) but informative. Use citations if source chunks
                     headers: getSessionHeaders(),
                     body: JSON.stringify(requestData)
                 });
-                if (response.status === 429) { showCostLimitBanner(); showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded'); throw new Error('Cost limit exceeded'); }
+                if (response.status === 429) { showCostLimitBanner(); throw new Error('Cost limit exceeded'); }
                 if (response.ok) checkCostLimitHeader(response);
                 const result = await response.json();
                 
@@ -6165,8 +6171,8 @@ ${(() => {
                     body: JSON.stringify(reqBody)
                 });
             if (response.status === 429) {
+                // Show banner only; do not show pop-up window when cost limit is exceeded
                 showCostLimitBanner();
-                showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded');
                 throw new Error('Cost limit exceeded');
             }
             if (ragServerAvailable && response.ok) checkCostLimitHeader(response);
@@ -7262,8 +7268,8 @@ Your response MUST follow this structure:
                     body: JSON.stringify(requestData)
                 });
                 if (resp.status === 429) {
+                    // Only show the banner, no blocking pop-up window
                     showCostLimitBanner();
-                    showAppAlert('Cost limit exceeded. Please try again later.', 'Cost limit exceeded');
                     throw new Error('Cost limit exceeded');
                 }
                 if (resp.ok) checkCostLimitHeader(resp);
@@ -7550,11 +7556,8 @@ Your response MUST follow this structure:
         if (!valid) { err.textContent = 'Invalid username or password. Please try again.'; return; }
         sessionStorage.setItem('quiz_auth', '1'); sessionStorage.setItem('quiz_user', username);
         try {
-          var profile = null;
-          try { var p = localStorage.getItem('student_profile_' + username); if (p) profile = JSON.parse(p); } catch(e) {}
-          if (window.logActivity) window.logActivity('login', username, profile);
-          // Don't save display_snapshot here - wait for questions to load (in loadQuestionsFromFile)
-          // if (window.logKnowledgeProfile && profile) window.logKnowledgeProfile(profile);
+          // Login event: record basic login without profile; profile will be recorded on logout instead.
+          if (window.logActivity) window.logActivity('login', username);
         } catch(e) {}
         err.textContent = ''; ls.classList.add('hidden'); qa.classList.remove('hidden');
         if (typeof window.initQuiz === 'function') { window.initQuiz(); } else { location.reload(); }
