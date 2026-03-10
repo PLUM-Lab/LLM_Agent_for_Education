@@ -789,7 +789,6 @@ Author: AI for Education (Wenchao Qin)
              
              Elements:
              - #qbank-selector: Dropdown selection box
-             - #qbank-status: Display loading status and question count
              ============================================================ -->
         <!-- ============================================================
              Student Profile Section (user = logged-in username)
@@ -819,7 +818,6 @@ Author: AI for Education (Wenchao Qin)
                 <select id="qbank-selector" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #e0e0e0; font-size: 14px;">
                     <option value="data/qbanks/generated_surgery_domain_questions.json" selected>Surgery Domain Questions (579 questions)</option>
                 </select>
-                <span id="qbank-status" style="color: #666; font-size: 13px;"></span>
             </div>
         </div>
 
@@ -2623,7 +2621,6 @@ Author: AI for Education (Wenchao Qin)
         //
         // ============================================================
         async function loadQuestionsFromFile(source = 'data/qbanks/generated_surgery_domain_questions.json') {
-            const statusEl = document.getElementById('qbank-status');
             
             try {
                 let questions = [];
@@ -2651,7 +2648,6 @@ Author: AI for Education (Wenchao Qin)
                         seen.add(key);
                         return true;
                     });
-                    if (statusEl) statusEl.textContent = `Loaded all ${questions.length} questions (after deduplication)`;
                 } else {
                     // Add timestamp parameter to force browser reload (avoid cache issues)
  //
@@ -2683,13 +2679,7 @@ Author: AI for Education (Wenchao Qin)
                         }).filter(q => q !== null);
                     } else {
                         // Regular JSON array
- // JSON
                         questions = await response.json();
-                    }
-                    
-                    if (statusEl) {
-                        const fileName = source.replace('.json', '').replace('.jsonl', '');
-                        statusEl.textContent = `Loaded ${questions.length} questions (${fileName})`;
                     }
                 }
                 
@@ -2809,7 +2799,6 @@ Author: AI for Education (Wenchao Qin)
                 updateKnowledgeDisplay();
             } catch (error) {
                 console.error(`Failed to load ${source}:`, error);
-                if (statusEl) statusEl.textContent = 'Loading failed';
                 
                 // Show error message in UI
                 document.getElementById('question-text').innerHTML = `
@@ -3192,7 +3181,7 @@ Author: AI for Education (Wenchao Qin)
         //
         // ====================================================================
         
-        const RAG_SERVER_URL = 'http://' + (window.location.hostname || '127.0.0.1') + ':' + (window.RAG_PORT || 5001);
+        const RAG_SERVER_URL = window.SINGLE_PORT ? '' : ('http://' + (window.location.hostname || '127.0.0.1') + ':' + (window.RAG_PORT || 5001));
         let ragServerAvailable = false;
 
         /** Log login/logout to this user's own log file (user_logs/{user}.json). Requires RAG server on port 5000. */

@@ -85,6 +85,7 @@ RAG 服务器 - 医学教育知识库
 
 依赖：
     pip install flask flask-cors openai faiss-cpu langchain-community pypdf ragatouille
+    （仅使用 ColBERTv2，无其他后备重排序器）
 
 使用方法：
     1. 在 api-key.js 中设置 API 密钥
@@ -113,7 +114,7 @@ import time
 import types
 from typing import Dict, List, Optional
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, redirect
 from flask_cors import CORS
 import langchain
 import numpy as np
@@ -184,8 +185,6 @@ try:
 except (ImportError, ModuleNotFoundError) as e:
     HAS_RERANKER = False
     print(f"[!] 重排序器导入失败: {e}")
-    print("[!] 将仅使用 FAISS 检索")
-
 
 
 # =============================================================================
@@ -292,12 +291,11 @@ def get_api_key() -> str:
 
 
 # =============================================================================
-# Per-user hourly cost limit ($3/hour)
+# Per-user cost limit: 三分钟五毛钱 ($0.5 per 3 min per user, rolling window)
 # =============================================================================
 
-# Per-user cost limit: $3 per hour (rolling window)
-COST_LIMIT_WINDOW_SECONDS = 3600  # 1 hour
-COST_LIMIT = 3.0  # $3 per user per hour
+COST_LIMIT_WINDOW_SECONDS = 180   # 3 分钟
+COST_LIMIT = 0.5                  # 五毛钱 / $0.5 per user per 3 min
 _user_costs: Dict[str, List[tuple]] = defaultdict(list)  # 用户ID -> [(时间戳, 费用), ...]，用于限额检查
 _user_tokens: Dict[str, List[tuple]] = defaultdict(list)  # 用户ID -> [(时间戳, pt, ct), ...]，用于限额
 _user_totals: Dict[str, Dict] = defaultdict(lambda: {"cost": 0.0, "prompt_tokens": 0, "completion_tokens": 0, "request_count": 0})  # 累计总量（不清理）
@@ -401,7 +399,7 @@ def _cost_limit_exceeded_after_add() -> bool:
 
 def cost_check_limit() -> Optional[tuple]:
     """
-    Check if user exceeds hourly cost limit ($3/hour).
+    Check if user exceeds cost limit ($0.5 per 3 min per user).
     Returns None if under limit; otherwise (response dict, status_code).
     """
     uid = _get_user_id()
@@ -939,39 +937,25 @@ def initialize_rag():
     openai_client = OpenAI(api_key=api_key)
     
     # -------------------------------------------------------------------------
-    # 步骤 1：加载 ColBERTv2 重排序器
+    # 步骤 1：加载重排序器（仅 ColBERTv2）
     # -------------------------------------------------------------------------
     if HAS_RERANKER:
         print("\n[0] 正在加载 ColBERTv2 重排序器...")
         try:
-            # 设置环境变量，尝试跳过 C++ 扩展编译（如果可能）
             import os
-            # 禁用 C++ 扩展编译（如果系统不支持）
             os.environ['COLBERT_LOAD_TORCH_EXTENSION_VERBOSE'] = 'False'
-            # 尝试使用纯 Python 实现（如果可用）
             os.environ['COLBERT_USE_CPP'] = 'False'
-            
-            # 加载预训练的 ColBERTv2 模型
-            # 首次运行可能会下载模型（约 500MB）
             reranker = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
             print("  [OK] ColBERTv2 重排序器已加载")
         except Exception as e:
             error_msg = str(e)
-            print(f"  [!] 加载重排序器失败：{e}")
-            
-            # 检查是否是 Windows 兼容性问题
-            if 'pthread.h' in error_msg or 'No such file or directory' in error_msg:
-                print("  [!] 原因：ColBERTv2 的 C++ 扩展在 Windows 上不兼容（需要 pthread.h）")
-                print("  [!] 解决方案：")
-                print("      1. 使用 WSL（Windows Subsystem for Linux）运行")
-                print("      2. 或继续使用 FAISS 检索（已足够使用）")
-            else:
-                print("  [!] 提示：ColBERTv2 需要 C++ 编译器（Visual Studio Build Tools）")
-                print("  [!] 或者系统将仅使用 FAISS 检索（已足够使用）")
+            print(f"  [!] 加载 ColBERTv2 失败：{e}")
+            if 'pthread.h' in error_msg or 'No such file or directory' in error_msg or 'cl' in error_msg or 'compiler' in error_msg.lower():
+                print("  [!] 原因：ColBERTv2 的 C++ 扩展在 Windows 上不兼容，请在 WSL/Linux 下运行以启用重排序")
             reranker = None
-    else:
-        print("\n[!] 重排序器不可用")
-        reranker = None
+
+    if reranker is None:
+        print("\n[!] 无重排序器，将仅使用 FAISS 检索")
     
     # -------------------------------------------------------------------------
     # 步骤 2：加载或构建 FAISS 索引
@@ -1125,7 +1109,7 @@ def _search_impl():
 @app.route('/chat_completion', methods=['POST'])
 def chat_completion():
     """
-    OpenAI chat proxy: forward request, track cost, enforce $3/hour per-user limit.
+    OpenAI chat proxy: forward request, track cost, enforce $0.5/3min per-user limit.
     超限时返回 429。
     """
     blocked = cost_check_limit()
@@ -2185,6 +2169,33 @@ def check_hint_trigger():
             "reason": "error",
             "error": str(e)
         }), 500
+
+
+# =============================================================================
+# 单端口模式：同时提供静态文件（UI）和 API
+# =============================================================================
+
+@app.route('/', methods=['GET'])
+def index_redirect():
+    """Redirect root to main quiz UI."""
+    return redirect('/medical-quiz.html', code=302)
+
+
+@app.route('/<path:path>', methods=['GET'])
+def serve_static(path):
+    """
+    Serve static files (HTML, JS, JSON, etc.) from project root.
+    Only GET; path must not contain '..'. Used when running in single-port mode.
+    """
+    if '..' in path or path.startswith('/'):
+        return jsonify({"error": "Not found"}), 404
+    base = _BASE_DIR
+    full = os.path.normpath(os.path.join(base, path))
+    if not os.path.realpath(full).startswith(os.path.realpath(base)):
+        return jsonify({"error": "Not found"}), 404
+    if not os.path.isfile(full):
+        return jsonify({"error": "Not found"}), 404
+    return send_from_directory(base, path)
 
 
 # =============================================================================

@@ -97,7 +97,7 @@
 
     <div class="bar">
         <div>
-            <span class="limit-badge">Limit: $3 per hour per user</span><span id="limit-val" style="display:none">3</span>
+            <span class="limit-badge">Limit: $0.5 per 3 min per user</span><span id="limit-val" style="display:none">0.5</span>
             <div class="auto-label">Auto-refresh every 30s</div>
         </div>
         <button class="refresh-btn" id="refresh">Refresh</button>
@@ -137,7 +137,7 @@
                 const r = await fetch(RAG_URL + '/usage_stats', { mode: 'cors' });
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 const data = await r.json();
-                document.getElementById('limit-val').textContent = (data.limit_per_hour ?? 3);
+                document.getElementById('limit-val').textContent = (data.limit_per_hour ?? 0.5);
                 render(data.users || []);
             } catch (e) {
                 showError('Cannot reach RAG server. Make sure it is running on port 5000. ' + e.message);
@@ -147,7 +147,7 @@
 
         function render(users) {
             const tbody = document.getElementById('tbody');
-            const limit = parseFloat(document.getElementById('limit-val').textContent) || 3;
+            const limit = parseFloat(document.getElementById('limit-val').textContent) || 0.5;
             if (!users.length) {
                 tbody.innerHTML = '<tr><td colspan="7" class="empty">No usage yet</td></tr>';
                 return;

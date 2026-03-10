@@ -19,75 +19,57 @@ This folder contains all necessary resources for deploying the Medical Quiz appl
 
 ## Deployment Instructions
 
-### Option 1: Simple HTTP Server (Recommended for Testing)
+### Recommended: Single-Port Deployment (UI + RAG API)
 
-1. Navigate to this folder:
-   ```bash
-   cd LLM_Agent_for_Education
-   ```
+From the **project root** (parent of `deploy/`), run:
 
-2. Start a simple HTTP server:
-   ```bash
-   # Python 3
-   python -m http.server 8000
-   
-   # Python 2
-   python -m SimpleHTTPServer 8000
-   
-   # Node.js (if you have http-server installed)
-   npx http-server -p 8000
-   ```
+```bash
+cd LLM_Agent_for_Education
+python start.py
+```
 
-3. Open your browser and navigate to:
-   ```
-   http://localhost:8000/medical-quiz.html
-   ```
+- One server listens on **port 8000** (configurable with `--port`).
+- Serves the quiz UI (e.g. `/medical-quiz.html`), static files, and all RAG/Tutor APIs on the same port.
+- All RAG features work: search, hints, chat, user logs, cost limit, etc., with no CORS issues.
 
-### Option 2: Web Server Deployment
+Then open: `http://localhost:8000/` or `http://localhost:8000/medical-quiz.html`.
 
-1. Copy all files in this folder to your web server's document root (e.g., `/var/www/html/` or `C:\inetpub\wwwroot\`)
+For production, point your reverse proxy (e.g. Nginx) or PaaS to this single port.
 
-2. Ensure your web server is configured to serve HTML files
+### Option 2: Static-Only (No Tutor/RAG)
 
-3. Access the application via your web server URL:
-   ```
-   http://your-server-domain/medical-quiz.html
-   ```
+If you only need the quiz UI without the backend:
 
-### Option 3: Static Hosting (GitHub Pages, Netlify, Vercel, etc.)
+1. From project root or this folder: `python -m http.server 8000`
+2. Open: `http://localhost:8000/medical-quiz.html`
 
-1. Upload all files in this folder (plus api-key.js in the parent folder) to your static hosting service
+Tutor, RAG search, and user logging will not work without the backend (use `python start.py` instead).
 
-2. Set `medical-quiz.html` as your entry point/index file
+### Option 3: Web Server Deployment
 
-3. The application will be accessible via your hosting service URL
+1. Copy the whole project (or at least `medical-quiz.html`, `rag_server.py`, `data/`, and dependencies) to your server.
+2. Run `python start.py` (or run `rag_server.py` with port 8000) so one process serves both UI and API.
+3. Put a reverse proxy (Nginx/Apache) in front of that single port if needed.
 
-## Backend Services (Optional)
+### Option 4: Static Hosting (Limited)
 
-The application can work standalone, but for full functionality, you may want to run:
-
-### RAG Server (Optional)
-- Provides semantic search and enhanced context retrieval
-- See main project's `rag_server.py` for backend server
-- Default port: 5000
-- The application will gracefully degrade if the RAG server is unavailable
+You can host only the HTML/JS/JSON on GitHub Pages, Netlify, etc., but **Tutor and RAG will not work** unless you deploy the backend separately and set CORS/API URL. For full functionality, use single-port deployment above.
 
 ## Features
 
-- âœ?Standalone deployment (all resources in one folder)
-- âœ?No external dependencies (except optional API key)
-- âœ?Works offline (after initial load)
-- âœ?Responsive design (mobile and desktop)
-- âœ?Multiple question banks
-- âœ?Student progress tracking (localStorage)
-- âœ?AI tutor integration (OpenAI API)
+- ??Standalone deployment (all resources in one folder)
+- ??No external dependencies (except optional API key)
+- ??Works offline (after initial load)
+- ??Responsive design (mobile and desktop)
+- ??Multiple question banks
+- ??Student progress tracking (localStorage)
+- ??AI tutor integration (OpenAI API)
 
 ## Notes
 
-- All file paths are relative, so the folder structure must be maintained
-- The application uses localStorage for student profiles (browser-specific)
-- API key can be provided via `api-key.js` or entered manually in the UI
-- Question bank files are loaded dynamically based on user selection
+- **Single port**: One process (port 8000) serves both the quiz UI and all RAG/Tutor APIs; no separate RAG port needed.
+- Keep project structure (e.g. `data/qbanks/`, `data/indexes/`) when deploying.
+- API key: `api-key.js` in project root or enter in the UI.
 
 ## Troubleshooting
 
