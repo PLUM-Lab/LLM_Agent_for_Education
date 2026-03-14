@@ -2228,32 +2228,17 @@ def _load_user_totals_from_logs() -> None:
 
 
 if __name__ == '__main__':
-    """
-    启动 RAG 服务器。
-    
-    初始化：
-        1. 加载 API 密钥
-        2. 加载/构建 FAISS 索引
-        3. 加载 ColBERTv2 重排序器
-    
-    服务器：
-        - 主机：0.0.0.0（可从任何 IP 访问）
-        - 端口：5000
-        - 调试：False（为了生产稳定性）
-    
-    使用方法：
-        python rag_server.py
-    
-    然后访问：
-        - http://localhost:5000/health - 检查状态
-        - http://localhost:5000/search - 搜索 API
-    """
+    import argparse
+    parser = argparse.ArgumentParser(description='RAG Server')
+    parser.add_argument('--port', type=int, default=None, help='Port to listen on (overrides RAG_PORT env var)')
+    args = parser.parse_args()
+
     _load_user_totals_from_logs()
     if initialize_rag():
         # 初始化提示生成器
         initialize_hint_generator()
-        
-        port = int(os.environ.get('RAG_PORT', 5000))
+
+        port = args.port or int(os.environ.get('RAG_PORT', 5001))
         print(f"\n服务器启动在 http://localhost:{port}")
         print("\nAPI 端点：")
         print("  POST /search          - 搜索相关块")
