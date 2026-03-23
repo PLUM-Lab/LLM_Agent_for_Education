@@ -682,7 +682,7 @@ Author: AI for Education (Wenchao Qin)
     </style>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-      function handleLogin() {
+      async function handleLogin() {
         var u = document.getElementById('login-username'), p = document.getElementById('login-password'), err = document.getElementById('login-error');
         var ls = document.getElementById('login-screen'), qa = document.getElementById('quiz-app');
         if (!u || !p || !err) { if (err) err.textContent = 'Missing fields.'; return; }
@@ -690,12 +690,17 @@ Author: AI for Education (Wenchao Qin)
         var username = (u.value || '').trim(), password = (p.value || '');
         if (!username) { err.textContent = 'Please enter a username.'; return; }
         if (!password) { err.textContent = 'Please enter a password.'; return; }
-        var DEFAULT_USERS = [{username:'admin',password:'admin'},{username:'student',password:'student'}];
-        var extra = [];
-        try { var s = localStorage.getItem('quiz_registered_users'); if (s) extra = JSON.parse(s); } catch(e) {}
-        var users = DEFAULT_USERS.concat(extra);
-        var valid = users.some(function(x) { return x.username === username && x.password === password; });
-        if (!valid) { err.textContent = 'Invalid username or password. Please try again.'; return; }
+        try {
+          if (window.authLogin) {
+            await window.authLogin(username, password);
+          } else {
+            err.textContent = 'Login service not ready. Please refresh.';
+            return;
+          }
+        } catch (loginErr) {
+          err.textContent = (loginErr && loginErr.message) ? loginErr.message : 'Invalid username or password. Please try again.';
+          return;
+        }
         sessionStorage.setItem('quiz_auth', '1'); sessionStorage.setItem('quiz_user', username);
         try {
           // Login event: record basic login without profile; profile will be recorded on logout instead.
@@ -1113,6 +1118,7 @@ Author: AI for Education (Wenchao Qin)
                 userName: userName,
                 questionsAnswered: 0,
                 knowledgeMap: {},  // Will be populated as questions are answered
+                answerHistory: {}, // questionId -> { selectedAnswer, isCorrect, answeredAt }
  //
                 createdAt: new Date().toISOString(),
                 lastUpdated: new Date().toISOString()
@@ -1684,6 +1690,48 @@ Author: AI for Education (Wenchao Qin)
  // UI
             updateKnowledgeDisplay();
         }
+
+        /**
+         * Persist answer history per question for the current user.
+         * If an answer is already saved, keep the original first answer.
+         *
+         * @param {Object} question
+         * @param {number} questionIndex
+         * @param {number} selectedAnswerIndex
+         * @param {boolean} isCorrect
+         */
+        function saveUserAnswerHistory(question, questionIndex, selectedAnswerIndex, isCorrect) {
+            if (!studentProfile || !question) return;
+            if (!studentProfile.answerHistory) studentProfile.answerHistory = {};
+
+            const questionId = getQuestionId(question, questionIndex);
+            if (!questionId) return;
+
+            // Keep the first submitted answer as "original answer".
+            if (!studentProfile.answerHistory[questionId]) {
+                studentProfile.answerHistory[questionId] = {
+                    selectedAnswer: selectedAnswerIndex,
+                    isCorrect: !!isCorrect,
+                    answeredAt: new Date().toISOString()
+                };
+                studentProfile.lastUpdated = new Date().toISOString();
+                saveStudentProfile();
+            }
+        }
+
+        /**
+         * Read previously saved answer history for a question.
+         *
+         * @param {Object} question
+         * @param {number} questionIndex
+         * @returns {Object|null}
+         */
+        function getUserAnswerHistory(question, questionIndex) {
+            if (!studentProfile || !studentProfile.answerHistory || !question) return null;
+            const questionId = getQuestionId(question, questionIndex);
+            if (!questionId) return null;
+            return studentProfile.answerHistory[questionId] || null;
+        }
         
         /**
          * Save student profile to localStorage
@@ -2158,6 +2206,11 @@ Author: AI for Education (Wenchao Qin)
                     if (fixedCount > 0) {
                         console.log(`🔧 Fixed ${fixedCount} components missing correctQuestionIds`);
                     }
+
+                    // Backward compatibility: old profiles may not have answerHistory
+                    if (!profile.answerHistory || typeof profile.answerHistory !== 'object') {
+                        profile.answerHistory = {};
+                    }
                     
                     return profile;
                 }
@@ -2166,6 +2219,37 @@ Author: AI for Education (Wenchao Qin)
             }
             
             return null;
+        }
+
+        async function loadStudentProfileFromServer(userName) {
+            if (!userName) return null;
+            try {
+                const url = RAG_SERVER_URL + '/user_log?user=' + encodeURIComponent(userName);
+                const resp = await fetch(url, { headers: getSessionHeaders(), mode: 'cors' });
+                if (!resp.ok) return null;
+                const data = await resp.json();
+                const profile = data && data.knowledge_profile ? data.knowledge_profile : null;
+                if (!profile || typeof profile !== 'object') return null;
+
+                if (!profile.knowledgeMap || typeof profile.knowledgeMap !== 'object') profile.knowledgeMap = {};
+                if (!profile.answerHistory || typeof profile.answerHistory !== 'object') profile.answerHistory = {};
+                Object.values(profile.knowledgeMap).forEach((component) => {
+                    if (component && typeof component === 'object' && !component.correctQuestionIds) {
+                        component.correctQuestionIds = [];
+                    }
+                });
+
+                try {
+                    const key = PROFILE_STORAGE_PREFIX + userName;
+                    localStorage.setItem(key, JSON.stringify(profile));
+                } catch (_) {}
+
+                console.log('📥 Loaded student profile from backend for user:', userName);
+                return profile;
+            } catch (e) {
+                console.warn('Failed to load student profile from backend:', e);
+                return null;
+            }
         }
         
         /**
@@ -2340,6 +2424,26 @@ Author: AI for Education (Wenchao Qin)
             
             // Update visualization: domains only from current question bank, progress bar per domain (always show when we have questions)
             if (vizEl) {
+                const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[c]));
+
+                // Bind click handler once (event delegation).
+                if (!window.__domainJumpBound) {
+                    vizEl.addEventListener('click', function(e) {
+                        const item = e.target && e.target.closest ? e.target.closest('.domain-item') : null;
+                        if (!item) return;
+                        const domain = item.dataset ? item.dataset.domain : item.getAttribute('data-domain');
+                        if (!domain) return;
+                        jumpToFirstQuestionInDomain(domain);
+                    });
+                    window.__domainJumpBound = true;
+                }
+
                 const getDomain = (q) => (q && q.domain) ? q.domain : 'Other';
                 const domainLastUpdated = {};
                 const knowledgeMap = (studentProfile && studentProfile.knowledgeMap) ? studentProfile.knowledgeMap : {};
@@ -2367,6 +2471,7 @@ Author: AI for Education (Wenchao Qin)
                 html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px;">';
 
                 allDomains.forEach(domain => {
+                    const domainEsc = escapeHtml(domain);
                     const totalInDomain = allQuestions.filter(q => getDomain(q) === domain).length;
                     const correctIdsInDomain = new Set();
                     Object.entries(knowledgeMap).forEach(([key, component]) => {
@@ -2379,9 +2484,9 @@ Author: AI for Education (Wenchao Qin)
                     const accuracy = totalInDomain > 0 ? Math.round((correctInDomain / totalInDomain) * 100) : 0;
                     const barColor = accuracy >= 70 ? '#28a745' : accuracy >= 40 ? '#ffc107' : '#dc3545';
 
-                    html += '<div style="margin-bottom: 0;">';
+                    html += `<div style="margin-bottom: 0; cursor: pointer;" class="domain-item" data-domain="${domainEsc}" title="Jump to first question in this domain">`;
                     html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">`;
-                    html += `<span style="font-weight: 500; color: #333;">${domain}</span>`;
+                    html += `<span style="font-weight: 500; color: #333;">${domainEsc}</span>`;
                     html += `<span style="font-size: 11px; color: #666;">${accuracy}% (${correctInDomain}/${totalInDomain})</span>`;
                     html += `</div>`;
                     html += `<div style="height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;">`;
@@ -2398,6 +2503,27 @@ Author: AI for Education (Wenchao Qin)
                 html += '</div>';
                 vizEl.innerHTML = html;
             }
+        }
+
+        /**
+         * Jump to the first question that belongs to a specific domain.
+         *
+         * @param {string} domain
+         */
+        function jumpToFirstQuestionInDomain(domain) {
+            if (!domain) return;
+            if (!allQuestions || allQuestions.length === 0) {
+                alert('Please load questions first');
+                return;
+            }
+
+            const targetIndex = allQuestions.findIndex(q => (q && q.domain ? q.domain : 'Other') === domain);
+            if (targetIndex < 0) {
+                alert(`No questions found in domain: ${domain}`);
+                return;
+            }
+
+            loadQuestionByIndex(targetIndex); // loadQuestionByIndex is 0-based
         }
         
         /**
@@ -2451,7 +2577,7 @@ Author: AI for Education (Wenchao Qin)
             });
         }
 
-        function setupProfileInitialization() {
+        async function setupProfileInitialization() {
             // Use logged-in username from session (login = profile identity)
             const userName = sessionStorage.getItem('quiz_user') || '';
             if (!userName) return;
@@ -2459,7 +2585,10 @@ Author: AI for Education (Wenchao Qin)
             const loggedInEl = document.getElementById('logged-in-user');
             if (loggedInEl) loggedInEl.textContent = 'Logged in as: ' + userName;
 
-            const existing = loadStudentProfile(userName);
+            let existing = loadStudentProfile(userName);
+            if (!existing) {
+                existing = await loadStudentProfileFromServer(userName);
+            }
             if (existing) {
                 studentProfile = existing;
                 if (allQuestions && allQuestions.length > 0) reevaluateKnowledgeStatus();
@@ -2474,7 +2603,7 @@ Author: AI for Education (Wenchao Qin)
         async function initQuiz() {
             setupEventListeners();
             setupQbankSelector();
-            setupProfileInitialization();
+            await setupProfileInitialization();
             setupResizer();
             updateKnowledgeDisplay();
             const selector = document.getElementById('qbank-selector');
@@ -2485,28 +2614,34 @@ Author: AI for Education (Wenchao Qin)
         window.initQuiz = initQuiz;
 
  // + localStorage
-        const DEFAULT_USERS = [
-            { username: 'admin', password: 'admin' },
-            { username: 'student', password: 'student' }
-        ];
-        const STORAGE_KEY_USERS = 'quiz_registered_users';
-
-        function getUsers() {
-            try {
-                const stored = localStorage.getItem(STORAGE_KEY_USERS);
-                const extra = stored ? JSON.parse(stored) : [];
-                return [...DEFAULT_USERS, ...extra];
-            } catch (_) { return [...DEFAULT_USERS]; }
+        async function authLogin(username, password) {
+            const url = RAG_SERVER_URL + '/auth/login';
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                mode: 'cors',
+                body: JSON.stringify({ username: (username || '').trim(), password: password || '' })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || !data.ok) {
+                throw new Error(data.error || 'Invalid username or password. Please try again.');
+            }
+            return data;
         }
 
-        function saveRegisteredUser(username, password) {
-            const list = [];
-            try {
-                const stored = localStorage.getItem(STORAGE_KEY_USERS);
-                if (stored) list.push(...JSON.parse(stored));
-            } catch (_) {}
-            list.push({ username: username.trim(), password });
-            localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(list));
+        async function authRegister(username, password) {
+            const url = RAG_SERVER_URL + '/auth/register';
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                mode: 'cors',
+                body: JSON.stringify({ username: (username || '').trim(), password: password || '' })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || !data.ok) {
+                throw new Error(data.error || 'Registration failed.');
+            }
+            return data;
         }
 
         // Initialize on page load
@@ -2539,7 +2674,7 @@ Author: AI for Education (Wenchao Qin)
                 var showLnk = document.getElementById('show-login');
                 if (showLnk) showLnk.addEventListener('click', function(e) { e.preventDefault(); showLogin(); });
                 var regForm = document.getElementById('register-form');
-                if (regForm) regForm.addEventListener('submit', function(e) {
+                if (regForm) regForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
                     const username = document.getElementById('register-username').value.trim();
                     const password = document.getElementById('register-password').value;
@@ -2549,13 +2684,14 @@ Author: AI for Education (Wenchao Qin)
                     if (errEl && password.length < 1) { errEl.textContent = 'Please enter a password.'; return; }
                     if (errEl && password !== password2) { errEl.textContent = 'Passwords do not match. Please try again.'; return; }
                     try {
-                        if (getUsers().some(u => u.username === username)) { if (errEl) errEl.textContent = 'This username is already taken. Please choose another.'; return; }
-                    } catch (_) {}
-                    saveRegisteredUser(username, password);
-                    if (errEl) errEl.textContent = '';
-                    showLogin();
-                    var loginErr = document.getElementById('login-error');
-                    if (loginErr) loginErr.textContent = 'Account created. Please sign in.';
+                        await authRegister(username, password);
+                        if (errEl) errEl.textContent = '';
+                        showLogin();
+                        var loginErr = document.getElementById('login-error');
+                        if (loginErr) loginErr.textContent = 'Account created. Please sign in.';
+                    } catch (regErr) {
+                        if (errEl) errEl.textContent = (regErr && regErr.message) ? regErr.message : 'Registration failed.';
+                    }
                 });
             } catch (err) { console.warn('Login UI setup:', err); }
 
@@ -2884,15 +3020,13 @@ Author: AI for Education (Wenchao Qin)
             const choices = letters.map(letter => `${letter}. ${q.options[letter]}`);
             const correctIndex = letters.indexOf(q.correct_answer);
             
-            // For generated_surgery_domain_questions.json, append domain/topic/subtopic to question text
- // generated_surgery_domain_questions.jsondomain/topic/subtopic
-            // Only show domain/topic/subtopic for questions from Surgery Domain Questions (not old question banks)
- // Surgery Domain Questionsdomain/topic/subtopic
+            // For generated_surgery_domain_questions.json, append only domain to question text
+// generated_surgery_domain_questions.jsondomain
             let questionText = q.question;
-            // Check if question has domain/topic/subtopic fields (indicating it's from generated_surgery_domain_questions.json)
- // domain/topic/subtopicgenerated_surgery_domain_questions.json
-            if (q.domain && q.topic && q.subtopic) {
-                questionText = `${q.question} (Domain: ${q.domain}, Topic: ${q.topic}, Subtopic: ${q.subtopic})`;
+            // Check if question has domain field (indicating domain-tagged question bank)
+// domaindomain-tagged
+            if (q.domain) {
+                questionText = `${q.question} (Domain: ${q.domain})`;
             }
             
             // Build explanations array
@@ -3020,6 +3154,19 @@ Author: AI for Education (Wenchao Qin)
  //
                 sourcePage: q.source_page || q.page_number || q.page || 'N/A'
             };
+
+            // Restore history answer for this question (if the user answered before).
+            const historyEntry = getUserAnswerHistory(q, index);
+            if (historyEntry && typeof historyEntry.selectedAnswer === 'number') {
+                const historicalAnswer = historyEntry.selectedAnswer;
+                converted.QA.student_prediction = historicalAnswer;
+                selectedAnswer = historicalAnswer;
+                converted.feedback = {
+                    correctness: historicalAnswer === converted.QA.answer ? 'Correct!' : 'Wrong!',
+                    explaination: converted.explanations || []
+                };
+            }
+
             loadData(converted);
             
             // Update progress display
@@ -4053,25 +4200,21 @@ Author: AI for Education (Wenchao Qin)
                 }
             } else {
                 // No laboratory data, display text directly
-                // Check if question contains domain/topic/subtopic info (from generated_surgery_domain_questions.json)
- // domain/topic/subtopicgenerated_surgery_domain_questions.json
+                // Check if question contains domain info (from generated_surgery_domain_questions.json)
+// domaingenerated_surgery_domain_questions.json
                 const questionText = qa.question;
-                const domainTopicMatch = questionText.match(/^(.*?)\s*\(Domain:\s*(.+?),\s*Topic:\s*(.+?),\s*Subtopic:\s*(.+?)\)$/);
+                const domainMatch = questionText.match(/^(.*?)\s*\(Domain:\s*(.+?)\)$/);
                 
-                if (domainTopicMatch) {
-                    // Has domain/topic/subtopic info - display with different styling + Trigger Tutor button
- // domain/topic/subtopic -
-                    const mainQuestion = domainTopicMatch[1];
-                    const domain = domainTopicMatch[2];
-                    const topic = domainTopicMatch[3];
-                    const subtopic = domainTopicMatch[4];
+                if (domainMatch) {
+                    // Has domain info - display with different styling + Trigger Tutor button
+// domain -
+                    const mainQuestion = domainMatch[1];
+                    const domain = domainMatch[2];
                     
                     questionTextEl.innerHTML = `
                         <div style="margin-bottom: 8px; padding: 4px 8px; border-left: 2px solid #d0d0d0; border-radius: 2px; font-size: 12px; color: #333; line-height: 1.4; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                             <span>
-                                <span style="color: #666;">Domain:</span> ${domain} | 
-                                <span style="color: #666;">Topic:</span> ${topic} | 
-                                <span style="color: #666;">Subtopic:</span> ${subtopic}
+                                <span style="color: #666;">Domain:</span> ${domain}
                             </span>
                             <button type="button" id="trigger-tutor-btn" style="
                                 padding: 6px 14px; font-size: 12px; border-radius: 6px; border: 1px solid #667eea;
@@ -4095,8 +4238,8 @@ Author: AI for Education (Wenchao Qin)
                         triggerBtn.style.display = 'none';
                     });
                 } else {
-                    // No domain/topic/subtopic info - display normally
- // domain/topic/subtopic -
+                    // No domain info - display normally
+// domain -
                     questionTextEl.textContent = questionText;
                 }
             }
@@ -4421,6 +4564,11 @@ Author: AI for Education (Wenchao Qin)
                 // Update current data with feedback
                 currentData.QA.student_prediction = selectedAnswer;
                 currentData.feedback = feedback;
+
+                // Save per-question original answer history.
+                if (allQuestions && currentGeneratedIndex >= 0 && currentGeneratedIndex < allQuestions.length) {
+                    saveUserAnswerHistory(allQuestions[currentGeneratedIndex], currentGeneratedIndex, selectedAnswer, isCorrect);
+                }
                 
                 // Update knowledge tracking (if profile is initialized)
  //
@@ -4468,10 +4616,6 @@ Author: AI for Education (Wenchao Qin)
                     feedbackContainer.appendChild(sourceDiv);
                 }
                 
-                // Display chunks after answer submission
-                if (feedbackContainer) {
-                    displayChunksAfterAnswer();
-                }
                 return;
             }
 
@@ -5006,7 +5150,7 @@ Author: AI for Education (Wenchao Qin)
             if (isAfterWrongAnswer) {
                 messageText = 'Your answer wasn\'t correct, but that\'s okay! Can you explain your reasoning? What made you choose that answer? This will help me guide you better.';
             } else {
-                messageText = 'I\'d like to understand your thinking about this problem. Can you explain your reasoning? What are you considering? This will help me guide you better.';
+                messageText = 'What are you considering? This will help me guide you better.';
             }
             
             const thinkingPromptDiv = document.createElement('div');
@@ -5016,7 +5160,6 @@ Author: AI for Education (Wenchao Qin)
                 <div class="message-content" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 20px;">
                     <div style="font-weight: 600; margin-bottom: 10px; font-size: 16px;">🤔 I'd like to understand your thinking</div>
                     <div style="line-height: 1.5;">${messageText}</div>
-                    <div style="margin-top: 10px; font-size: 13px; opacity: 0.95;">Type your reasoning in the input box below and click Send.</div>
                 </div>
             `;
             conversationList.appendChild(thinkingPromptDiv);
@@ -5044,34 +5187,11 @@ Author: AI for Education (Wenchao Qin)
             const conversationList = document.getElementById('conversation-list');
             if (!conversationList) return;
             
-            try {
-                if (isCorrect) {
-                    // Answer is correct: Tutor proactively introduces related knowledge
-                    // Show loading indicator only for correct answers
-                    const loadingId = addMessageToConversation('assistant', 
-                        '<span style="color: #6b7280;">💭 Let me share some insights...</span>', true);
-                    try {
-                        await proactiveTutorKnowledgeIntroduction();
-                    } catch (error) {
-                        console.error('Error in proactive tutor knowledge introduction:', error);
-                        removeMessageFromConversation(loadingId);
-                        addMessageToConversation('assistant', 'Great job! Would you like to explore this topic further?');
-                    } finally {
-                        removeMessageFromConversation(loadingId);
-                    }
-                } else {
-                    // Answer is wrong: Tutor automatically triggers guidance (decompose/clarify)
-                    // Don't show loading here - submitStudentThinking will show its own loading indicator
-                    await proactiveTutorGuidanceForWrongAnswer();
-                }
-            } catch (error) {
-                console.error('Error in proactive tutor response:', error);
-                // Fallback: Show a simple encouraging message
-                const fallbackMsg = isCorrect 
-                    ? 'Great job! Would you like to explore this topic further?'
-                    : 'Let me help you understand this better. Can you explain your reasoning?';
-                addMessageToConversation('assistant', fallbackMsg);
-            }
+            // Submit now only shows predefined tutor text, no automatic ChatGPT call.
+            const proactiveMsg = isCorrect
+                ? 'Great job! Would you like to explore this topic further?'
+                : 'Do you want me to decompose the question for you?';
+            addMessageToConversation('assistant', proactiveMsg);
         }
         
         /**
@@ -7529,7 +7649,7 @@ Your response MUST follow this structure:
     </script>
     <script>
     (function() {
-      function handleLogin() {
+      async function handleLogin() {
         var u = document.getElementById('login-username'), p = document.getElementById('login-password'), err = document.getElementById('login-error');
         var ls = document.getElementById('login-screen'), qa = document.getElementById('quiz-app');
         if (!u || !p || !err) return;
@@ -7537,12 +7657,17 @@ Your response MUST follow this structure:
         var username = (u.value || '').trim(), password = (p.value || '');
         if (!username) { err.textContent = 'Please enter a username.'; return; }
         if (!password) { err.textContent = 'Please enter a password.'; return; }
-        var DEFAULT_USERS = [{username:'admin',password:'admin'},{username:'student',password:'student'}];
-        var extra = [];
-        try { var s = localStorage.getItem('quiz_registered_users'); if (s) extra = JSON.parse(s); } catch(e) {}
-        var users = DEFAULT_USERS.concat(extra);
-        var valid = users.some(function(x) { return x.username === username && x.password === password; });
-        if (!valid) { err.textContent = 'Invalid username or password. Please try again.'; return; }
+        try {
+          if (window.authLogin) {
+            await window.authLogin(username, password);
+          } else {
+            err.textContent = 'Login service not ready. Please refresh.';
+            return;
+          }
+        } catch (loginErr) {
+          err.textContent = (loginErr && loginErr.message) ? loginErr.message : 'Invalid username or password. Please try again.';
+          return;
+        }
         sessionStorage.setItem('quiz_auth', '1'); sessionStorage.setItem('quiz_user', username);
         try {
           // Login event: record basic login without profile; profile will be recorded on logout instead.

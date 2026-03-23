@@ -112,6 +112,7 @@ import re
 from threading import Lock
 import time
 import types
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from flask import Flask, jsonify, request, send_from_directory, redirect
@@ -1228,6 +1229,8 @@ def cost_limit_status():
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 USER_LOGS_DIR = os.path.join(_BASE_DIR, "user_logs")
 _user_log_lock = Lock()
+USERS_DB_PATH = os.path.join(_BASE_DIR, "local_users.json")
+_users_db_lock = Lock()
 
 
 def _safe_username(user: str) -> str:
@@ -1237,6 +1240,55 @@ def _safe_username(user: str) -> str:
         s = s[5:]
     s = re.sub(r'[<>:"/\\|?*]', "_", s)[:64]
     return s or "unknown"
+
+
+def _normalize_username(user: str) -> str:
+    """Normalize username for auth storage and comparisons."""
+    return (user or "").strip()
+
+
+def _default_users() -> List[dict]:
+    return [
+        {"username": "admin", "password": "admin"},
+        {"username": "student", "password": "student"},
+    ]
+
+
+def _read_users_db() -> List[dict]:
+    """Read local users DB (project-local file), auto-create with defaults."""
+    with _users_db_lock:
+        users = []
+        if os.path.exists(USERS_DB_PATH):
+            try:
+                with open(USERS_DB_PATH, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    users = [u for u in data if isinstance(u, dict)]
+            except (json.JSONDecodeError, IOError):
+                users = []
+
+        # Ensure default users always exist.
+        existing = {str(u.get("username", "")).strip(): u for u in users}
+        for du in _default_users():
+            if du["username"] not in existing:
+                users.append(dict(du))
+
+        # Persist normalized list so file always exists.
+        try:
+            with open(USERS_DB_PATH, "w", encoding="utf-8") as f:
+                json.dump(users, f, ensure_ascii=False, indent=2)
+        except IOError:
+            pass
+        return users
+
+
+def _write_users_db(users: List[dict]) -> None:
+    with _users_db_lock:
+        try:
+            with open(USERS_DB_PATH, "w", encoding="utf-8") as f:
+                json.dump(users, f, ensure_ascii=False, indent=2)
+        except IOError:
+            pass
 
 
 def _get_user_log_path(user: str) -> str:
@@ -1249,7 +1301,22 @@ def _read_user_log(user: str) -> dict:
     path = _get_user_log_path(user)
     with _user_log_lock:
         if not os.path.exists(path):
-            return {"user": _safe_username(user), "button_clicks": [], "tutor_conversations": [], "knowledge_profile": None, "display_snapshot": None, "usage": {"cost_total": 0.0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "request_count": 0}, "events": []}
+            return {
+                "user": _safe_username(user),
+                "button_clicks": [],
+                "tutor_conversations": [],
+                "knowledge_profile": None,
+                "display_snapshot": None,
+                "usage": {"cost_total": 0.0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "request_count": 0},
+                "events": [],
+                "statistics": {
+                    "total_time_in_system": 0,
+                    "total_time_in_system_seconds": 0,
+                    "total_time_in_system_minutes": 0.0,
+                    "turns_with_tutor": 0,
+                    "last_computed_at": None,
+                },
+            }
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -1257,7 +1324,7 @@ def _read_user_log(user: str) -> dict:
             data = {}
     if not isinstance(data, dict):
         data = {}
-    for key in ["button_clicks", "tutor_conversations", "knowledge_profile", "display_snapshot", "usage", "events"]:
+    for key in ["button_clicks", "tutor_conversations", "knowledge_profile", "display_snapshot", "usage", "events", "statistics"]:
         if key not in data:
             if key == "usage":
                 data["usage"] = {"cost_total": 0.0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "request_count": 0}
@@ -1267,13 +1334,103 @@ def _read_user_log(user: str) -> dict:
                 data["display_snapshot"] = None
             elif key == "events":
                 data["events"] = []
+            elif key == "statistics":
+                data["statistics"] = {
+                    "total_time_in_system": 0,
+                    "total_time_in_system_seconds": 0,
+                    "total_time_in_system_minutes": 0.0,
+                    "turns_with_tutor": 0,
+                    "last_computed_at": None,
+                }
             else:
                 data[key] = []
     return data
 
 
+def _parse_iso_timestamp(ts: str) -> Optional[datetime]:
+    """Parse ISO timestamp string into timezone-aware datetime."""
+    if not ts or not isinstance(ts, str):
+        return None
+    s = ts.strip()
+    if not s:
+        return None
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except ValueError:
+        return None
+
+
+def _compute_user_statistics(data: dict) -> dict:
+    """Compute user-level statistics from events and tutor conversations."""
+    total_seconds = 0
+    active_login_time = None
+
+    # Compute total time in system from login/logout events
+    events = data.get("events") if isinstance(data, dict) else []
+    if isinstance(events, list):
+        event_points = []
+        for ev in events:
+            if not isinstance(ev, dict):
+                continue
+            e_type = str(ev.get("event", "")).strip().lower()
+            dt = _parse_iso_timestamp(ev.get("timestamp"))
+            if e_type in ("login", "logout") and dt is not None:
+                event_points.append((dt, e_type))
+        event_points.sort(key=lambda x: x[0])
+
+        for dt, e_type in event_points:
+            if e_type == "login":
+                active_login_time = dt
+            elif e_type == "logout" and active_login_time is not None:
+                if dt >= active_login_time:
+                    total_seconds += int((dt - active_login_time).total_seconds())
+                active_login_time = None
+
+        # If currently logged in (no logout yet), count until now
+        if active_login_time is not None:
+            now = datetime.now(timezone.utc)
+            if now >= active_login_time:
+                total_seconds += int((now - active_login_time).total_seconds())
+
+    # Compute tutor turns (count user turns)
+    turns_with_tutor = 0
+    convos = data.get("tutor_conversations") if isinstance(data, dict) else []
+    if isinstance(convos, list):
+        for convo in convos:
+            if not isinstance(convo, dict):
+                continue
+            messages = convo.get("messages", [])
+            if not isinstance(messages, list):
+                continue
+            for msg in messages:
+                if not isinstance(msg, dict):
+                    continue
+                # Preferred format: { "user": "...", "assistant": "..." }
+                if str(msg.get("user", "")).strip():
+                    turns_with_tutor += 1
+                # Compatibility format: { "role": "user", "content": "..." }
+                elif str(msg.get("role", "")).strip().lower() == "user" and str(msg.get("content", "")).strip():
+                    turns_with_tutor += 1
+
+    return {
+        "total_time_in_system": int(total_seconds),
+        "total_time_in_system_seconds": int(total_seconds),
+        "total_time_in_system_minutes": round(total_seconds / 60.0, 2),
+        "turns_with_tutor": int(turns_with_tutor),
+        "last_computed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+
+
 def _write_user_log(user: str, data: dict) -> None:
     path = _get_user_log_path(user)
+    if not isinstance(data, dict):
+        data = {}
+    data["statistics"] = _compute_user_statistics(data)
     with _user_log_lock:
         try:
             with open(path, "w", encoding="utf-8") as f:
@@ -1474,6 +1631,53 @@ def user_log_list_users():
         if name.endswith(".json"):
             users.append(name[:-5])
     return jsonify({"users": sorted(users)})
+
+
+@app.route('/auth/register', methods=['POST'])
+def auth_register():
+    """Register a local user persisted in project file. Body: { username, password }"""
+    try:
+        body = request.get_json() or {}
+        username = _normalize_username(body.get("username"))
+        password = str(body.get("password") or "")
+
+        if not username:
+            return jsonify({"ok": False, "error": "username required"}), 400
+        if not password:
+            return jsonify({"ok": False, "error": "password required"}), 400
+
+        users = _read_users_db()
+        if any(_normalize_username(u.get("username")) == username for u in users):
+            return jsonify({"ok": False, "error": "username already exists"}), 409
+
+        users.append({"username": username, "password": password})
+        _write_users_db(users)
+        return jsonify({"ok": True, "user": username})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route('/auth/login', methods=['POST'])
+def auth_login():
+    """Validate username/password from local users DB. Body: { username, password }"""
+    try:
+        body = request.get_json() or {}
+        username = _normalize_username(body.get("username"))
+        password = str(body.get("password") or "")
+        if not username or not password:
+            return jsonify({"ok": False, "error": "username and password required"}), 400
+
+        users = _read_users_db()
+        valid = any(
+            _normalize_username(u.get("username")) == username and str(u.get("password") or "") == password
+            for u in users
+        )
+        if not valid:
+            return jsonify({"ok": False, "error": "invalid credentials"}), 401
+
+        return jsonify({"ok": True, "user": username})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @app.route('/rebuild', methods=['POST'])
