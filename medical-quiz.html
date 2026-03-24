@@ -1732,6 +1732,17 @@ Author: AI for Education (Wenchao Qin)
             if (!questionId) return null;
             return studentProfile.answerHistory[questionId] || null;
         }
+
+        /**
+         * Clear saved per-question answers for "restart from beginning".
+         * This keeps account/knowledge data but resets questions to unanswered state.
+         */
+        function clearUserAnswerHistory() {
+            if (!studentProfile) return;
+            studentProfile.answerHistory = {};
+            studentProfile.lastUpdated = new Date().toISOString();
+            saveStudentProfile();
+        }
         
         /**
          * Save student profile to localStorage
@@ -6743,6 +6754,7 @@ ${(() => {
  // Cancelfalse
                 //
                 if (confirm('Would you like to restart from the beginning?')) {
+                    clearUserAnswerHistory();
                     // User chose to restart: Load first question (index 0)
  // 0
                     loadQuestionByIndex(0);
