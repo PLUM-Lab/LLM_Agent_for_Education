@@ -232,6 +232,151 @@ app = Flask(__name__)
 # expose_headers 让前端能读取 X-Cost-Limit-Exceeded（超限即时提示）
 CORS(app, supports_credentials=True, expose_headers=["X-Cost-Limit-Exceeded"])
 
+#
+# -----------------------------------------------------------------------------
+# System debug logging (API + internal function calls + errors)
+# -----------------------------------------------------------------------------
+#
+_SYSTEM_LOG_LOCK = Lock()
+SYSTEM_LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "system_logs")
+SYSTEM_LOG_PATH = os.path.join(SYSTEM_LOG_DIR, "system_debug_log.jsonl")
+
+
+def _system_log(event: str, level: str = "INFO", **data) -> None:
+    """Append one JSONL record for debugging (avoid logging raw secrets/user text)."""
+    try:
+        os.makedirs(SYSTEM_LOG_DIR, exist_ok=True)
+        rec = {
+            "ts": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "level": level,
+            "event": event,
+        }
+        rec.update(data)
+        line = json.dumps(rec, ensure_ascii=False)
+        with _SYSTEM_LOG_LOCK:
+            with open(SYSTEM_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(line + "\n")
+    except Exception:
+        # Never break API for logging failures
+        pass
+
+
+def _system_log_error(context: str, err: Exception) -> None:
+    import traceback
+    try:
+        _system_log(
+            event="error",
+            level="ERROR",
+            context=context,
+            error=str(err),
+            stack=traceback.format_exc()[:20000],  # cap stack size
+        )
+    except Exception:
+        pass
+
+
+def _safe_body_meta(path: str, body: object) -> dict:
+    """Create non-sensitive metadata for logs."""
+    if not isinstance(body, dict):
+        return {}
+    meta = {}
+    try:
+        if path.endswith("/search") or path == "/search":
+            if "query" in body:
+                meta["query_len"] = len(str(body.get("query") or ""))
+            meta["num_retrieved"] = body.get("num_retrieved")
+            meta["num_final"] = body.get("num_final")
+        elif path.endswith("/chat_completion") or path == "/chat_completion":
+            meta["model"] = body.get("model")
+            meta["max_tokens"] = body.get("max_tokens")
+            meta["temperature"] = body.get("temperature")
+            messages = body.get("messages")
+            if isinstance(messages, list):
+                meta["messages_count"] = len(messages)
+                meta["total_message_chars"] = sum(len(str(m.get("content") or "")) for m in messages if isinstance(m, dict) and m.get("content") is not None)
+        elif path.endswith("/generate_hints") or path == "/generate_hints":
+            meta["question_len"] = len(str(body.get("question") or ""))
+            meta["student_answer_len"] = len(str(body.get("student_answer") or ""))
+            meta["correct_answer_len"] = len(str(body.get("correct_answer") or ""))
+        elif path.endswith("/evaluate_student_thinking") or path == "/evaluate_student_thinking":
+            meta["question_len"] = len(str(body.get("question") or ""))
+            meta["student_thinking_len"] = len(str(body.get("student_thinking") or ""))
+        elif path.endswith("/evaluate_guidance_response") or path == "/evaluate_guidance_response":
+            meta["original_question_len"] = len(str(body.get("original_question") or ""))
+            meta["student_response_len"] = len(str(body.get("student_response") or ""))
+            meta["round_number"] = body.get("round_number")
+        elif path.endswith("/check_hint_trigger") or path == "/check_hint_trigger":
+            meta["student_answer_len"] = len(str(body.get("student_answer") or ""))
+            if body.get("user_message") is not None:
+                meta["user_message_len"] = len(str(body.get("user_message") or ""))
+        elif path.startswith("/user_log"):
+            # Do not dump logs; keep short meta.
+            meta["body_keys"] = list(body.keys())[:30]
+            if "button" in body:
+                meta["button"] = str(body.get("button") or "")[:30]
+            if "event" in body:
+                meta["event"] = str(body.get("event") or "")[:30]
+    except Exception:
+        return {}
+    return meta
+
+
+_SYSLOG_API_PREFIXES = (
+    "/search",
+    "/chat_completion",
+    "/generate_hints",
+    "/evaluate_answer",
+    "/evaluate_student_thinking",
+    "/evaluate_guidance_response",
+    "/check_hint_trigger",
+    "/user_log",
+    "/auth",
+    "/rebuild",
+    "/health",
+    "/usage_stats",
+    "/cost_limit_status",
+)
+
+
+@app.before_request
+def _system_log_api_start() -> None:
+    try:
+        if not any(request.path.startswith(p) for p in _SYSLOG_API_PREFIXES):
+            return
+        # Only parse JSON body when available to keep logging light.
+        body = request.get_json(silent=True)
+        request._syslog_start_ts = time.time()
+        _system_log(
+            event="api_call_start",
+            method=request.method,
+            path=request.path,
+            user_id=_get_user_id(),
+            body_meta=_safe_body_meta(request.path, body),
+        )
+    except Exception:
+        pass
+
+
+@app.after_request
+def _system_log_api_end(response):
+    try:
+        if not hasattr(request, "_syslog_start_ts"):
+            return response
+        start_ts = getattr(request, "_syslog_start_ts", None)
+        if not start_ts:
+            return response
+        duration_ms = int((time.time() - start_ts) * 1000)
+        _system_log(
+            event="api_call_end",
+            method=request.method,
+            path=request.path,
+            status_code=getattr(response, "status_code", None),
+            duration_ms=duration_ms,
+        )
+    except Exception:
+        pass
+    return response
+
 
 @app.errorhandler(500)
 def handle_500(e):
@@ -239,6 +384,10 @@ def handle_500(e):
     import traceback
     traceback.print_exc()
     err = str(e) if e else "Internal server error"
+    try:
+        _system_log_error(context="flask_500_errorhandler", err=e if isinstance(e, Exception) else Exception(err))
+    except Exception:
+        pass
     return jsonify({"success": False, "error": err}), 500
 
 # =============================================================================
@@ -1077,6 +1226,14 @@ def _search_impl():
             return jsonify({"error": "未提供查询"}), 400
         
         # 执行两阶段检索
+        _system_log(
+            event="function_call",
+            level="INFO",
+            function="search_similar",
+            query_len=len(str(query or "")),
+            num_retrieved=num_retrieved,
+            num_final=num_final,
+        )
         results, embedding_tokens = search_similar(
             query, 
             openai_client, 
@@ -1084,6 +1241,13 @@ def _search_impl():
             all_chunks, 
             num_retrieved=num_retrieved,
             num_final=num_final
+        )
+        _system_log(
+            event="function_return",
+            level="INFO",
+            function="search_similar",
+            embedding_tokens=int(embedding_tokens or 0),
+            results_count=len(results) if isinstance(results, list) else None,
         )
         # 按实际 token 数记录 embedding 费用
         uid = _get_user_id()
@@ -1104,6 +1268,7 @@ def _search_impl():
         return resp
     
     except Exception as e:
+        _system_log_error(context="_search_impl", err=e)
         return jsonify({"error": str(e)}), 500
 
 
@@ -1137,6 +1302,15 @@ def chat_completion():
         if response_format:
             kwargs["response_format"] = response_format
 
+        _system_log(
+            event="function_call",
+            level="INFO",
+            function="openai_client.chat.completions.create",
+            model=model,
+            messages_count=len(messages) if isinstance(messages, list) else None,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
         resp = openai_client.chat.completions.create(**kwargs)
         usage = getattr(resp, "usage", None)
         if usage:
@@ -1146,6 +1320,15 @@ def chat_completion():
             uid = _get_user_id()
             cost_add(uid, cost)
             token_add(uid, pt, ct)
+            _system_log(
+                event="function_return",
+                level="INFO",
+                function="openai_client.chat.completions.create",
+                model=model,
+                prompt_tokens=int(pt or 0),
+                completion_tokens=int(ct or 0),
+                cost_usd=float(cost),
+            )
 
         choice = resp.choices[0] if resp.choices else None
         if not choice:
@@ -1163,6 +1346,7 @@ def chat_completion():
             resp.headers["X-Cost-Limit-Exceeded"] = "true"
         return resp
     except Exception as e:
+        _system_log_error(context="chat_completion", err=e)
         return jsonify({"error": str(e)}), 500
 
 
@@ -1229,6 +1413,13 @@ def cost_limit_status():
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 USER_LOGS_DIR = os.path.join(_BASE_DIR, "user_logs")
 _user_log_lock = Lock()
+_cohort_summary_lock = Lock()
+# Cohort rollup mirror file (regenerated when any user posts knowledge_profile + display_snapshot).
+USER_LOG_COHORT_SUMMARY_BASENAME = "_cohort_summary_by_domain.json"
+_COHORT_SUMMARY_PERSIST_NOTE = (
+    "Written when GET /user_log/summary_by_domain is called, or after POST /user_log/knowledge_profile. "
+    "Source: re-scan of user_logs/*.json display_snapshot.by_domain."
+)
 USERS_DB_PATH = os.path.join(_BASE_DIR, "local_users.json")
 _users_db_lock = Lock()
 
@@ -1345,6 +1536,118 @@ def _read_user_log(user: str) -> dict:
             else:
                 data[key] = []
     return data
+
+
+def _aggregate_display_snapshot_by_domain_all_users() -> dict:
+    """
+    Read every user_logs/*.json and merge display_snapshot.by_domain across users.
+
+    Any new user is included automatically once they have a log file that contains
+    display_snapshot (typically written when the knowledge profile is logged).
+    """
+    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    if not os.path.isdir(USER_LOGS_DIR):
+        return {
+            "generated_at": generated_at,
+            "user_log_files_scanned": 0,
+            "users_with_display_snapshot": 0,
+            "by_domain": [],
+        }
+
+    # domain -> aggregator state
+    agg: Dict[str, dict] = {}
+    files_scanned = 0
+    users_with_snapshot = 0
+
+    for name in sorted(os.listdir(USER_LOGS_DIR)):
+        if name.startswith("_"):
+            continue
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(USER_LOGS_DIR, name)
+        files_scanned += 1
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, IOError, OSError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        snap = data.get("display_snapshot")
+        if not isinstance(snap, dict):
+            continue
+        rows = snap.get("by_domain")
+        if not isinstance(rows, list) or not rows:
+            continue
+        users_with_snapshot += 1
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            domain = (row.get("domain") or "").strip()
+            if not domain:
+                continue
+            if domain not in agg:
+                agg[domain] = {
+                    "domain": domain,
+                    "bank_question_total": 0,
+                    "user_counted": 0,
+                    "sum_correct": 0,
+                    "_accuracy_samples": [],
+                }
+            a = agg[domain]
+            bt = int(row.get("total") or 0)
+            if bt > a["bank_question_total"]:
+                a["bank_question_total"] = bt
+            a["user_counted"] += 1
+            a["sum_correct"] += int(row.get("correct") or 0)
+            ap = row.get("accuracy_percent")
+            if isinstance(ap, (int, float)):
+                a["_accuracy_samples"].append(float(ap))
+
+    by_domain: List[dict] = []
+    for d in sorted(agg.keys()):
+        a = agg[d]
+        samples = a.pop("_accuracy_samples", [])
+        n = max(a["user_counted"], 1)
+        mean_acc = int(round(sum(samples) / len(samples))) if samples else 0
+        mean_correct = round(a["sum_correct"] / n, 2)
+        # Only keep per-domain difficulty/accuracy style stats in the public rollup.
+        # Internal counters like bank_question_total/users_counted/sum_correct_across_users
+        # are not exposed in the JSON to keep it concise.
+        by_domain.append({
+            "domain": a["domain"],
+            "mean_correct_per_user": mean_correct,
+            "mean_accuracy_percent": mean_acc,
+        })
+
+    return {
+        "generated_at": generated_at,
+        "user_log_files_scanned": files_scanned,
+        "users_with_display_snapshot": users_with_snapshot,
+        "by_domain": by_domain,
+    }
+
+
+def _write_cohort_summary_file(summary: dict) -> None:
+    """Write cohort rollup JSON under user_logs/ (same dir as per-user logs)."""
+    out = dict(summary)
+    out["persist_note"] = _COHORT_SUMMARY_PERSIST_NOTE
+    path = os.path.join(USER_LOGS_DIR, USER_LOG_COHORT_SUMMARY_BASENAME)
+    os.makedirs(USER_LOGS_DIR, exist_ok=True)
+    tmp_path = path + ".tmp"
+    with _cohort_summary_lock:
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(out, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_path, path)
+
+
+def _persist_cohort_summary_by_domain() -> None:
+    """Recompute cohort rollup from all user_logs and write _cohort_summary_by_domain.json."""
+    try:
+        summary = _aggregate_display_snapshot_by_domain_all_users()
+        _write_cohort_summary_file(summary)
+    except Exception as e:
+        print(f"[_persist_cohort_summary_by_domain] {e}")
 
 
 def _parse_iso_timestamp(ts: str) -> Optional[datetime]:
@@ -1468,6 +1771,8 @@ def _update_user_log_knowledge_profile(user: str, profile: dict, display_snapsho
     if display_snapshot is not None:
         data["display_snapshot"] = display_snapshot
     _write_user_log(user, data)
+    # Refresh cohort rollup whenever profile is saved (re-scan user_logs; cheap at moderate scale).
+    _persist_cohort_summary_by_domain()
 
 
 def _append_user_log_event(user: str, event: str, timestamp: str, profile: Optional[dict] = None) -> None:
@@ -1628,9 +1933,29 @@ def user_log_list_users():
         return jsonify({"users": []})
     users = []
     for name in os.listdir(USER_LOGS_DIR):
+        if name.startswith("_"):
+            continue
         if name.endswith(".json"):
             users.append(name[:-5])
     return jsonify({"users": sorted(users)})
+
+
+@app.route('/user_log/summary_by_domain', methods=['GET'])
+def user_log_summary_by_domain():
+    """
+    Aggregate display_snapshot.by_domain across all user log files on disk.
+
+    Use this for cohort / admin reporting; includes any user who already has
+    a JSON log under user_logs/. No static user list required.
+    """
+    try:
+        summary = _aggregate_display_snapshot_by_domain_all_users()
+        summary["persist_note"] = _COHORT_SUMMARY_PERSIST_NOTE
+        _write_cohort_summary_file(summary)
+        return jsonify(summary)
+    except Exception as e:
+        print(f"[user_log/summary_by_domain] ERROR: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/auth/register', methods=['POST'])
@@ -1855,7 +2180,22 @@ def generate_hints():
         
         # 生成推理步骤链 (基于 MedTutor-R1 方法)
         usage_out = {}
+        _system_log(
+            event="function_call",
+            level="INFO",
+            function="hint_generator.generate_sub_questions",
+            question_len=len(str(data.get("question") or "")),
+            student_answer_len=len(str(data.get("student_answer") or "")),
+        )
         response = hint_generator.generate_sub_questions(hint_request, usage_out=usage_out)
+        _system_log(
+            event="function_return",
+            level="INFO",
+            function="hint_generator.generate_sub_questions",
+            prompt_tokens=int(usage_out.get("prompt_tokens", 0) or 0),
+            completion_tokens=int(usage_out.get("completion_tokens", 0) or 0),
+            model=usage_out.get("model", None),
+        )
         
         # 格式化显示
         formatted = hint_generator.format_hints_for_display(response)
@@ -1888,6 +2228,7 @@ def generate_hints():
     except Exception as e:
         import traceback
         traceback.print_exc()
+        _system_log_error(context="generate_hints", err=e)
         return jsonify({
             "success": False,
             "error": str(e)
@@ -2132,10 +2473,24 @@ def evaluate_student_thinking():
         # 调用评估方法分析学生思考
         # 这使用LLM在DECOMPOSE和CLARIFY行动之间做决定
         usage_out = {}
+        _system_log(
+            event="function_call",
+            level="INFO",
+            function="hint_generator.evaluate_student_thinking",
+            student_thinking_len=len(str(data.get("student_thinking") or "")),
+        )
         result = hint_generator.evaluate_student_thinking(
             request=hint_request,
             student_thinking=data['student_thinking'],
             usage_out=usage_out
+        )
+        _system_log(
+            event="function_return",
+            level="INFO",
+            function="hint_generator.evaluate_student_thinking",
+            prompt_tokens=int(usage_out.get("prompt_tokens", 0) or 0),
+            completion_tokens=int(usage_out.get("completion_tokens", 0) or 0),
+            model=usage_out.get("model", None),
         )
         
         # 按实际 token 记录费用
@@ -2180,6 +2535,7 @@ def evaluate_student_thinking():
         import traceback
         tb_str = traceback.format_exc()
         traceback.print_exc()
+        _system_log_error(context="evaluate_student_thinking", err=e)
         # 写入日志文件便于排查
         try:
             (Path(__file__).parent / "tutor_error.log").write_text(
@@ -2266,6 +2622,14 @@ def evaluate_guidance_response():
         # Call evaluation method
         # 调用评估方法
         usage_out = {}
+        _system_log(
+            event="function_call",
+            level="INFO",
+            function="hint_generator.evaluate_guidance_response",
+            current_action=data.get("current_action"),
+            round_number=data.get("round_number"),
+            student_response_len=len(str(data.get("student_response") or "")),
+        )
         result = hint_generator.evaluate_guidance_response(
             request=hint_request,
             current_action=data.get('current_action'),
@@ -2277,6 +2641,14 @@ def evaluate_guidance_response():
             round_number=data.get('round_number', 1),
             cannot_decompose_further=data.get('cannot_decompose_further', False),
             usage_out=usage_out
+        )
+        _system_log(
+            event="function_return",
+            level="INFO",
+            function="hint_generator.evaluate_guidance_response",
+            prompt_tokens=int(usage_out.get("prompt_tokens", 0) or 0),
+            completion_tokens=int(usage_out.get("completion_tokens", 0) or 0),
+            model=usage_out.get("model", None),
         )
         
         # 按实际 token 记录费用
@@ -2304,6 +2676,7 @@ def evaluate_guidance_response():
     except Exception as e:
         import traceback
         traceback.print_exc()
+        _system_log_error(context="evaluate_guidance_response", err=e)
         return jsonify({
             "success": False,
             "error": str(e)
@@ -2368,6 +2741,7 @@ def check_hint_trigger():
         })
         
     except Exception as e:
+        _system_log_error(context="check_hint_trigger", err=e)
         return jsonify({
             "should_trigger": False,
             "reason": "error",
@@ -2382,7 +2756,13 @@ def check_hint_trigger():
 @app.route('/', methods=['GET'])
 def index_redirect():
     """Redirect root to main quiz UI."""
-    return redirect('/medical-quiz.html', code=302)
+    return redirect('/deploy/medical-quiz.html', code=302)
+
+
+@app.route('/medical-quiz.html', methods=['GET'])
+def medical_quiz_redirect():
+    """Serve deploy/medical-quiz.html even if the root copy is removed."""
+    return redirect('/deploy/medical-quiz.html', code=302)
 
 
 @app.route('/<path:path>', methods=['GET'])
@@ -2457,6 +2837,8 @@ if __name__ == '__main__':
         print("  POST /user_log/knowledge_profile - 记录知识画像")
         print("  GET  /user_log/usage?user= - 当前用户 token/费用")
         print("  GET  /user_log?user= - 当前用户完整日志")
+        print("  GET  /user_log/summary_by_domain - 所有用户 by_domain 汇总（扫描 user_logs）")
+        print(f"       知识画像带 display_snapshot 保存时同步写入 {USER_LOG_COHORT_SUMMARY_BASENAME}")
         print("  POST /rebuild         - 从 PDF 重建索引")
         print("\n按 Ctrl+C 停止服务器\n")
         

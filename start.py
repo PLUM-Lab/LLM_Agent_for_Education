@@ -361,7 +361,9 @@ Examples:
         print(f"  项目路径 (WSL): {wsl_path}")
         print(f"  浏览器访问: http://localhost:{args.port}/")
         print("  按 Ctrl+C 停止\n")
-        cmd = f"cd '{wsl_path}' && export RAG_PORT={args.port} && python3 start.py"
+        # Pass --port through to the WSL process; relying on env only isn't enough because
+        # start.py writes rag-config.js from args.port and defaults to 8000.
+        cmd = f"cd '{wsl_path}' && export RAG_PORT={args.port} && python3 start.py --port {args.port}"
         rc = subprocess.call(["wsl", "-e", "bash", "-c", cmd])
         sys.exit(rc if rc is not None else 0)
 

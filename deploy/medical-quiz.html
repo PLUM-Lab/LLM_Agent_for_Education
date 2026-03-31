@@ -959,6 +959,8 @@ Author: AI for Education (Wenchao Qin)
 
     <!-- Load API key from parent folder api-key.js (ignored by Git) -->
     <script src="../api-key.js"></script>
+    <!-- Load RAG port config (written by start.py). Use parent path because this page lives under /deploy -->
+    <script src="../rag-config.js"></script>
 
     <!-- ====================================================================
          JAVASCRIPT - Quiz Logic and ChatGPT Integration
@@ -3375,7 +3377,10 @@ Author: AI for Education (Wenchao Qin)
         //
         // ====================================================================
         
-        const RAG_SERVER_URL = 'https://trader-sake-romantic-gage.trycloudflare.com';
+        // In single-port mode, the backend serves UI + API on the same origin,
+        // so RAG_SERVER_URL should be empty (requests go to relative paths like /user_log/...).
+        // In multi-port mode, use the configured host/port from rag-config.js.
+        const RAG_SERVER_URL = window.SINGLE_PORT ? '' : ('http://' + (window.location.hostname || '127.0.0.1') + ':' + (window.RAG_PORT || 5001));
         let ragServerAvailable = false;
 
         /** Log login/logout to this user's own log file (user_logs/{user}.json). Requires RAG server on port 5000. */
@@ -3432,15 +3437,29 @@ Author: AI for Education (Wenchao Qin)
 
         /** Log knowledge profile snapshot to per-user log. */
         window.logKnowledgeProfile = function(profile, displaySnapshot) {
-            var user = sessionStorage.getItem('quiz_user');
-            if (!user || !profile) return;
+            if (typeof location !== 'undefined' && location.protocol === 'file:') {
+                console.warn('[Knowledge profile] Use http:// from your RAG server (not a local file path), or sync cannot reach the API.');
+                return;
+            }
+            var user = (sessionStorage.getItem('quiz_user') || (profile && profile.userName) || '').trim();
+            if (!user || !profile) {
+                console.warn('[Knowledge profile] Missing user or profile; server sync skipped.');
+                return;
+            }
             var body = { user: user, profile: profile };
             if (displaySnapshot && typeof displaySnapshot === 'object') body.display_snapshot = displaySnapshot;
             fetch(RAG_SERVER_URL + '/user_log/knowledge_profile', {
                 method: 'POST',
                 headers: getSessionHeaders(),
                 body: JSON.stringify(body)
-            }).catch(function() {});
+            }).then(function(r) {
+                if (!r.ok) console.warn('[Knowledge profile] HTTP', r.status, r.statusText, '- check same origin as', RAG_SERVER_URL || '(page host)');
+                return r.json().catch(function() { return {}; });
+            }).then(function(data) {
+                if (data && data.ok === false) console.warn('[Knowledge profile]', data.error || data);
+            }).catch(function(e) {
+                console.warn('[Knowledge profile] Network error — is the backend running and the page opened via the server URL?', e && e.message ? e.message : e);
+            });
         };
 
         /** Show in-page alert with English title and OK button (avoids browser 确定 / localhost title). */

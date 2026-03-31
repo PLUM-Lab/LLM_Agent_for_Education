@@ -64,3 +64,11 @@ api-key.js
 *secret*
 
 user_activity_log copy.json
+
+# System debug logs (API/function call tracing + stack traces)
+system_logs/
+system_debug_log.jsonl
+
+# Local server startup logs (debug only)
+start_server_*.txt
+start_wsl_*.txt
