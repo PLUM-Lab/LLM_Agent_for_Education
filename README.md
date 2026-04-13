@@ -278,6 +278,106 @@ Configuration (in `generate_questions.py`):
 - `model = "gpt-4o-mini"` - OpenAI model
 - `chunk_size = 1024` - Tokens per chunk
 
+
+
+
+## Deploying to the Internet (Cloudflare Tunnel)
+
+Use this approach to make the quiz publicly accessible without opening firewall ports or configuring a reverse proxy. The HTML file is served by any static web server (e.g. Apache `mod_userdir`), while the RAG backend is exposed through a free Cloudflare tunnel.
+
+### Architecture
+
+```
+Browser
+  │
+  ├──► Static file server (Apache/Nginx/GitHub Pages)
+  │      serves medical-quiz.html (HTML/CSS/JS)
+  │
+  └──► Cloudflare Tunnel URL  ──► cloudflared ──► rag_server.py (localhost:5001)
+         (public HTTPS)                               handles AI / RAG API calls
+```
+
+### Prerequisites
+
+- Python 3 with `rag_server.py` dependencies installed (see [Dependencies](#dependencies))
+- `OPENAI_API_KEY` environment variable set on the server (**do not use `api-key.js`**)
+- `cloudflared` installed ([download](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/))
+- A static file server to serve `medical-quiz.html` (Apache, Nginx, GitHub Pages, etc.)
+
+### Step 1: Set the OpenAI API Key
+
+Set the environment variable on your server — never put the key in a public file:
+
+```bash
+export OPENAI_API_KEY='sk-your-actual-key'
+```
+
+To persist across sessions, add it to `~/.bashrc` or `~/.profile`.
+
+### Step 2: Start the RAG Server
+
+Run `rag_server.py` in the tmux (the default port is 5001):
+
+```bash
+python3 rag_server.py 
+```
+
+Verify it started:
+
+```bash
+curl http://localhost:5001/health
+```
+
+### Step 3: Start the Cloudflare Tunnel
+
+```bash
+~/cloudflared tunnel --url http://localhost:5001
+```
+
+`cloudflared` will print a public URL, for example:
+
+```
+https://trader-sake-romantic-gage.trycloudflare.com
+```
+
+Keep this terminal open (or run with `nohup` / `tmux`).
+
+### Step 4: Update RAG_SERVER_URL in medical-quiz.html
+
+Open `deploy/medical-quiz.html` and set `RAG_SERVER_URL` to the tunnel URL printed in step 3:
+
+```javascript
+const RAG_SERVER_URL = 'https://trader-sake-romantic-gage.trycloudflare.com';
+```
+
+### Step 5: Serve medical-quiz.html
+
+Copy the file to your public web directory and serve it with any static file server.
+
+**Example — Apache `mod_userdir` on a university server:**
+
+```bash
+cp deploy/medical-quiz.html ~/public_html/project/work/education_agent/deploy/
+# Also copy question bank JSON files the page loads:
+cp data/qbanks/*.json ~/public_html/project/work/education_agent/deploy/
+```
+
+The page is now accessible at, e.g.:
+`http://yourserver.edu/~username/project/work/education_agent/deploy/medical-quiz.html`
+
+### Notes
+
+- **Tunnel URL changes on every restart.** After restarting `cloudflared`, update `RAG_SERVER_URL` in `medical-quiz.html` and redeploy the file.
+- **API key security:** `rag_server.py` reads `OPENAI_API_KEY` from the environment. The key is never sent to the browser.
+- **Stopping the servers:**
+  ```bash
+  pkill -f rag_server.py
+  pkill -f cloudflared
+  ```
+- **Logs:** `~/rag.log` for the RAG server; cloudflared logs to stdout.
+
+---
+
 ## Technical Details
 
 ### Question Generation Pipeline
