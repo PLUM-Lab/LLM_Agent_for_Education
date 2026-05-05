@@ -1765,9 +1765,89 @@ def _append_tutor_conversation(user: str, question_id: Optional[int], question_t
     _write_user_log(user, data)
 
 
+def _knowledge_profile_strength(p: object) -> int:
+    """Heuristic size of cumulative progress (defensive merge / anti-clobber)."""
+    if not isinstance(p, dict):
+        return 0
+    try:
+        qa = int(p.get("questionsAnswered") or 0)
+    except (TypeError, ValueError):
+        qa = 0
+    km = p.get("knowledgeMap")
+    if not isinstance(km, dict):
+        km = {}
+    id_n = 0
+    for comp in km.values():
+        if isinstance(comp, dict):
+            cids = comp.get("correctQuestionIds")
+            if isinstance(cids, list):
+                id_n += len(cids)
+    return max(qa, id_n, len(km))
+
+
+def _merge_knowledge_profiles(a: dict, b: dict) -> dict:
+    """Union two profiles so a stale/small POST cannot erase a larger on-disk map."""
+    if not isinstance(a, dict):
+        a = {}
+    if not isinstance(b, dict):
+        b = {}
+    out = {"userName": a.get("userName") or b.get("userName"), "knowledgeMap": {}}
+    try:
+        out["questionsAnswered"] = max(
+            int(a.get("questionsAnswered") or 0),
+            int(b.get("questionsAnswered") or 0),
+        )
+    except (TypeError, ValueError):
+        out["questionsAnswered"] = int(a.get("questionsAnswered") or 0) or int(b.get("questionsAnswered") or 0)
+    km_a = a.get("knowledgeMap") if isinstance(a.get("knowledgeMap"), dict) else {}
+    km_b = b.get("knowledgeMap") if isinstance(b.get("knowledgeMap"), dict) else {}
+    for k in set(km_a) | set(km_b):
+        ca = km_a.get(k) if isinstance(km_a.get(k), dict) else {}
+        cb = km_b.get(k) if isinstance(km_b.get(k), dict) else {}
+        ids_a = set(ca.get("correctQuestionIds") or []) if isinstance(ca.get("correctQuestionIds"), list) else set()
+        ids_b = set(cb.get("correctQuestionIds") or []) if isinstance(cb.get("correctQuestionIds"), list) else set()
+        merged_ids = list(ids_a | ids_b)
+        st = "known" if (ca.get("status") == "known" or cb.get("status") == "known") else (
+            ca.get("status") or cb.get("status") or "unknown"
+        )
+        base = {**ca, **cb}
+        base["correctQuestionIds"] = merged_ids
+        base["status"] = st
+        out["knowledgeMap"][k] = base
+    ah_a = a.get("answerHistory") if isinstance(a.get("answerHistory"), dict) else {}
+    ah_b = b.get("answerHistory") if isinstance(b.get("answerHistory"), dict) else {}
+    out["answerHistory"] = {**ah_a, **ah_b}
+    for key in ("createdAt", "lastUpdated"):
+        va, vb = a.get(key), b.get(key)
+        if isinstance(va, str) and isinstance(vb, str):
+            out[key] = max(va, vb)
+        else:
+            out[key] = va or vb
+    if not out.get("userName"):
+        out["userName"] = ""
+    return out
+
+
 def _update_user_log_knowledge_profile(user: str, profile: dict, display_snapshot: Optional[dict] = None) -> None:
     data = _read_user_log(user)
-    data["knowledge_profile"] = profile
+    old_prof = data.get("knowledge_profile")
+    new_prof = profile if isinstance(profile, dict) else {}
+    old_s = _knowledge_profile_strength(old_prof)
+    new_s = _knowledge_profile_strength(new_prof)
+    # Another device with empty local state must not overwrite real progress.
+    if old_s > 0 and new_s == 0:
+        print(
+            f"[user_log] keep knowledge_profile (refuse empty overwrite) user={user!r} "
+            f"old_strength={old_s} new_strength={new_s}"
+        )
+        if display_snapshot is not None:
+            data["display_snapshot"] = display_snapshot
+            _write_user_log(user, data)
+            _persist_cohort_summary_by_domain()
+        return
+    if isinstance(old_prof, dict) and old_s > new_s and new_s > 0:
+        new_prof = _merge_knowledge_profiles(old_prof, new_prof)
+    data["knowledge_profile"] = new_prof
     if display_snapshot is not None:
         data["display_snapshot"] = display_snapshot
     _write_user_log(user, data)

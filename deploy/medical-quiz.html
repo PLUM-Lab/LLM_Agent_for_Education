@@ -2240,8 +2240,23 @@ Author: AI for Education (Wenchao Qin)
             return null;
         }
 
-        async function loadStudentProfileFromServer(userName) {
+        /** Rough progress metric so stale localStorage cannot beat server totals (multi-device). */
+        function studentProfileProgressScore(p) {
+            if (!p || typeof p !== 'object') return 0;
+            const qa = Number(p.questionsAnswered) || 0;
+            const km = p.knowledgeMap || {};
+            let idCount = 0;
+            for (const comp of Object.values(km)) {
+                if (comp && typeof comp === 'object' && Array.isArray(comp.correctQuestionIds)) {
+                    idCount += comp.correctQuestionIds.length;
+                }
+            }
+            return Math.max(qa, idCount);
+        }
+
+        async function loadStudentProfileFromServer(userName, options) {
             if (!userName) return null;
+            const persistLocal = !options || options.persistLocal !== false;
             try {
                 const url = RAG_SERVER_URL + '/user_log?user=' + encodeURIComponent(userName);
                 const resp = await fetch(url, { headers: getSessionHeaders(), mode: 'cors' });
@@ -2258,10 +2273,12 @@ Author: AI for Education (Wenchao Qin)
                     }
                 });
 
-                try {
-                    const key = PROFILE_STORAGE_PREFIX + userName;
-                    localStorage.setItem(key, JSON.stringify(profile));
-                } catch (_) {}
+                if (persistLocal) {
+                    try {
+                        const key = PROFILE_STORAGE_PREFIX + userName;
+                        localStorage.setItem(key, JSON.stringify(profile));
+                    } catch (_) {}
+                }
 
                 console.log('📥 Loaded student profile from backend for user:', userName);
                 return profile;
@@ -2630,11 +2647,18 @@ Author: AI for Education (Wenchao Qin)
             const loggedInEl = document.getElementById('logged-in-user');
             if (loggedInEl) loggedInEl.textContent = 'Logged in as: ' + userName;
 
-            let existing = loadStudentProfile(userName);
-            if (!existing) {
-                existing = await loadStudentProfileFromServer(userName);
+            const local = loadStudentProfile(userName);
+            const server = await loadStudentProfileFromServer(userName, { persistLocal: false });
+            let existing = null;
+            if (local && server) {
+                existing = studentProfileProgressScore(server) >= studentProfileProgressScore(local) ? server : local;
+            } else {
+                existing = server || local;
             }
             if (existing) {
+                try {
+                    localStorage.setItem(PROFILE_STORAGE_PREFIX + userName, JSON.stringify(existing));
+                } catch (_) {}
                 studentProfile = existing;
                 if (allQuestions && allQuestions.length > 0) reevaluateKnowledgeStatus();
             } else {
